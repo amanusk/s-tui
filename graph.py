@@ -26,11 +26,17 @@ animation.
 """
 
 import urwid
+import random
 
 import math
 import time
 
 UPDATE_INTERVAL = 0.2
+
+def update_value_2(self):
+    last_value = random.randint(0, 50)
+    self.rand_data.append(last_value)
+    self.rand_data = self.rand_data[1:]
 
 def sin100( x ):
     """
@@ -49,14 +55,8 @@ class GraphModel:
 
     def __init__(self):
         data = [ ('Saw', range(0,100,2)*2),
-            ('Square', [0]*30 + [100]*30),
-            ('Sine 1', [sin100(x) for x in range(100)] ),
-            ('Sine 2', [(sin100(x) + sin100(x*2))/2
-                for x in range(100)] ),
-            ('Sine 3', [(sin100(x) + sin100(x*3))/2
-                for x in range(100)] ),
-            ('Sine 4', [(sin100(x) + sin100(x * 4)) / 2
-                for x in range(100)]),
+            ('Rand', [random.randint(0, 10)
+                        for x in range(100)]),
             ]
         self.modes = []
         self.data = {}
@@ -92,6 +92,7 @@ class GraphView(urwid.WidgetWrap):
     A class responsible for providing the application's interface and
     graph display.
     """
+
     palette = [
         ('body',         'black',      'light gray', 'standout'),
         ('header',       'white',      'dark red',   'bold'),
@@ -121,6 +122,8 @@ class GraphView(urwid.WidgetWrap):
         self.start_time = None
         self.offset = 0
         self.last_offset = None
+        self.rand_data = [0] * self.graph_num_bars
+
         urwid.WidgetWrap.__init__(self, self.main_window())
 
     def get_offset_now(self):
@@ -131,6 +134,11 @@ class GraphView(urwid.WidgetWrap):
         tdelta = time.time() - self.start_time
         return int(self.offset + (tdelta*self.graph_offset_per_second))
 
+    def update_value(self):
+        last_value = random.randint(0,100)
+        self.rand_data.append(last_value)
+        self.rand_data = self.rand_data[1:]
+
     def update_graph(self, force_update=False):
         o = self.get_offset_now()
         if o == self.last_offset and not force_update:
@@ -140,8 +148,10 @@ class GraphView(urwid.WidgetWrap):
         r = gspb * self.graph_num_bars
         d, max_value, repeat = self.controller.get_data( o, r )
         l = []
+        self.update_value()
+
         for n in range(self.graph_num_bars):
-            value = sum(d[n*gspb:(n+1)*gspb])/gspb
+            value = self.rand_data[n]
             # toggle between two bar types
             if n & 1:
                 l.append([0,value])
