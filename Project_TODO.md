@@ -1,5 +1,6 @@
-- [ ] a task list item
-- [ ] list syntax required
-- [ ] normal **formatting**, @mentions, #1234 refs
-- [ ] incomplete
-- [x] completed
+- [x] Split into two Graphs
+- [ ] Set width of both graphs to be dynamic
+- [ ] Change temperature graph to red (Possibaly on high temp only)
+- [ ] Start by default
+- [ ] Add stress options from within
+- [ ] Add calculation of lost performance based on frequancy
