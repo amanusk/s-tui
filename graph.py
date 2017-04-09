@@ -27,16 +27,12 @@ animation.
 
 import urwid
 import random
+import psutil
 
 import math
 import time
 
-UPDATE_INTERVAL = 0.2
-
-def update_value_2(self):
-    last_value = random.randint(0, 50)
-    self.rand_data.append(last_value)
-    self.rand_data = self.rand_data[1:]
+UPDATE_INTERVAL = 1
 
 def sin100( x ):
     """
@@ -100,9 +96,11 @@ class GraphView(urwid.WidgetWrap):
         ('main shadow',  'dark gray',  'black'),
         ('line',         'black',      'light gray', 'standout'),
         ('bg background','light gray', 'black'),
-        ('bg 1',         'black',      'dark blue', 'standout'),
+        #('bg 1',         'black',      'dark blue', 'standout'),
+        ('bg 1',         'black',      'dark green', 'standout'),
         ('bg 1 smooth',  'dark blue',  'black'),
-        ('bg 2',         'black',      'dark cyan', 'standout'),
+        #('bg 2',         'black',      'dark cyan', 'standout'),
+        ('bg 2',         'dark red',    'light green', 'standout'),
         ('bg 2 smooth',  'dark cyan',  'black'),
         ('button normal','light gray', 'dark blue', 'standout'),
         ('button select','white',      'dark green'),
@@ -113,7 +111,8 @@ class GraphView(urwid.WidgetWrap):
         ]
 
     graph_samples_per_bar = 10
-    graph_num_bars = 5
+    # TODO: Make this scalable to the full window
+    graph_num_bars = 50
     graph_offset_per_second = 5
 
     def __init__(self, controller):
@@ -122,7 +121,8 @@ class GraphView(urwid.WidgetWrap):
         self.start_time = None
         self.offset = 0
         self.last_offset = None
-        self.rand_data = [0] * self.graph_num_bars
+        self.cpu_util = [0] * self.graph_num_bars
+        self.cpu_temp = [0] * self.graph_num_bars
 
         urwid.WidgetWrap.__init__(self, self.main_window())
 
@@ -134,10 +134,18 @@ class GraphView(urwid.WidgetWrap):
         tdelta = time.time() - self.start_time
         return int(self.offset + (tdelta*self.graph_offset_per_second))
 
-    def update_value(self):
-        last_value = random.randint(0,100)
-        self.rand_data.append(last_value)
-        self.rand_data = self.rand_data[1:]
+    def update_util(self):
+        #last_value = random.randint(0,100)
+        last_value = psutil.cpu_percent(interval=None)
+        self.cpu_util.append(last_value)
+        self.cpu_util = self.cpu_util[1:]
+
+    def update_temp(self):
+        temps = psutil.sensors_temperatures()
+        #TODO make this more robust
+        last_value = psutil.sensors_temperatures()['acpitz'][0].current
+        self.cpu_temp.append(last_value)
+        self.cpu_temp = self.cpu_temp[1:]
 
     def update_graph(self, force_update=False):
         o = self.get_offset_now()
@@ -148,28 +156,41 @@ class GraphView(urwid.WidgetWrap):
         r = gspb * self.graph_num_bars
         d, max_value, repeat = self.controller.get_data( o, r )
         l = []
-        self.update_value()
+        self.update_util()
+        self.update_temp()
 
+        # Updating CPU utilization
         for n in range(self.graph_num_bars):
-            value = self.rand_data[n]
+            value = self.cpu_util[n]
             # toggle between two bar types
             if n & 1:
                 l.append([0,value])
             else:
                 l.append([value,0])
-        self.graph.set_data(l,max_value)
+        self.graph_util.set_data(l,max_value)
+
+        # Updating CPU temperature
+        l = []
+        for n in range(self.graph_num_bars):
+            value = self.cpu_temp[n]
+            # toggle between two bar types
+            if n & 1:
+                l.append([0,value])
+            else:
+                l.append([value,0])
+        self.graph_temp.set_data(l,max_value)
 
         # also update progress
-        if (o//repeat)&1:
-            # show 100% for first half, 0 for second half
-            if o%repeat > repeat//2:
-                prog = 0
-            else:
-                prog = 1
-        else:
-            prog = float(o%repeat) / repeat
-        self.animate_progress.set_completion( prog )
-        return True
+        #if (o//repeat)&1:
+        #    # show 100% for first half, 0 for second half
+        #    if o%repeat > repeat//2:
+        #        prog = 0
+        #    else:
+        #        prog = 1
+        #else:
+        #    prog = float(o%repeat) / repeat
+        #self.animate_progress.set_completion( prog )
+        #return True
 
     def on_animate_button(self, button):
         """Toggle started state and button text."""
@@ -206,8 +227,8 @@ class GraphView(urwid.WidgetWrap):
         self.last_offset = None
 
     def on_unicode_checkbox(self, w, state):
-        self.graph = self.bar_graph( state )
-        self.graph_wrap._w = self.graph
+        self.graph_util = self.bar_graph( state )
+        self.graph_wrap._w = self.graph_util
         self.animate_progress = self.progress_bar( state )
         self.animate_progress_wrap._w = self.animate_progress
         self.update_graph( True )
@@ -298,13 +319,17 @@ class GraphView(urwid.WidgetWrap):
         return w
 
     def main_window(self):
-        self.graph = self.bar_graph()
-        self.graph_wrap = urwid.WidgetWrap( self.graph )
+        self.graph_util = self.bar_graph()
+        self.graph_temp = self.bar_graph()
+        # TODO: Optional if graph could be stretched
+        self.graph_util.set_bar_width(1)
+        self.graph_temp.set_bar_width(1)
+        #self.graph_wrap = urwid.WidgetWrap( self.graph_util )
         vline = urwid.AttrWrap( urwid.SolidFill(u'\u2502'), 'line')
         hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
 
         c = self.graph_controls()
-        l = [('weight',2,self.graph_wrap), ('fixed',1,hline), ('weight',2,self.graph_wrap)]
+        l = [('weight',2,self.graph_util), ('fixed',1,hline), ('weight',2,self.graph_temp)]
 
         r = urwid.Pile(l, focus_item=None)
 
