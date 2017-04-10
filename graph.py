@@ -26,7 +26,7 @@ animation.
 """
 
 import urwid
-import random
+from ScalableBarGraph import ScalableBarGraph
 import psutil
 
 import math
@@ -116,11 +116,11 @@ class GraphView(urwid.WidgetWrap):
         ]
 
     graph_samples_per_bar = 10
-    # TODO: Make this scalable to the full window
     graph_num_bars = 50
     graph_offset_per_second = 5
 
     def __init__(self, controller):
+
         self.controller = controller
         self.started = True
         self.start_time = None
@@ -131,6 +131,7 @@ class GraphView(urwid.WidgetWrap):
         self.mode_buttons = []
         self.animate_button = []
         self.graph_util = []
+        self.graph_temp = []
         self.animate_progress = []
         self.animate_progress_wrap = []
 
@@ -144,28 +145,43 @@ class GraphView(urwid.WidgetWrap):
         tdelta = time.time() - self.start_time
         return int(self.offset + (tdelta*self.graph_offset_per_second))
 
+    def update_graph_val(self, values, new_val):
+        values_num = len(values)
+
+        if values_num > self.graph_num_bars:
+            values = values[values_num - self.graph_num_bars - 1:]
+        elif values_num < self.graph_num_bars:
+            zero_pad = [0] * (self.graph_num_bars - values_num)
+            values = zero_pad + values
+
+        values.append(new_val)
+        return values[1:]
+
     def update_util(self):
-        # last_value = random.randint(0,100)
         last_value = psutil.cpu_percent(interval=None)
-        self.cpu_util.append(last_value)
-        self.cpu_util = self.cpu_util[1:]
+        self.cpu_util = self.update_graph_val(self.cpu_util, last_value)
 
     def update_temp(self):
         # temps = psutil.sensors_temperatures()  # TODO is this needed?
         # TODO make this more robust
         last_value = psutil.sensors_temperatures()['acpitz'][0].current
-        self.cpu_temp.append(last_value)
-        self.cpu_temp = self.cpu_temp[1:]
+        self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
 
     def update_graph(self, force_update=False):
+
+        self.graph_num_bars = self.graph_util.get_size()[1]
+
         o = self.get_offset_now()
         if o == self.last_offset and not force_update:
             return False
         self.last_offset = o
         gspb = self.graph_samples_per_bar
         r = gspb * self.graph_num_bars
-        d, max_value, repeat = self.controller.get_data(o, r)
+
+        # TODO set maximum value dynamically and per graph
+        max_value = 100
         l = []
+
         self.update_util()
         self.update_temp()
 
@@ -240,6 +256,7 @@ class GraphView(urwid.WidgetWrap):
         self.graph_wrap._w = self.graph_util
         self.animate_progress = self.progress_bar(state)
         self.animate_progress_wrap._w = self.animate_progress
+
         self.update_graph(True)
 
     def main_shadow(self, w):
@@ -259,7 +276,7 @@ class GraphView(urwid.WidgetWrap):
         satt = None
         if smooth:
             satt = {(1, 0): 'bg 1 smooth', (2, 0): 'bg 2 smooth'}
-        w = urwid.BarGraph(['bg background', 'bg 1', 'bg 2'], satt=satt)
+        w = ScalableBarGraph(['bg background', 'bg 1', 'bg 2'], satt=satt)
         return w
 
     def button(self, t, fn):
@@ -328,6 +345,9 @@ class GraphView(urwid.WidgetWrap):
     def main_window(self):
         self.graph_util = self.bar_graph()
         self.graph_temp = self.bar_graph()
+
+        self.graph_num_bars = self.graph_util.get_size()[1]
+
         # TODO: Optional if graph could be stretched
         self.graph_util.set_bar_width(1)
         self.graph_temp.set_bar_width(1)
@@ -380,9 +400,9 @@ class GraphController:
         self.view.update_graph(True)
         return rval
 
-    def get_data(self, offset, range):
-        """Provide data to our view for the graph."""
-        return self.model.get_data(offset, range)
+    # def get_data(self, offset, range):
+    #     """Provide data to our view for the graph."""
+    #     return self.model.get_data(offset, range)
 
     def main(self):
         self.loop = urwid.MainLoop(self.view, self.view.palette)
