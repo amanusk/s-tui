@@ -96,6 +96,35 @@ class GraphMode:
     #     return l, self.data_max_value, len(d)
 
 
+class GraphData:
+    def __init__(self, graph_num_bars):
+        self.graph_num_bars = graph_num_bars
+        self.cpu_util = [0] * graph_num_bars
+        self.cpu_temp = [0] * graph_num_bars
+
+    def update_util(self):
+        last_value = psutil.cpu_percent(interval=None)
+        self.cpu_util = self.update_graph_val(self.cpu_util, last_value)
+
+    def update_temp(self):
+        # TODO make this more robust
+        # TODO change color according to last recorded temp
+        last_value = psutil.sensors_temperatures()['acpitz'][0].current
+        self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
+
+    def update_graph_val(self, values, new_val):
+        values_num = len(values)
+
+        if values_num > self.graph_num_bars:
+            values = values[values_num - self.graph_num_bars - 1:]
+        elif values_num < self.graph_num_bars:
+            zero_pad = [0] * (self.graph_num_bars - values_num)
+            values = zero_pad + values
+
+        values.append(new_val)
+        return values[1:]
+
+
 class GraphView(urwid.WidgetWrap):
     """
     A class responsible for providing the application's interface and
@@ -134,8 +163,9 @@ class GraphView(urwid.WidgetWrap):
         self.start_time = None
         self.offset = 0
         self.last_offset = None
-        self.cpu_util = [0] * self.graph_num_bars
-        self.cpu_temp = [0] * self.graph_num_bars
+        #self.cpu_util = [0] * self.graph_num_bars
+        #self.cpu_temp = [0] * self.graph_num_bars
+        self.graph_data = GraphData(self.graph_num_bars)
         self.mode_buttons = []
         self.animate_button = []
         self.graph_util = []
@@ -153,32 +183,12 @@ class GraphView(urwid.WidgetWrap):
         tdelta = time.time() - self.start_time
         return int(self.offset + (tdelta*self.graph_offset_per_second))
 
-    def update_graph_val(self, values, new_val):
-        values_num = len(values)
 
-        if values_num > self.graph_num_bars:
-            values = values[values_num - self.graph_num_bars - 1:]
-        elif values_num < self.graph_num_bars:
-            zero_pad = [0] * (self.graph_num_bars - values_num)
-            values = zero_pad + values
-
-        values.append(new_val)
-        return values[1:]
-
-    def update_util(self):
-        last_value = psutil.cpu_percent(interval=None)
-        self.cpu_util = self.update_graph_val(self.cpu_util, last_value)
-
-    def update_temp(self):
-        # temps = psutil.sensors_temperatures()  # TODO is this needed?
-        # TODO make this more robust
-        # TODO change color according to last recorded temp
-        last_value = psutil.sensors_temperatures()['acpitz'][0].current
-        self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
 
     def update_graph(self, force_update=False):
 
         self.graph_num_bars = self.graph_util.get_size()[1]
+        self.graph_data.graph_num_bars = self.graph_util.get_size()[1]
 
         o = self.get_offset_now()
         if o == self.last_offset and not force_update:
@@ -191,12 +201,12 @@ class GraphView(urwid.WidgetWrap):
         max_value = 100
         l = []
 
-        self.update_util()
-        self.update_temp()
+        self.graph_data.update_temp()
+        self.graph_data.update_util()
 
         # Updating CPU utilization
         for n in range(self.graph_num_bars):
-            value = self.cpu_util[n]
+            value = self.graph_data.cpu_util[n]
             # toggle between two bar types
             if n & 1:
                 l.append([0, value])
@@ -207,7 +217,7 @@ class GraphView(urwid.WidgetWrap):
         # Updating CPU temperature
         l = []
         for n in range(self.graph_num_bars):
-            value = self.cpu_temp[n]
+            value = self.graph_data.cpu_temp[n]
             # toggle between two bar types
             if n & 1:
                 l.append([0, value])
