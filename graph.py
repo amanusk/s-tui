@@ -417,6 +417,10 @@ class GraphController:
 
     def main(self):
         self.loop = urwid.MainLoop(self.view, self.view.palette)
+
+        self.view.started = False  # TODO change to true for logical assigmnent
+        self.view.on_animate_button(self.view.animate_button)
+
         self.loop.run()
 
     def animate_graph(self, loop=None, user_data=None):
