@@ -153,7 +153,6 @@ class GraphView(urwid.WidgetWrap):
         ]
 
     graph_samples_per_bar = 10
-    graph_num_bars = 50
     graph_offset_per_second = 5
 
     def __init__(self, controller):
@@ -163,9 +162,7 @@ class GraphView(urwid.WidgetWrap):
         self.start_time = None
         self.offset = 0
         self.last_offset = None
-        #self.cpu_util = [0] * self.graph_num_bars
-        #self.cpu_temp = [0] * self.graph_num_bars
-        self.graph_data = GraphData(self.graph_num_bars)
+        self.graph_data = GraphData(0)
         self.mode_buttons = []
         self.animate_button = []
         self.graph_util = []
@@ -187,7 +184,6 @@ class GraphView(urwid.WidgetWrap):
 
     def update_graph(self, force_update=False):
 
-        self.graph_num_bars = self.graph_util.get_size()[1]
         self.graph_data.graph_num_bars = self.graph_util.get_size()[1]
 
         o = self.get_offset_now()
@@ -195,7 +191,7 @@ class GraphView(urwid.WidgetWrap):
             return False
         self.last_offset = o
         gspb = self.graph_samples_per_bar
-        r = gspb * self.graph_num_bars
+        r = gspb * self.graph_data.graph_num_bars
 
         # TODO set maximum value dynamically and per graph
         max_value = 100
@@ -205,7 +201,7 @@ class GraphView(urwid.WidgetWrap):
         self.graph_data.update_util()
 
         # Updating CPU utilization
-        for n in range(self.graph_num_bars):
+        for n in range(self.graph_data.graph_num_bars):
             value = self.graph_data.cpu_util[n]
             # toggle between two bar types
             if n & 1:
@@ -216,7 +212,7 @@ class GraphView(urwid.WidgetWrap):
 
         # Updating CPU temperature
         l = []
-        for n in range(self.graph_num_bars):
+        for n in range(self.graph_data.graph_num_bars):
             value = self.graph_data.cpu_temp[n]
             # toggle between two bar types
             if n & 1:
@@ -367,7 +363,7 @@ class GraphView(urwid.WidgetWrap):
         self.graph_util = self.bar_graph('bg 1', 'bg 2')
         self.graph_temp = self.bar_graph('bg 3', 'bg 4')
 
-        self.graph_num_bars = self.graph_util.get_size()[1]
+        self.graph_data.graph_num_bars = self.graph_util.get_size()[1]
 
         # TODO: Optional if graph could be stretched
         self.graph_util.set_bar_width(1)
