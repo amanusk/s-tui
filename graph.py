@@ -60,7 +60,13 @@ class GraphMode:
         return self.modes
 
     def set_mode(self, m):
+        if m == 'Regular Operation':
+            pass  # TODO stop stress
+        elif m == 'Stress Operation':
+            pass  # TODO open stress options (new window?)
+
         self.current_mode = m
+        # Start stress here?
         if m == 'Stress Operation':
             self.stress_process = subprocess.Popen(['stress', '-c', '4'], shell=False)
             self.stress_process = psutil.Process(self.stress_process.pid)
@@ -70,8 +76,24 @@ class GraphMode:
                 for proc in self.stress_process.children(recursive=True):
                     proc.kill()
             except:
-                pass
+                print "Could not kill process"
         return True
+
+    # def get_data(self, offset, r):
+    #     """
+    #     Return the data in [offset:offset+r], the maximum value
+    #     for items returned, and the offset at which the data
+    #     repeats.
+    #     """
+    #     l = []
+    #     d = self.data[self.current_mode]
+    #     while r:
+    #         offset = offset % len(d)
+    #         segment = d[offset:offset+r]
+    #         r -= len(segment)
+    #         offset += len(segment)
+    #         l += segment
+    #     return l, self.data_max_value, len(d)
 
 
 class GraphView(urwid.WidgetWrap):
@@ -148,6 +170,7 @@ class GraphView(urwid.WidgetWrap):
         self.cpu_util = self.update_graph_val(self.cpu_util, last_value)
 
     def update_temp(self):
+        # temps = psutil.sensors_temperatures()  # TODO is this needed?
         # TODO make this more robust
         # TODO change color according to last recorded temp
         last_value = psutil.sensors_temperatures()['acpitz'][0].current
@@ -191,6 +214,18 @@ class GraphView(urwid.WidgetWrap):
             else:
                 l.append([value, 0])
         self.graph_temp.set_data(l, max_value)
+
+        # also update progress
+        # if (o//repeat)&1:
+        #    # show 100% for first half, 0 for second half
+        #    if o%repeat > repeat//2:
+        #        prog = 0
+        #    else:
+        #        prog = 1
+        # else:
+        #    prog = float(o%repeat) / repeat
+        # self.animate_progress.set_completion( prog )
+        # return True
 
     def on_animate_button(self, button):
         """Toggle started state and button text."""
