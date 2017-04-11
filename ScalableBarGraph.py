@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-"""A simple python script template.
+"""ScalableBarGraph Class extends urwid.BarGraph so that
+the current size of the bar graph is also obtainable
+get_size() - returns the tuple (row, col)
 """
 
 import urwid
@@ -23,4 +25,4 @@ class ScalableBarGraph(urwid.BarGraph):
         return self._size
 
     def on_resize(self, new_size):
-        self._size = new_size
+        pass  # place folder for any future implantation

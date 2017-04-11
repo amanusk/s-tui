@@ -38,24 +38,20 @@ import signal
 UPDATE_INTERVAL = 1
 
 
-class GraphModel:
+class GraphMode:
     """
-    A class responsible for storing the data that will be displayed
-    on the graph, and keeping track of which mode is enabled.
+    A class responsible for storing the data related to 
+    the current mode of operation
     """
 
     data_max_value = 100
 
     def __init__(self):
-        data = [
-            ('Regular Operation', 0),
-            ('Stress Operation', 1),
+        self.modes = [
+            'Regular Operation',
+            'Stress Operation',
             ]
-        self.modes = []
         self.data = {}
-        for m, d in data:
-            self.modes.append(m)
-            self.data[m] = d
 
         self.current_mode = self.modes[0]
         self.stress_process = None
@@ -64,6 +60,11 @@ class GraphModel:
         return self.modes
 
     def set_mode(self, m):
+        if m == 'Regular Operation':
+            pass  # TODO stop stress
+        elif m == 'Stress Operation':
+            pass  # TODO open stress options (new window?)
+
         self.current_mode = m
         # Start stress here?
         if m == 'Stress Operation':
@@ -80,21 +81,21 @@ class GraphModel:
                 print "Could not kill process"
         return True
 
-    def get_data(self, offset, r):
-        """
-        Return the data in [offset:offset+r], the maximum value
-        for items returned, and the offset at which the data
-        repeats.
-        """
-        l = []
-        d = self.data[self.current_mode]
-        while r:
-            offset = offset % len(d)
-            segment = d[offset:offset+r]
-            r -= len(segment)
-            offset += len(segment)
-            l += segment
-        return l, self.data_max_value, len(d)
+    # def get_data(self, offset, r):
+    #     """
+    #     Return the data in [offset:offset+r], the maximum value
+    #     for items returned, and the offset at which the data
+    #     repeats.
+    #     """
+    #     l = []
+    #     d = self.data[self.current_mode]
+    #     while r:
+    #         offset = offset % len(d)
+    #         segment = d[offset:offset+r]
+    #         r -= len(segment)
+    #         offset += len(segment)
+    #         l += segment
+    #     return l, self.data_max_value, len(d)
 
 
 class GraphView(urwid.WidgetWrap):
@@ -104,24 +105,24 @@ class GraphView(urwid.WidgetWrap):
     """
 
     palette = [
-        ('body',          'black',      'light gray', 'standout'),
-        ('header',        'white',      'dark red',   'bold'),
+        ('body',          'black',      'light gray',   'standout'),
+        ('header',        'white',      'dark red',     'bold'),
         ('screen edge',   'light blue', 'dark cyan'),
         ('main shadow',   'dark gray',  'black'),
-        ('line',          'black',      'light gray', 'standout'),
+        ('line',          'black',      'light gray',   'standout'),
         ('bg background', 'light gray', 'black'),
-        ('bg 1',          'black',      'dark green', 'standout'),
+        ('bg 1',          'black',      'dark green',   'standout'),
         ('bg 1 smooth',   'dark blue',  'black'),
         ('bg 2',          'dark red',    'light green', 'standout'),
         ('bg 2 smooth',   'dark cyan',  'black'),
-        ('button normal', 'light gray', 'dark blue', 'standout'),
+        ('bg 3', 'light red', 'dark red', 'standout'),
+        ('bg 4', 'dark red', 'light red', 'standout'),
+        ('button normal', 'light gray', 'dark blue',    'standout'),
         ('button select', 'white',      'dark green'),
-        ('line',          'black',      'light gray', 'standout'),
-        ('pg normal',     'white',      'black', 'standout'),
+        ('line',          'black',      'light gray',   'standout'),
+        ('pg normal',     'white',      'black',        'standout'),
         ('pg complete',   'white',      'dark magenta'),
         ('pg smooth',     'dark magenta', 'black')
-        # ('bg 1',         'black',      'dark blue', 'standout'),
-        # ('bg 2',         'black',      'dark cyan', 'standout'),
         ]
 
     graph_samples_per_bar = 10
@@ -173,6 +174,7 @@ class GraphView(urwid.WidgetWrap):
     def update_temp(self):
         # temps = psutil.sensors_temperatures()  # TODO is this needed?
         # TODO make this more robust
+        # TODO change color according to last recorded temp
         last_value = psutil.sensors_temperatures()['acpitz'][0].current
         self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
 
@@ -250,6 +252,7 @@ class GraphView(urwid.WidgetWrap):
         if state:
             # The new mode is the label of the button
             self.controller.set_mode(button.get_label())
+
         self.last_offset = None
 
     def on_mode_change(self, m):
@@ -260,6 +263,7 @@ class GraphView(urwid.WidgetWrap):
                 break
         self.last_offset = None
 
+    # TODO is this needed?
     def on_unicode_checkbox(self, w, state):
         self.graph_util = self.bar_graph(state)
         self.graph_wrap._w = self.graph_util
@@ -281,11 +285,11 @@ class GraphView(urwid.WidgetWrap):
                           ('fixed top', 1), ('fixed bottom', 2))
         return w
 
-    def bar_graph(self, smooth=False):
+    def bar_graph(self, color_a, color_b, smooth=False):
         satt = None
         if smooth:
             satt = {(1, 0): 'bg 1 smooth', (2, 0): 'bg 2 smooth'}
-        w = ScalableBarGraph(['bg background', 'bg 1', 'bg 2'], satt=satt)
+        w = ScalableBarGraph(['bg background', color_a, color_b], satt=satt)
         return w
 
     def button(self, t, fn):
@@ -352,8 +356,8 @@ class GraphView(urwid.WidgetWrap):
         return w
 
     def main_window(self):
-        self.graph_util = self.bar_graph()
-        self.graph_temp = self.bar_graph()
+        self.graph_util = self.bar_graph('bg 1', 'bg 2')
+        self.graph_temp = self.bar_graph('bg 3', 'bg 4')
 
         self.graph_num_bars = self.graph_util.get_size()[1]
 
@@ -390,22 +394,22 @@ class GraphController:
     def __init__(self):
         self.loop = []
         self.animate_alarm = None
-        self.model = GraphModel()
+        self.mode = GraphMode()
         self.view = GraphView(self)
         # use the first mode as the default
         mode = self.get_modes()[0]
-        self.model.set_mode(mode)
+        self.mode.set_mode(mode)
         # update the view
         self.view.on_mode_change(mode)
         self.view.update_graph(True)
 
     def get_modes(self):
         """Allow our view access to the list of modes."""
-        return self.model.get_modes()
+        return self.mode.get_modes()
 
     def set_mode(self, m):
         """Allow our view to set the mode."""
-        rval = self.model.set_mode(m)
+        rval = self.mode.set_mode(m)
         self.view.update_graph(True)
         return rval
 
