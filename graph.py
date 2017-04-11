@@ -31,16 +31,11 @@ import psutil
 
 import math
 import time
+import os
+import subprocess
+import signal
 
 UPDATE_INTERVAL = 1
-
-
-def sin100(x):
-    """
-    A sin function that returns values between 0 and 100 and repeats
-    after x == 100.
-    """
-    return 50 + 50 * math.sin(x * math.pi / 50)
 
 
 class GraphModel:
@@ -53,8 +48,8 @@ class GraphModel:
 
     def __init__(self):
         data = [
-            ('Regular Operation', [0] * 100),
-            ('Stress Operation', [0] * 100),
+            ('Regular Operation', 0),
+            ('Stress Operation', 1),
             ]
         self.modes = []
         self.data = {}
@@ -63,12 +58,26 @@ class GraphModel:
             self.data[m] = d
 
         self.current_mode = self.modes[0]
+        self.stress_process = None
 
     def get_modes(self):
         return self.modes
 
     def set_mode(self, m):
         self.current_mode = m
+        # Start stress here?
+        if m == 'Stress Operation':
+            self.stress_process = subprocess.Popen(['stress', '-c', '4'], shell=False)
+        else:
+            try:
+				PROCNAME = 'stress'
+
+				for proc in psutil.process_iter():
+					# check whether the process name matches
+					if proc.name() == PROCNAME:
+						proc.kill()
+            except:
+                print "Could not kill process"
         return True
 
     def get_data(self, offset, r):
@@ -101,10 +110,8 @@ class GraphView(urwid.WidgetWrap):
         ('main shadow',   'dark gray',  'black'),
         ('line',          'black',      'light gray', 'standout'),
         ('bg background', 'light gray', 'black'),
-        # ('bg 1',         'black',      'dark blue', 'standout'),
         ('bg 1',          'black',      'dark green', 'standout'),
         ('bg 1 smooth',   'dark blue',  'black'),
-        # ('bg 2',         'black',      'dark cyan', 'standout'),
         ('bg 2',          'dark red',    'light green', 'standout'),
         ('bg 2 smooth',   'dark cyan',  'black'),
         ('button normal', 'light gray', 'dark blue', 'standout'),
@@ -113,6 +120,8 @@ class GraphView(urwid.WidgetWrap):
         ('pg normal',     'white',      'black', 'standout'),
         ('pg complete',   'white',      'dark magenta'),
         ('pg smooth',     'dark magenta', 'black')
+        # ('bg 1',         'black',      'dark blue', 'standout'),
+        # ('bg 2',         'black',      'dark cyan', 'standout'),
         ]
 
     graph_samples_per_bar = 10
