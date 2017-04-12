@@ -91,6 +91,8 @@ class GraphData:
         self.core_num = psutil.cpu_count()
         if is_admin:
             self.top_freq = readmsr(TURBO_MSR, 0)
+            if self.top_freq == None:
+                self.top_freq = psutil.cpu_freq().max
         else:
             self.top_freq = psutil.cpu_freq().max
 
