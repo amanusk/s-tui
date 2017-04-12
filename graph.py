@@ -85,6 +85,7 @@ class GraphData:
         self.cur_temp = 0
         self.cur_freq = 0
         self.perf_lost = 0
+        self.max_perf_lost = 0
 
         self.samples_taken = 0
 
@@ -105,7 +106,9 @@ class GraphData:
         self.cur_freq = int(psutil.cpu_freq().current)
         if is_admin and self.samples_taken > WAIT_SAMPLES:
             self.perf_lost = int(self.top_freq) - int(self.cur_freq)
-            self.perf_lost = round(float(self.perf_lost) / float(self.top_freq),1)
+            self.perf_lost = round(float(self.perf_lost) / float(self.top_freq) * 100,1)
+            if self.perf_lost > self.max_perf_lost: self.max_perf_lost = self.perf_lost
+
 
 
     def update_temp(self):
@@ -198,7 +201,7 @@ class GraphView(urwid.WidgetWrap):
         self.cur_temp.set_text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c')
         self.top_freq.set_text(str(self.graph_data.top_freq) + 'MHz')
         self.cur_freq.set_text(str(self.graph_data.cur_freq) + 'MHz')
-        self.perf_lost.set_text(str(self.graph_data.perf_lost) + '%')
+        self.perf_lost.set_text(str(self.graph_data.max_perf_lost) + '%')
 
 
     def update_graph(self, force_update=False):
@@ -271,7 +274,7 @@ class GraphView(urwid.WidgetWrap):
                                                         str(self.graph_data.core_num)],
                                                        stdout = FNULL, stderr = FNULL, shell=False)
                 self.stress_process = psutil.Process(self.stress_process.pid)
-                self.graph_data.perf_lost = 0
+                self.graph_data.max_perf_lost = 0
                 self.graph_data.samples_taken = 0
             else:
                 try:
@@ -405,7 +408,7 @@ class GraphView(urwid.WidgetWrap):
         self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")
         self.top_freq = urwid.Text(str(self.graph_data.top_freq) + 'MHz', align="right")
         self.cur_freq = urwid.Text(str(self.graph_data.cur_freq) + 'MHz', align="right")
-        self.perf_lost = urwid.Text(str(self.graph_data.perf_lost) + '%', align="right")
+        self.perf_lost = urwid.Text(str(self.graph_data.max_perf_lost) + '%', align="right")
 
         self.graph_data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
 
