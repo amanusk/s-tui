@@ -27,7 +27,9 @@ animation.
 from __future__ import print_function
 
 import urwid
-from ScalableBarGraph import ScalableBarGraph
+from ComplexBarGraphs import ScalableBarGraph
+from ComplexBarGraphs import LabeledBarGraph
+
 import psutil
 import time
 import subprocess
@@ -177,7 +179,7 @@ class GraphView(urwid.WidgetWrap):
 
     def update_graph(self, force_update=False):
 
-        self.graph_data.graph_num_bars = self.graph_util.get_size()[1]
+        self.graph_data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
 
         o = self.get_offset_now()
         if o == self.last_offset and not force_update:
@@ -201,7 +203,7 @@ class GraphView(urwid.WidgetWrap):
                 l.append([0, value])
             else:
                 l.append([value, 0])
-        self.graph_util.set_data(l, max_value)
+        self.graph_util.bar_graph.set_data(l, max_value)
 
         # Updating CPU temperature
         l = []
@@ -212,7 +214,7 @@ class GraphView(urwid.WidgetWrap):
                 l.append([0, value])
             else:
                 l.append([value, 0])
-        self.graph_temp.set_data(l, max_value)
+        self.graph_temp.bar_graph.set_data(l, max_value)
 
         self.update_stats()
 
@@ -268,12 +270,14 @@ class GraphView(urwid.WidgetWrap):
                           ('fixed top', 1), ('fixed bottom', 2))
         return w
 
-    def bar_graph(self, color_a, color_b, smooth=False):
+    def bar_graph(self, color_a, color_b, title, x_label, y_label, smooth=False):
         satt = None
         if smooth:
             satt = {(1, 0): 'bg 1 smooth', (2, 0): 'bg 2 smooth'}
         w = ScalableBarGraph(['bg background', color_a, color_b], satt=satt)
-        return w
+        bg = LabeledBarGraph([w, x_label, y_label, title])
+
+        return bg
 
     def button(self, t, fn):
         w = urwid.Button(t, fn)
@@ -335,26 +339,24 @@ class GraphView(urwid.WidgetWrap):
         return buttons
 
     def graph_stats(self):
-        fixed_stats = [urwid.Divider(), urwid.Text("Max Temp", align = "left"), 
+        fixed_stats = [urwid.Divider(), urwid.Text("Max Temp", align="left"),
                        self.max_temp] + \
-                      [urwid.Divider(), urwid.Text("Current Temp", align = "left"), 
+                      [urwid.Divider(), urwid.Text("Current Temp", align="left"),
                        self.cur_temp]
-        # w = urwid.ListBox(urwid.SimpleListWalker(fixed_stats))
         return fixed_stats
 
     def main_window(self):
         # Initiating the data
-        self.graph_util = self.bar_graph('bg 1', 'bg 2')
-        self.graph_temp = self.bar_graph('bg 3', 'bg 4')
+        self.graph_util = self.bar_graph('bg 1', 'bg 2', 'util[%]', [], [0, 50, 100])
+        self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'temp[C]', [], [0, 25, 50, 75, 100])
         self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
         self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")
 
-        self.graph_data.graph_num_bars = self.graph_util.get_size()[1]
+        self.graph_data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
 
         # TODO: Optional if graph could be stretched
-        self.graph_util.set_bar_width(1)
-        self.graph_temp.set_bar_width(1)
-        # self.graph_wrap = urwid.WidgetWrap( self.graph_util )
+        self.graph_util.bar_graph.set_bar_width(1)
+        self.graph_temp.bar_graph.set_bar_width(1)
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
         hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
 
@@ -413,7 +415,7 @@ class GraphController:
     def main(self):
         self.loop = urwid.MainLoop(self.view, self.view.palette)
 
-        self.view.started = False  # TODO change to true for logical assigmnent
+        self.view.started = False  # simulate pressing to start button
         self.view.on_animate_button(self.view.animate_button)
 
         self.loop.run()
