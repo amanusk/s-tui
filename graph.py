@@ -24,19 +24,16 @@ Urwid example demonstrating use of the BarGraph widget and creating a
 floating-window appearance.  Also shows use of alarms to create timed
 animation.
 """
+from __future__ import print_function
 
 import urwid
 from ScalableBarGraph import ScalableBarGraph
 import psutil
-
-import math
 import time
-import os
 import subprocess
-import signal
 
 UPDATE_INTERVAL = 1
-DEGREE_SIGN= u'\N{DEGREE SIGN}'
+DEGREE_SIGN = u'\N{DEGREE SIGN}'
 
 
 class GraphMode:
@@ -73,11 +70,11 @@ class GraphMode:
             self.stress_process = psutil.Process(self.stress_process.pid)
         else:
             try:
-                # Kill all the subprocesses of stress
+                # Kill all the subprocess of stress
                 for proc in self.stress_process.children(recursive=True):
                     proc.kill()
             except:
-                print "Could not kill process"
+                print('Could not kill process')
         return True
 
 
@@ -174,11 +171,9 @@ class GraphView(urwid.WidgetWrap):
         tdelta = time.time() - self.start_time
         return int(self.offset + (tdelta*self.graph_offset_per_second))
 
-
     def update_stats(self):
         self.max_temp.set_text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c')
         self.cur_temp.set_text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c')
-
 
     def update_graph(self, force_update=False):
 
@@ -188,8 +183,8 @@ class GraphView(urwid.WidgetWrap):
         if o == self.last_offset and not force_update:
             return False
         self.last_offset = o
-        gspb = self.graph_samples_per_bar
-        r = gspb * self.graph_data.graph_num_bars
+        # gspb = self.graph_samples_per_bar
+        # r = gspb * self.graph_data.graph_num_bars
 
         # TODO set maximum value dynamically and per graph
         max_value = 100
@@ -336,17 +331,16 @@ class GraphView(urwid.WidgetWrap):
             urwid.Divider(),
             self.button("Quit", self.exit_program),
             ]
-        w = urwid.ListBox(urwid.SimpleListWalker(buttons))
-        return w
+        # w = urwid.ListBox(urwid.SimpleListWalker(buttons))
+        return buttons
 
     def graph_stats(self):
         fixed_stats = [urwid.Divider(), urwid.Text("Max Temp", align = "left"), 
                        self.max_temp] + \
                       [urwid.Divider(), urwid.Text("Current Temp", align = "left"), 
                        self.cur_temp]
-        w = urwid.ListBox(urwid.SimpleListWalker(fixed_stats))
-        return w
-
+        # w = urwid.ListBox(urwid.SimpleListWalker(fixed_stats))
+        return fixed_stats
 
     def main_window(self):
         # Initiating the data
@@ -366,7 +360,7 @@ class GraphView(urwid.WidgetWrap):
 
         graph_controls = self.graph_controls()
         graph_stats = self.graph_stats()
-        text_col = urwid.Pile([graph_controls, graph_stats], focus_item = None)
+        text_col = urwid.ListBox(urwid.SimpleListWalker(graph_controls + [urwid.Divider()] + graph_stats))
         l = [('weight', 2, self.graph_util),
              ('fixed',  1, hline),
              ('weight', 2, self.graph_temp)]
@@ -374,7 +368,8 @@ class GraphView(urwid.WidgetWrap):
         r = urwid.Pile(l, focus_item=None)
 
         w = urwid.Columns([('weight', 2, r),
-                           ('fixed', 1, vline), text_col],
+                           ('fixed',  1, vline),
+                           ('fixed',  20, text_col)],
                           dividechars=1, focus_column=2)
         w = urwid.Padding(w, ('fixed left', 1), ('fixed right', 0))
         w = urwid.AttrWrap(w, 'body')
