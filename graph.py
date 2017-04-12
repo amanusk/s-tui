@@ -36,6 +36,7 @@ import subprocess
 import signal
 
 UPDATE_INTERVAL = 1
+DEGREE_SIGN= u'\N{DEGREE SIGN}'
 
 
 class GraphMode:
@@ -79,28 +80,14 @@ class GraphMode:
                 print "Could not kill process"
         return True
 
-    # def get_data(self, offset, r):
-    #     """
-    #     Return the data in [offset:offset+r], the maximum value
-    #     for items returned, and the offset at which the data
-    #     repeats.
-    #     """
-    #     l = []
-    #     d = self.data[self.current_mode]
-    #     while r:
-    #         offset = offset % len(d)
-    #         segment = d[offset:offset+r]
-    #         r -= len(segment)
-    #         offset += len(segment)
-    #         l += segment
-    #     return l, self.data_max_value, len(d)
-
 
 class GraphData:
     def __init__(self, graph_num_bars):
         self.graph_num_bars = graph_num_bars
         self.cpu_util = [0] * graph_num_bars
         self.cpu_temp = [0] * graph_num_bars
+        self.max_temp = 0
+        self.cur_temp = 0
 
     def update_util(self):
         last_value = psutil.cpu_percent(interval=None)
@@ -111,6 +98,11 @@ class GraphData:
         # TODO change color according to last recorded temp
         last_value = psutil.sensors_temperatures()['acpitz'][0].current
         self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
+        # Update max temp
+        if last_value > int(self.max_temp):
+            self.max_temp = last_value
+        # Update currnt temp
+        self.cur_temp = last_value
 
     def update_graph_val(self, values, new_val):
         values_num = len(values)
@@ -167,6 +159,8 @@ class GraphView(urwid.WidgetWrap):
         self.animate_button = []
         self.graph_util = []
         self.graph_temp = []
+        self.max_temp = None
+        self.cur_temp = None
         self.animate_progress = []
         self.animate_progress_wrap = []
 
@@ -180,6 +174,10 @@ class GraphView(urwid.WidgetWrap):
         tdelta = time.time() - self.start_time
         return int(self.offset + (tdelta*self.graph_offset_per_second))
 
+
+    def update_stats(self):
+        self.max_temp.set_text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c')
+        self.cur_temp.set_text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c')
 
 
     def update_graph(self, force_update=False):
@@ -221,17 +219,7 @@ class GraphView(urwid.WidgetWrap):
                 l.append([value, 0])
         self.graph_temp.set_data(l, max_value)
 
-        # also update progress
-        # if (o//repeat)&1:
-        #    # show 100% for first half, 0 for second half
-        #    if o%repeat > repeat//2:
-        #        prog = 0
-        #    else:
-        #        prog = 1
-        # else:
-        #    prog = float(o%repeat) / repeat
-        # self.animate_progress.set_completion( prog )
-        # return True
+        self.update_stats()
 
     def on_animate_button(self, button):
         """Toggle started state and button text."""
@@ -269,11 +257,7 @@ class GraphView(urwid.WidgetWrap):
 
     # TODO is this needed?
     def on_unicode_checkbox(self, w, state):
-        self.graph_util = self.bar_graph(state)
-        self.graph_wrap._w = self.graph_util
-        self.animate_progress = self.progress_bar(state)
-        self.animate_progress_wrap._w = self.animate_progress
-
+        self.graph_util = self.bar_graph('bg 1 smooth', 'bg 2 smooth', state)
         self.update_graph(True)
 
     def main_shadow(self, w):
@@ -342,26 +326,34 @@ class GraphView(urwid.WidgetWrap):
             unicode_checkbox = urwid.Text(
                 "UTF-8 encoding not detected")
 
-        self.animate_progress_wrap = urwid.WidgetWrap(
-            self.animate_progress)
-
-        l = [urwid.Text("Mode", align="center"),
+        buttons = [urwid.Text("Mode", align="center"),
              ] + self.mode_buttons + [
             urwid.Divider(),
             urwid.Text("Animation", align="center"),
             animate_controls,
-            self.animate_progress_wrap,
             urwid.Divider(),
             urwid.LineBox(unicode_checkbox),
             urwid.Divider(),
             self.button("Quit", self.exit_program),
             ]
-        w = urwid.ListBox(urwid.SimpleListWalker(l))
+        w = urwid.ListBox(urwid.SimpleListWalker(buttons))
         return w
 
+    def graph_stats(self):
+        fixed_stats = [urwid.Divider(), urwid.Text("Max Temp", align = "left"), 
+                       self.max_temp] + \
+                      [urwid.Divider(), urwid.Text("Current Temp", align = "left"), 
+                       self.cur_temp]
+        w = urwid.ListBox(urwid.SimpleListWalker(fixed_stats))
+        return w
+
+
     def main_window(self):
+        # Initiating the data
         self.graph_util = self.bar_graph('bg 1', 'bg 2')
         self.graph_temp = self.bar_graph('bg 3', 'bg 4')
+        self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
+        self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")
 
         self.graph_data.graph_num_bars = self.graph_util.get_size()[1]
 
@@ -372,7 +364,9 @@ class GraphView(urwid.WidgetWrap):
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
         hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
 
-        c = self.graph_controls()
+        graph_controls = self.graph_controls()
+        graph_stats = self.graph_stats()
+        text_col = urwid.Pile([graph_controls, graph_stats], focus_item = None)
         l = [('weight', 2, self.graph_util),
              ('fixed',  1, hline),
              ('weight', 2, self.graph_temp)]
@@ -380,7 +374,7 @@ class GraphView(urwid.WidgetWrap):
         r = urwid.Pile(l, focus_item=None)
 
         w = urwid.Columns([('weight', 2, r),
-                           ('fixed', 1, vline), c],
+                           ('fixed', 1, vline), text_col],
                           dividechars=1, focus_column=2)
         w = urwid.Padding(w, ('fixed left', 1), ('fixed right', 0))
         w = urwid.AttrWrap(w, 'body')
