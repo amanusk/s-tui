@@ -33,9 +33,19 @@ from ComplexBarGraphs import LabeledBarGraph
 import psutil
 import time
 import subprocess
+import ctypes
+import os
+from aux import readmsr
 
+# Constats
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
+FNULL = open(os.devnull, 'w')
+TURBO_MSR = 429
+WAIT_SAMPLES = 5
+
+# globals
+is_admin = None
 
 
 class GraphMode:
@@ -60,37 +70,41 @@ class GraphMode:
         return self.modes
 
     def set_mode(self, m):
-        if m == 'Regular Operation':
-            pass  # TODO stop stress
-        elif m == 'Stress Operation':
-            pass  # TODO open stress options (new window?)
-
         self.current_mode = m
-        # Start stress here?
-        if m == 'Stress Operation':
-            self.stress_process = subprocess.Popen(['stress', '-c', '4'], shell=False)
-            self.stress_process = psutil.Process(self.stress_process.pid)
-        else:
-            try:
-                # Kill all the subprocess of stress
-                for proc in self.stress_process.children(recursive=True):
-                    proc.kill()
-            except:
-                print('Could not kill process')
         return True
 
 
 class GraphData:
     def __init__(self, graph_num_bars):
         self.graph_num_bars = graph_num_bars
+        # Data for graphs
         self.cpu_util = [0] * graph_num_bars
         self.cpu_temp = [0] * graph_num_bars
+        # Constants data
         self.max_temp = 0
         self.cur_temp = 0
+        self.cur_freq = 0
+        self.perf_lost = 0
+
+        self.samples_taken = 0
+
+        self.core_num = psutil.cpu_count()
+        if is_admin:
+            self.top_freq = readmsr(TURBO_MSR, 0)
+        else:
+            self.top_freq = psutil.cpu_freq().max
 
     def update_util(self):
         last_value = psutil.cpu_percent(interval=None)
         self.cpu_util = self.update_graph_val(self.cpu_util, last_value)
+
+    def update_freq(self):
+        self.samples_taken += 1
+        self.cur_freq = int(psutil.cpu_freq().current)
+        if is_admin and self.samples_taken > WAIT_SAMPLES:
+            self.perf_lost = int(self.top_freq) - int(self.cur_freq)
+            self.perf_lost = round(float(self.perf_lost) / float(self.top_freq),1)
+
 
     def update_temp(self):
         # TODO make this more robust
@@ -100,7 +114,7 @@ class GraphData:
         # Update max temp
         if last_value > int(self.max_temp):
             self.max_temp = last_value
-        # Update currnt temp
+        # Update currnet temp
         self.cur_temp = last_value
 
     def update_graph_val(self, values, new_val):
@@ -160,6 +174,10 @@ class GraphView(urwid.WidgetWrap):
         self.graph_temp = []
         self.max_temp = None
         self.cur_temp = None
+        self.top_freq = None
+        self.cur_freq = None
+        self.perf_lost = None
+
         self.animate_progress = []
         self.animate_progress_wrap = []
 
@@ -176,6 +194,10 @@ class GraphView(urwid.WidgetWrap):
     def update_stats(self):
         self.max_temp.set_text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c')
         self.cur_temp.set_text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c')
+        self.top_freq.set_text(str(self.graph_data.top_freq) + 'MHz')
+        self.cur_freq.set_text(str(self.graph_data.cur_freq) + 'MHz')
+        self.perf_lost.set_text(str(self.graph_data.perf_lost) + '%')
+
 
     def update_graph(self, force_update=False):
 
@@ -194,6 +216,7 @@ class GraphView(urwid.WidgetWrap):
 
         self.graph_data.update_temp()
         self.graph_data.update_util()
+        self.graph_data.update_freq()
 
         # Updating CPU utilization
         for n in range(self.graph_data.graph_num_bars):
@@ -238,9 +261,29 @@ class GraphView(urwid.WidgetWrap):
 
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
+
+        def start_stress(mode):
+            # Start stress here?
+            if mode == 'Stress Operation':
+                self.stress_process = subprocess.Popen(['stress', '-c',
+                                                        str(self.graph_data.core_num)],
+                                                       stdout = FNULL, stderr = FNULL, shell=False)
+                self.stress_process = psutil.Process(self.stress_process.pid)
+                self.graph_data.perf_lost = 0
+                self.graph_data.samples_taken = 0
+            else:
+                try:
+                    # Kill all the subprocess of stress
+                    for proc in self.stress_process.children(recursive=True):
+                        proc.kill()
+                except:
+                    print('Could not kill process')
+
         if state:
             # The new mode is the label of the button
             self.controller.set_mode(button.get_label())
+            start_stress(self.controller.mode.current_mode)
+
 
         self.last_offset = None
 
@@ -341,8 +384,15 @@ class GraphView(urwid.WidgetWrap):
     def graph_stats(self):
         fixed_stats = [urwid.Divider(), urwid.Text("Max Temp", align="left"),
                        self.max_temp] + \
-                      [urwid.Divider(), urwid.Text("Current Temp", align="left"),
-                       self.cur_temp]
+                      [urwid.Divider(), urwid.Text("Current Temp", align = "left"), 
+                       self.cur_temp] + \
+                      [urwid.Divider(), urwid.Text("Top Freq", align = "left"), 
+                       self.top_freq] + \
+                      [urwid.Divider(), urwid.Text("Cur Freq", align = "left"), 
+                       self.cur_freq] + \
+                      [urwid.Divider(), urwid.Text("Perf Lost", align = "left"), 
+                       self.perf_lost]
+        # w = urwid.ListBox(urwid.SimpleListWalker(fixed_stats))
         return fixed_stats
 
     def main_window(self):
@@ -351,6 +401,9 @@ class GraphView(urwid.WidgetWrap):
         self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'temp[C]', [], [0, 25, 50, 75, 100])
         self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
         self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")
+        self.top_freq = urwid.Text(str(self.graph_data.top_freq) + 'MHz', align="right")
+        self.cur_freq = urwid.Text(str(self.graph_data.cur_freq) + 'MHz', align="right")
+        self.perf_lost = urwid.Text(str(self.graph_data.perf_lost) + '%', align="right")
 
         self.graph_data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
 
@@ -434,6 +487,15 @@ class GraphController:
 
 
 def main():
+    global is_admin
+    try:
+         is_admin = os.getuid() == 0
+    except AttributeError:
+         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
+    if not is_admin:
+        print ("You running without root permissions. Run as root for best results")
+        time.sleep(2)
+
     GraphController().main()
 
 if '__main__' == __name__:
