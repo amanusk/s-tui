@@ -151,7 +151,7 @@ class GraphView(urwid.WidgetWrap):
         ('bg 1',          'black',      'dark green',   'standout'),
         ('bg 1 smooth',   'dark blue',  'black'),
         ('bg 2',          'dark red',    'light green', 'standout'),
-        ('bg 2 smooth',   'dark cyan',  'black'),
+        ('bg 2 smooth',   'light blue',  'black'),
         ('bg 3', 'light red', 'dark red', 'standout'),
         ('bg 4', 'dark red', 'light red', 'standout'),
         ('button normal', 'light gray', 'dark blue',    'standout'),
@@ -197,6 +197,8 @@ class GraphView(urwid.WidgetWrap):
         return int(self.offset + (tdelta*self.graph_offset_per_second))
 
     def update_stats(self):
+        if self.controller.mode.current_mode == 'Regular Operation':
+            self.graph_data.max_perf_lost = 0
         self.max_temp.set_text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c')
         self.cur_temp.set_text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c')
         self.top_freq.set_text(str(self.graph_data.top_freq) + 'MHz')
@@ -302,7 +304,8 @@ class GraphView(urwid.WidgetWrap):
 
     # TODO is this needed?
     def on_unicode_checkbox(self, w, state):
-        self.graph_util = self.bar_graph('bg 1 smooth', 'bg 2 smooth', state)
+        self.graph_util = self.bar_graph('bg 1', 'bg 2', 'util[%]', [], [0, 50, 100], smooth=True)
+        self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'temp[C]', [], [0, 25, 50, 75, 100], smooth=True)
         self.update_graph(True)
 
     def main_shadow(self, w):
@@ -346,6 +349,12 @@ class GraphView(urwid.WidgetWrap):
                                      0, 1)
 
     def exit_program(self, w):
+        try:
+            # Kill all the subprocess of stress
+            for proc in self.stress_process.children(recursive=True):
+                proc.kill()
+        except:
+            print('Could not kill process')
         raise urwid.ExitMainLoop()
 
     def graph_controls(self):
@@ -402,7 +411,7 @@ class GraphView(urwid.WidgetWrap):
 
     def main_window(self):
         # Initiating the data
-        self.graph_util = self.bar_graph('bg 1', 'bg 2', 'util[%]', [], [0, 50, 100])
+        self.graph_util = self.bar_graph('bg 1', 'bg 2', 'util[%]', [], [0, 50, 100], smooth=True)
         self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'temp[C]', [], [0, 25, 50, 75, 100])
         self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
         self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")

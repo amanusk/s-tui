@@ -4,6 +4,10 @@ import os
 
 def readmsr(msr, cpu = 0):
     if not os.path.exists("/dev/cpu/0/msr"):
+        try:
+            os.system("/sbin/modprobe msr")
+        except:
+            pass
         return None
     f = os.open('/dev/cpu/%d/msr' % (cpu,), os.O_RDONLY)
     os.lseek(f, msr, os.SEEK_SET)
