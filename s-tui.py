@@ -133,6 +133,8 @@ class GraphData:
             self.perf_lost = round(float(self.perf_lost) / float(self.top_freq) * 100, 1)
             if self.perf_lost > self.max_perf_lost:
                 self.max_perf_lost = self.perf_lost
+        elif not is_admin:
+            self.max_perf_lost = "N/A (no root)"
 
     def reset(self):
         self.cpu_util = [0] * self.graph_num_bars
@@ -549,7 +551,7 @@ class GraphView(urwid.WidgetPlaceholder):
                        self.top_freq] + \
                       [urwid.Divider(), urwid.Text("Cur Freq", align="left"),
                        self.cur_freq] + \
-                      [urwid.Divider(), urwid.Text("Perf Lost", align="left"),
+                      [urwid.Divider(), urwid.Text("Max Perf Lost", align="left"),
                        self.perf_lost]
         return fixed_stats
 
@@ -558,7 +560,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_util = self.bar_graph('bg 1', 'bg 2', 'Utilization[%]', [], [0, 50, 100])
         self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'Temperature[C]', [], [0, 25, 50, 75, 100])
         top_freq = self.graph_data.top_freq
-        self.graph_freq = self.bar_graph('bg 5', 'bg 6', 'Frequency[MHz]', [], [0, top_freq / 3, 2 * top_freq / 3, top_freq])
+        self.graph_freq = self.bar_graph('bg 5', 'bg 6', 'Frequency[MHz]', [], [0, int(top_freq / 3), int(2 * top_freq / 3), int(top_freq)])
         self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
         self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")
         self.top_freq = urwid.Text(str(self.graph_data.top_freq) + 'MHz', align="right")
