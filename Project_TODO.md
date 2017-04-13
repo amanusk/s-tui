@@ -1,6 +1,0 @@
-- [X] Split into two Graphs
-- [X] Set width of both graphs to be dynamic
-- [X] Change temperature graph to red (Possibaly on high temp only)
-- [X] Start by default
-- [X] Add stress options from within
-- [X] Add calculation of lost performance based on frequancy

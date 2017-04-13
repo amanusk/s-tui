@@ -1,29 +1,22 @@
 #!/usr/bin/python
-#
-# Urwid graphics example program
-#    Copyright (C) 2004-2011  Ian Ward
-#
-#    This library is free software; you can redistribute it and/or
-#    modify it under the terms of the GNU Lesser General Public
-#    License as published by the Free Software Foundation; either
-#    version 2.1 of the License, or (at your option) any later version.
-#
-#    This library is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#    Lesser General Public License for more details.
-#
-#    You should have received a copy of the GNU Lesser General Public
-#    License along with this library; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-#
-# Urwid web site: http://excess.org/urwid/
 
-"""
-Urwid example demonstrating use of the BarGraph widget and creating a
-floating-window appearance.  Also shows use of alarms to create timed
-animation.
-"""
+# Copyright (C) 2017 Alex Manuskin, Gil Tsuker
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+"""An urwid program to stress and monitor you computer"""
+
 from __future__ import print_function
 
 import urwid
@@ -36,6 +29,8 @@ import time
 import subprocess
 import ctypes
 import os
+import argparse
+import logging
 from aux import readmsr
 
 # Constants
@@ -45,9 +40,34 @@ FNULL = open(os.devnull, 'w')
 TURBO_MSR = 429
 WAIT_SAMPLES = 5
 
+log_file = "_s-tui.log"
+
+VERSION = 0.1
+VERSION_MESSAGE = " s-tui " + str(VERSION) +\
+" - (C) 2017 Alex Manuskin, Gil Tsuker\n\
+Relased under GNU GPLv2"
+
 # globals
 is_admin = None
 
+INTRO_MESSAGE = "\
+********s-tui manual********\n\
+-Alex Manuskin      alex.manuskin@gmail.com\n\
+-Gil Tsuker         \n\
+April 2017\n\
+\n\
+s-tui is a terminal UI add-on for stress. The software uses stress to run CPU\n\
+hogs, while monitoring the CPU usage, temperature and frequency.\n\
+The software was conceived with the vision of being able to stress test your\n\
+computer without the need for a GUI\n\
+\n\
+Usage:\n\
+* Toggle between stressed and regular operation using the radio buttons.\n\
+* If you wish to alternate stress defaults, you can do it in 'stress options\n\
+* If your system supports it, you can use the utf8 button to get a smoother graph\n\
+* Reset buttons resets the graph and the max statistics\n\
+* Use the quit button to quit the software\n\
+"
 
 class GraphMode:
     """
@@ -157,7 +177,7 @@ class GraphView(urwid.WidgetPlaceholder):
     palette = [
         ('body',          'black',      'light gray',   'standout'),
         ('header',        'white',      'dark red',     'bold'),
-        ('screen edge',   'light blue', 'dark cyan'),
+        ('screen edge',   'light blue', 'brown'),
         ('main shadow',   'dark gray',  'black'),
         ('line',          'black',      'light gray',   'standout'),
         ('menu button',   'light gray', 'black'),
@@ -560,6 +580,25 @@ class GraphController:
 
 
 def main():
+    args = get_args()
+    # Print version and exit
+    if args.version:
+        print (VERSION_MESSAGE)
+        exit(0)
+
+    # Setup logging util
+    log_file
+    level = ""
+    if args.debug:
+        level=logging.DEBUG
+        logFormatter = logging.Formatter("%(asctime)s [%(funcName)s()] [%(levelname)-5.5s]  %(message)s")
+        rootLogger = logging.getLogger()
+        fileHandler = logging.FileHandler(log_file)
+        fileHandler.setFormatter(logFormatter)
+        rootLogger.addHandler(fileHandler)
+        rootLogger.setLevel(level)
+
+
     global is_admin
     try:
         is_admin = os.getuid() == 0
@@ -567,9 +606,22 @@ def main():
         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
     if not is_admin:
         print ("You are running without root permissions. Run as root for best results")
+        logging.info("Started without root permissions")
         time.sleep(2)
 
     GraphController().main()
+
+def get_args():
+    parser = argparse.ArgumentParser(
+        description=INTRO_MESSAGE,
+        formatter_class=argparse.RawTextHelpFormatter)
+
+    parser.add_argument('-d', '--debug',
+                        default=False, action='store_true', help="Output debug log to " + log_file)
+    parser.add_argument('-v', '--version',
+                        default=False, action='store_true', help="Display version")
+    args = parser.parse_args()
+    return args
 
 if '__main__' == __name__:
     main()
