@@ -29,6 +29,7 @@ from __future__ import print_function
 import urwid
 from ComplexBarGraphs import ScalableBarGraph
 from ComplexBarGraphs import LabeledBarGraph
+from StressMenu import StressMenu
 
 import psutil
 import time
@@ -37,7 +38,7 @@ import ctypes
 import os
 from aux import readmsr
 
-# Constats
+# Constants
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
 FNULL = open(os.devnull, 'w')
@@ -91,7 +92,7 @@ class GraphData:
         self.core_num = psutil.cpu_count()
         if is_admin:
             self.top_freq = readmsr(TURBO_MSR, 0)
-            if self.top_freq == None:
+            if self.top_freq is None:
                 self.top_freq = psutil.cpu_freq().max
         else:
             self.top_freq = psutil.cpu_freq().max
@@ -105,8 +106,9 @@ class GraphData:
         self.cur_freq = int(psutil.cpu_freq().current)
         if is_admin and self.samples_taken > WAIT_SAMPLES:
             self.perf_lost = int(self.top_freq) - int(self.cur_freq)
-            self.perf_lost = round(float(self.perf_lost) / float(self.top_freq) * 100,1)
-            if self.perf_lost > self.max_perf_lost: self.max_perf_lost = self.perf_lost
+            self.perf_lost = round(float(self.perf_lost) / float(self.top_freq) * 100, 1)
+            if self.perf_lost > self.max_perf_lost:
+                self.max_perf_lost = self.perf_lost
 
     def reset(self):
         self.cpu_util = [0] * self.graph_num_bars
@@ -146,7 +148,7 @@ class GraphData:
         return values[1:]
 
 
-class GraphView(urwid.WidgetWrap):
+class GraphView(urwid.WidgetPlaceholder):
     """
     A class responsible for providing the application's interface and
     graph display.
@@ -158,6 +160,7 @@ class GraphView(urwid.WidgetWrap):
         ('screen edge',   'light blue', 'dark cyan'),
         ('main shadow',   'dark gray',  'black'),
         ('line',          'black',      'light gray',   'standout'),
+        ('menu button',   'light gray', 'black'),
         ('bg background', 'light gray', 'black'),
         ('bg 1',          'black',      'dark green',   'standout'),
         ('bg 1 smooth',   'dark blue',  'black'),
@@ -193,11 +196,13 @@ class GraphView(urwid.WidgetWrap):
         self.top_freq = None
         self.cur_freq = None
         self.perf_lost = None
+        self.main_window_w = []
+        self.stress_menu = StressMenu()
 
         self.animate_progress = []
         self.animate_progress_wrap = []
 
-        urwid.WidgetWrap.__init__(self, self.main_window())
+        urwid.WidgetPlaceholder.__init__(self, self.main_window())
 
     def get_offset_now(self):
         if self.start_time is None:
@@ -216,17 +221,13 @@ class GraphView(urwid.WidgetWrap):
         self.cur_freq.set_text(str(self.graph_data.cur_freq) + 'MHz')
         self.perf_lost.set_text(str(self.graph_data.max_perf_lost) + '%')
 
-
     def update_graph(self, force_update=False):
-
         self.graph_data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
 
         o = self.get_offset_now()
         if o == self.last_offset and not force_update:
             return False
         self.last_offset = o
-        # gspb = self.graph_samples_per_bar
-        # r = gspb * self.graph_data.graph_num_bars
 
         # TODO set maximum value dynamically and per graph
         max_value = 100
@@ -278,6 +279,11 @@ class GraphView(urwid.WidgetWrap):
         self.update_graph(True)
         self.graph_data.reset()
 
+    def on_stress_menu(self, w):
+        self.original_widget = urwid.Overlay(self.stress_menu.main_window, self.original_widget,
+                           ('fixed left', 3), self.stress_menu.get_size()[1],
+                           ('fixed top', 2), self.stress_menu.get_size()[0])
+
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
 
@@ -286,7 +292,7 @@ class GraphView(urwid.WidgetWrap):
             if mode == 'Stress Operation':
                 self.stress_process = subprocess.Popen(['stress', '-c',
                                                         str(self.graph_data.core_num)],
-                                                       stdout = FNULL, stderr = FNULL, shell=False)
+                                                       stdout=FNULL, stderr=FNULL, shell=False)
                 self.stress_process = psutil.Process(self.stress_process.pid)
                 self.graph_data.max_perf_lost = 0
                 self.graph_data.samples_taken = 0
@@ -303,7 +309,6 @@ class GraphView(urwid.WidgetWrap):
             self.controller.set_mode(button.get_label())
             start_stress(self.controller.mode.current_mode)
 
-
         self.last_offset = None
 
     def on_mode_change(self, m):
@@ -314,7 +319,6 @@ class GraphView(urwid.WidgetWrap):
                 break
         self.last_offset = None
 
-    # TODO is this needed?
     def on_unicode_checkbox(self, w, state):
         self.graph_util = self.bar_graph('bg 1', 'bg 2', 'util[%]', [], [0, 50, 100], smooth=True)
         self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'temp[C]', [], [0, 25, 50, 75, 100], smooth=True)
@@ -342,8 +346,8 @@ class GraphView(urwid.WidgetWrap):
 
         return bg
 
-    def button(self, t, fn):
-        w = urwid.Button(t, fn)
+    def button(self, t, fn, data=None):
+        w = urwid.Button(t, fn, data)
         w = urwid.AttrWrap(w, 'button normal', 'button select')
         return w
 
@@ -384,7 +388,8 @@ class GraphView(urwid.WidgetWrap):
         animate_controls = urwid.GridFlow([
             self.animate_button,
             self.button("Reset", self.on_reset_button),
-        ], 9, 2, 0, 'center')
+            self.button('Stress Options', self.on_stress_menu),
+        ], 18, 2, 0, 'center')
 
         if urwid.get_encoding_mode() == "utf8":
             unicode_checkbox = urwid.CheckBox(
@@ -397,7 +402,7 @@ class GraphView(urwid.WidgetWrap):
         buttons = [urwid.Text("Mode", align="center"),
              ] + self.mode_buttons + [
             urwid.Divider(),
-            urwid.Text("Animation", align="center"),
+            urwid.Text("Control Options", align="center"),
             animate_controls,
             urwid.Divider(),
             urwid.LineBox(unicode_checkbox),
@@ -410,13 +415,13 @@ class GraphView(urwid.WidgetWrap):
     def graph_stats(self):
         fixed_stats = [urwid.Divider(), urwid.Text("Max Temp", align="left"),
                        self.max_temp] + \
-                      [urwid.Divider(), urwid.Text("Current Temp", align = "left"), 
+                      [urwid.Divider(), urwid.Text("Current Temp", align="left"),
                        self.cur_temp] + \
-                      [urwid.Divider(), urwid.Text("Top Freq", align = "left"), 
+                      [urwid.Divider(), urwid.Text("Top Freq", align="left"),
                        self.top_freq] + \
-                      [urwid.Divider(), urwid.Text("Cur Freq", align = "left"), 
+                      [urwid.Divider(), urwid.Text("Cur Freq", align="left"),
                        self.cur_freq] + \
-                      [urwid.Divider(), urwid.Text("Perf Lost", align = "left"), 
+                      [urwid.Divider(), urwid.Text("Perf Lost", align="left"),
                        self.perf_lost]
         # w = urwid.ListBox(urwid.SimpleListWalker(fixed_stats))
         return fixed_stats
@@ -433,30 +438,32 @@ class GraphView(urwid.WidgetWrap):
 
         self.graph_data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
 
-        # TODO: Optional if graph could be stretched
         self.graph_util.bar_graph.set_bar_width(1)
         self.graph_temp.bar_graph.set_bar_width(1)
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
         hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
 
-        graph_controls = self.graph_controls()
-        graph_stats = self.graph_stats()
-        text_col = urwid.ListBox(urwid.SimpleListWalker(graph_controls + [urwid.Divider()] + graph_stats))
         l = [('weight', 2, self.graph_util),
              ('fixed',  1, hline),
              ('weight', 2, self.graph_temp)]
 
-        r = urwid.Pile(l, focus_item=None)
+        r = urwid.Pile(l)
+
+        graph_controls = self.graph_controls()
+        graph_stats = self.graph_stats()
+
+        text_col = urwid.ListBox(urwid.SimpleListWalker(graph_controls + [urwid.Divider()] + graph_stats))
 
         w = urwid.Columns([('weight', 2, r),
                            ('fixed',  1, vline),
                            ('fixed',  20, text_col)],
                           dividechars=1, focus_column=2)
+
         w = urwid.Padding(w, ('fixed left', 1), ('fixed right', 0))
         w = urwid.AttrWrap(w, 'body')
         w = urwid.LineBox(w)
-        w = urwid.AttrWrap(w, 'line')
-        w = self.main_shadow(w)
+        self.main_window_w = urwid.AttrWrap(w, 'line')
+        w = self.main_shadow(self.main_window_w)
         return w
 
 
@@ -487,10 +494,6 @@ class GraphController:
         self.view.update_graph(True)
         return rval
 
-    # def get_data(self, offset, range):
-    #     """Provide data to our view for the graph."""
-    #     return self.model.get_data(offset, range)
-
     def main(self):
         self.loop = urwid.MainLoop(self.view, self.view.palette)
 
@@ -515,11 +518,11 @@ class GraphController:
 def main():
     global is_admin
     try:
-         is_admin = os.getuid() == 0
+        is_admin = os.getuid() == 0
     except AttributeError:
-         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
+        is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
     if not is_admin:
-        print ("You running without root permissions. Run as root for best results")
+        print ("You are running without root permissions. Run as root for best results")
         time.sleep(2)
 
     GraphController().main()

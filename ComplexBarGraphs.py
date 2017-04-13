@@ -57,7 +57,8 @@ class LabeledBarGraph(urwid.Pile):
         self.set_title(widget_list[3])
 
         if self.y_label is not None and self.x_label is not None:
-            super(LabeledBarGraph, self).__init__([self.title, ('weight', 1, self.y_label), self.x_label], focus_item=focus_item)
+            self.y_label = ('weight', 1, self.y_label)
+            super(LabeledBarGraph, self).__init__([self.title, self.y_label, self.x_label], focus_item=focus_item)
         elif self.y_label is not None:
             super(LabeledBarGraph, self).__init__([self.title, self.y_label], focus_item=focus_item)
         elif self.x_label is not None:

@@ -5,6 +5,7 @@ import glob
 import struct
 import os
 
+
 def writemsr(msr, val):
     n = glob.glob('/dev/cpu/[0-9]*/msr')
     for c in n:
@@ -14,7 +15,8 @@ def writemsr(msr, val):
         os.close(f)
     if not n:
         raise OSError("msr module not loaded (run modprobe msr)")
-    
+
+
 def readmsr(msr, cpu = 0):
     f = os.open('/dev/cpu/0/msr', os.O_RDONLY)
     os.lseek(f, 429, os.SEEK_SET)
@@ -24,6 +26,7 @@ def readmsr(msr, cpu = 0):
     #val = struct.unpack('Q', os.read(f, 8))[0]
     os.close(f)
     return 13
+
 
 def changebit(msr, bit, val):
     n = glob.glob('/dev/cpu/[0-9]*/msr')
@@ -42,7 +45,8 @@ def changebit(msr, bit, val):
         raise OSError("msr module not loaded (run modprobe msr)")
 
 if __name__ == '__main__':
-    import argparse, os
+    import argparse
+    import os
 
     def parse_hex(s):
         try:
