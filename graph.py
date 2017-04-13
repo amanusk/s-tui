@@ -163,11 +163,13 @@ class GraphView(urwid.WidgetPlaceholder):
         ('menu button',   'light gray', 'black'),
         ('bg background', 'light gray', 'black'),
         ('bg 1',          'black',      'dark green',   'standout'),
-        ('bg 1 smooth',   'dark green',  'black'),
-        ('bg 2',          'dark red',    'light green', 'standout'),
-        ('bg 2 smooth',   'light green',  'black'),
-        ('bg 3', 'light red', 'dark red', 'standout'),
-        ('bg 4', 'dark red', 'light red', 'standout'),
+        ('bg 1 smooth',   'dark green', 'black'),
+        ('bg 2',          'dark red',   'light green',  'standout'),
+        ('bg 2 smooth',   'light green','black'),
+        ('bg 3',          'light red',  'dark red',     'standout'),
+        ('bg 3 smooth',   'dark red',   'black'),
+        ('bg 4',          'dark red',   'light red',    'standout'),
+        ('bg 4 smooth',   'light red',  'black'),
         ('button normal', 'light gray', 'dark blue',    'standout'),
         ('button select', 'white',      'dark green'),
         ('line',          'black',      'light gray',   'standout'),
@@ -357,8 +359,14 @@ class GraphView(urwid.WidgetPlaceholder):
         self.last_offset = None
 
     def on_unicode_checkbox(self, w, state):
-        self.graph_util = self.bar_graph('bg 1', 'bg 2', 'util[%]', [], [0, 50, 100], smooth=True)
-        self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'temp[C]', [], [0, 25, 50, 75, 100], smooth=True)
+
+        if state: satt = {(1, 0): 'bg 1 smooth', (2, 0): 'bg 2 smooth'}
+        else: satt = None
+        self.graph_util.bar_graph.set_segment_attributes(['bg background', 'bg 1', 'bg 2'], satt=satt)
+
+        if state: satt = {(1, 0): 'bg 3 smooth', (2, 0): 'bg 4 smooth'}
+        else: satt = None
+        self.graph_temp.bar_graph.set_segment_attributes(['bg background', 'bg 3', 'bg 4'], satt=satt)
 
         self.update_graph(True)
 
@@ -375,10 +383,9 @@ class GraphView(urwid.WidgetPlaceholder):
                           ('fixed top', 1), ('fixed bottom', 2))
         return w
 
-    def bar_graph(self, color_a, color_b, title, x_label, y_label, satt=None, smooth=False):
-        if smooth:
-            satt = {(1, 0): 'bg 1 smooth', (2, 0): 'bg 2 smooth'}
-        w = ScalableBarGraph(['bg background', color_a, color_b], satt=satt)
+    def bar_graph(self, color_a, color_b, title, x_label, y_label):
+
+        w = ScalableBarGraph(['bg background', color_a, color_b])
         bg = LabeledBarGraph([w, x_label, y_label, title])
 
         return bg
@@ -430,7 +437,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         if urwid.get_encoding_mode() == "utf8":
             unicode_checkbox = urwid.CheckBox(
-                "Enable Unicode Graphics",
+                "Smooth Graph (Unicode Graphics)",
                 on_state_change=self.on_unicode_checkbox)
         else:
             unicode_checkbox = urwid.Text(

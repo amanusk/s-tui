@@ -45,7 +45,7 @@ class LabeledBarGraph(urwid.Pile):
                 'Item 2 must be a valid label')
 
         self.bar_graph = []
-        self.sef_graph(widget_list[0])
+        self.set_graph(widget_list[0])
 
         self.x_label = []
         self.set_x_label(widget_list[1])
@@ -110,7 +110,7 @@ class LabeledBarGraph(urwid.Pile):
         self.y_label = urwid.Columns(y_notation,
                                      dividechars=1)
 
-    def sef_graph(self, graph):
+    def set_graph(self, graph):
         self.bar_graph = graph
 
     @staticmethod
