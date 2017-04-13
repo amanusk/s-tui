@@ -75,8 +75,6 @@ class GraphMode:
     the current mode of operation
     """
 
-    data_max_value = 100
-
     def __init__(self):
         self.modes = [
             'Regular Operation',
@@ -97,10 +95,13 @@ class GraphMode:
 
 class GraphData:
     def __init__(self, graph_num_bars):
+        self.temp_max_value = 100
+        self.util_max_value = 100
         self.graph_num_bars = graph_num_bars
         # Data for graphs
         self.cpu_util = [0] * graph_num_bars
         self.cpu_temp = [0] * graph_num_bars
+        self.cpu_freq = [0] * graph_num_bars
         # Constants data
         self.max_temp = 0
         self.cur_temp = 0
@@ -124,6 +125,9 @@ class GraphData:
     def update_freq(self):
         self.samples_taken += 1
         self.cur_freq = int(psutil.cpu_freq().current)
+
+        self.cpu_freq = self.update_graph_val(self.cpu_freq, self.cur_freq)
+
         if is_admin and self.samples_taken > WAIT_SAMPLES:
             self.perf_lost = int(self.top_freq) - int(self.cur_freq)
             self.perf_lost = round(float(self.perf_lost) / float(self.top_freq) * 100, 1)
@@ -133,16 +137,13 @@ class GraphData:
     def reset(self):
         self.cpu_util = [0] * self.graph_num_bars
         self.cpu_temp = [0] * self.graph_num_bars
+        self.cpu_freq = [0] * self.graph_num_bars
         self.max_temp = 0
         self.cur_temp = 0
         self.cur_freq = 0
         self.perf_lost = 0
         self.max_perf_lost = 0
         self.samples_taken = 0
-
-
-
-
 
     def update_temp(self):
         # TODO make this more robust
@@ -190,6 +191,10 @@ class GraphView(urwid.WidgetPlaceholder):
         ('bg 3 smooth',   'dark red',   'black'),
         ('bg 4',          'dark red',   'light red',    'standout'),
         ('bg 4 smooth',   'light red',  'black'),
+        ('bg 5',          'black',      'dark cyan', 'standout'),
+        ('bg 5 smooth',   'dark cyan',  'black'),
+        ('bg 6',          'dark red',   'light cyan', 'standout'),
+        ('bg 6 smooth',   'light cyan', 'black'),
         ('button normal', 'light gray', 'dark blue',    'standout'),
         ('button select', 'white',      'dark green'),
         ('line',          'black',      'light gray',   'standout'),
@@ -211,8 +216,14 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_data = GraphData(0)
         self.mode_buttons = []
         self.animate_button = []
+
         self.graph_util = []
         self.graph_temp = []
+        self.graph_freq = []
+
+        self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
+        self.visible_graphs = []
+
         self.max_temp = None
         self.cur_temp = None
         self.top_freq = None
@@ -254,7 +265,6 @@ class GraphView(urwid.WidgetPlaceholder):
         self.last_offset = o
 
         # TODO set maximum value dynamically and per graph
-        max_value = 100
         l = []
 
         self.graph_data.update_temp()
@@ -269,7 +279,7 @@ class GraphView(urwid.WidgetPlaceholder):
                 l.append([0, value])
             else:
                 l.append([value, 0])
-        self.graph_util.bar_graph.set_data(l, max_value)
+        self.graph_util.bar_graph.set_data(l, self.graph_data.util_max_value)
 
         # Updating CPU temperature
         l = []
@@ -280,7 +290,19 @@ class GraphView(urwid.WidgetPlaceholder):
                 l.append([0, value])
             else:
                 l.append([value, 0])
-        self.graph_temp.bar_graph.set_data(l, max_value)
+        self.graph_temp.bar_graph.set_data(l, self.graph_data.temp_max_value)
+
+        # Updating CPU frequancy
+        l = []
+        for n in range(self.graph_data.graph_num_bars):
+            value = self.graph_data.cpu_freq[n]
+            # toggle between two bar types
+            if n & 1:
+                l.append([0, value])
+            else:
+                l.append([value, 0])
+        self.graph_freq.bar_graph.set_data(l, self.graph_data.top_freq)
+
 
         self.update_stats()
 
@@ -300,8 +322,8 @@ class GraphView(urwid.WidgetPlaceholder):
     def on_reset_button(self, w):
         self.offset = 0
         self.start_time = time.time()
-        self.update_graph(True)
         self.graph_data.reset()
+        self.update_graph(True)
 
     def on_stress_menu_close(self):
         self.original_widget = self.main_window_w
@@ -388,6 +410,10 @@ class GraphView(urwid.WidgetPlaceholder):
         else: satt = None
         self.graph_temp.bar_graph.set_segment_attributes(['bg background', 'bg 3', 'bg 4'], satt=satt)
 
+        if state: satt = {(1, 0): 'bg 5 smooth', (2, 0): 'bg 6 smooth'}
+        else: satt = None
+        self.graph_freq.bar_graph.set_segment_attributes(['bg background', 'bg 5', 'bg 6'], satt=satt)
+
         self.update_graph(True)
 
     def main_shadow(self, w):
@@ -471,10 +497,48 @@ class GraphView(urwid.WidgetPlaceholder):
             urwid.Divider(),
             urwid.LineBox(unicode_checkbox),
             urwid.Divider(),
+            urwid.LineBox(urwid.Pile([
+                urwid.CheckBox('Frequency', on_state_change=self.show_frequency),
+                urwid.CheckBox('Temperature', state=True, on_state_change=self.show_temprature),
+                urwid.CheckBox('Utilization', state=True, on_state_change=self.show_utilization)])),
+            urwid.Divider(),
             self.button("Quit", self.exit_program),
             ]
-        # w = urwid.ListBox(urwid.SimpleListWalker(buttons))
+
         return buttons
+
+    def show_frequency(self, w, state):
+        if state:
+            self.visible_graphs[0] = self.graph_freq
+        else:
+            self.visible_graphs[0] = None
+        self.show_graphs()
+
+    def show_utilization(self, w, state):
+        if state:
+            self.visible_graphs[1] = self.graph_util
+        else:
+            self.visible_graphs[1] = None
+        self.show_graphs()
+
+    def show_temprature(self, w, state):
+        if state:
+            self.visible_graphs[2] = self.graph_temp
+        else:
+            self.visible_graphs[2] = None
+        self.show_graphs()
+
+    def show_graphs(self):
+
+        graph_list = []
+        hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
+
+        for g in self.visible_graphs:
+            if g is not None:
+                graph_list.append(g)
+                graph_list.append(('fixed',  1, hline))
+
+        self.graph_place_holder.original_widget = urwid.Pile(graph_list)
 
     def graph_stats(self):
         fixed_stats = [urwid.Divider(), urwid.Text("Max Temp", align="left"),
@@ -487,13 +551,14 @@ class GraphView(urwid.WidgetPlaceholder):
                        self.cur_freq] + \
                       [urwid.Divider(), urwid.Text("Perf Lost", align="left"),
                        self.perf_lost]
-        # w = urwid.ListBox(urwid.SimpleListWalker(fixed_stats))
         return fixed_stats
 
     def main_window(self):
         # Initiating the data
-        self.graph_util = self.bar_graph('bg 1', 'bg 2', 'util[%]', [], [0, 50, 100])
-        self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'temp[C]', [], [0, 25, 50, 75, 100])
+        self.graph_util = self.bar_graph('bg 1', 'bg 2', 'Utilization[%]', [], [0, 50, 100])
+        self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'Temperature[C]', [], [0, 25, 50, 75, 100])
+        top_freq = self.graph_data.top_freq
+        self.graph_freq = self.bar_graph('bg 5', 'bg 6', 'Frequency[MHz]', [], [0, top_freq / 3, 2 * top_freq / 3, top_freq])
         self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
         self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")
         self.top_freq = urwid.Text(str(self.graph_data.top_freq) + 'MHz', align="right")
@@ -504,21 +569,19 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.graph_util.bar_graph.set_bar_width(1)
         self.graph_temp.bar_graph.set_bar_width(1)
+        self.graph_freq.bar_graph.set_bar_width(1)
+
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
-        hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
 
-        l = [('weight', 2, self.graph_util),
-             ('fixed',  1, hline),
-             ('weight', 2, self.graph_temp)]
-
-        r = urwid.Pile(l)
+        self.visible_graphs = [None, self.graph_util, self.graph_temp]
+        self.show_graphs()
 
         graph_controls = self.graph_controls()
         graph_stats = self.graph_stats()
 
         text_col = urwid.ListBox(urwid.SimpleListWalker(graph_controls + [urwid.Divider()] + graph_stats))
 
-        w = urwid.Columns([('weight', 2, r),
+        w = urwid.Columns([('weight', 2, self.graph_place_holder),
                            ('fixed',  1, vline),
                            ('fixed',  20, text_col)],
                           dividechars=1, focus_column=2)
@@ -625,3 +688,4 @@ def get_args():
 
 if '__main__' == __name__:
     main()
+
