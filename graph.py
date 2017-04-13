@@ -163,9 +163,9 @@ class GraphView(urwid.WidgetPlaceholder):
         ('menu button',   'light gray', 'black'),
         ('bg background', 'light gray', 'black'),
         ('bg 1',          'black',      'dark green',   'standout'),
-        ('bg 1 smooth',   'dark blue',  'black'),
+        ('bg 1 smooth',   'dark green',  'black'),
         ('bg 2',          'dark red',    'light green', 'standout'),
-        ('bg 2 smooth',   'light blue',  'black'),
+        ('bg 2 smooth',   'light green',  'black'),
         ('bg 3', 'light red', 'dark red', 'standout'),
         ('bg 4', 'dark red', 'light red', 'standout'),
         ('button normal', 'light gray', 'dark blue',    'standout'),
@@ -197,7 +197,9 @@ class GraphView(urwid.WidgetPlaceholder):
         self.cur_freq = None
         self.perf_lost = None
         self.main_window_w = []
-        self.stress_menu = StressMenu()
+        self.stress_menu = StressMenu(self.on_stress_menu_close)
+
+        self.stress_menu.sqrt_workers = str(self.graph_data.core_num)
 
         self.animate_progress = []
         self.animate_progress_wrap = []
@@ -279,10 +281,13 @@ class GraphView(urwid.WidgetPlaceholder):
         self.update_graph(True)
         self.graph_data.reset()
 
-    def on_stress_menu(self, w):
+    def on_stress_menu_close(self):
+        self.original_widget = self.main_window_w
+
+    def on_stress_menu_open(self, w):
         self.original_widget = urwid.Overlay(self.stress_menu.main_window, self.original_widget,
-                           ('fixed left', 3), self.stress_menu.get_size()[1],
-                           ('fixed top', 2), self.stress_menu.get_size()[0])
+                                             ('fixed left', 3), self.stress_menu.get_size()[1],
+                                             ('fixed top', 2), self.stress_menu.get_size()[0])
 
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
@@ -290,10 +295,42 @@ class GraphView(urwid.WidgetPlaceholder):
         def start_stress(mode):
             # Start stress here?
             if mode == 'Stress Operation':
-                self.stress_process = subprocess.Popen(['stress', '-c',
-                                                        str(self.graph_data.core_num)],
+
+                stress_cmd = ['stress']
+
+                if int(self.stress_menu.sqrt_workers) > 0:
+                    stress_cmd.append('-c')
+                    stress_cmd.append(self.stress_menu.sqrt_workers)
+
+                if int(self.stress_menu.sync_workers) > 0:
+                    stress_cmd.append('-i')
+                    stress_cmd.append(self.stress_menu.sync_workers)
+
+                if int(self.stress_menu.memory_workers) > 0:
+                    stress_cmd.append('--vm')
+                    stress_cmd.append(self.stress_menu.memory_workers)
+                    stress_cmd.append('--vm-bytes')
+                    stress_cmd.append(self.stress_menu.malloc_byte)
+                    stress_cmd.append('--vm-stride')
+                    stress_cmd.append(self.stress_menu.byte_touch_cnt)
+
+                if self.stress_menu.no_malloc:
+                    stress_cmd.append('--vm-keep')
+
+                if int(self.stress_menu.write_workers) > 0:
+                    stress_cmd.append('--hdd')
+                    stress_cmd.append(self.stress_menu.write_workers)
+                    stress_cmd.append('--hdd-bytes')
+                    stress_cmd.append(self.stress_menu.write_bytes)
+
+                if self.stress_menu.time_out != 'none':
+                    stress_cmd.append('-t')
+                    stress_cmd.append(self.stress_menu.time_out)
+
+                self.stress_process = subprocess.Popen(stress_cmd,
                                                        stdout=FNULL, stderr=FNULL, shell=False)
                 self.stress_process = psutil.Process(self.stress_process.pid)
+
                 self.graph_data.max_perf_lost = 0
                 self.graph_data.samples_taken = 0
             else:
@@ -322,6 +359,7 @@ class GraphView(urwid.WidgetPlaceholder):
     def on_unicode_checkbox(self, w, state):
         self.graph_util = self.bar_graph('bg 1', 'bg 2', 'util[%]', [], [0, 50, 100], smooth=True)
         self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'temp[C]', [], [0, 25, 50, 75, 100], smooth=True)
+
         self.update_graph(True)
 
     def main_shadow(self, w):
@@ -337,8 +375,7 @@ class GraphView(urwid.WidgetPlaceholder):
                           ('fixed top', 1), ('fixed bottom', 2))
         return w
 
-    def bar_graph(self, color_a, color_b, title, x_label, y_label, smooth=False):
-        satt = None
+    def bar_graph(self, color_a, color_b, title, x_label, y_label, satt=None, smooth=False):
         if smooth:
             satt = {(1, 0): 'bg 1 smooth', (2, 0): 'bg 2 smooth'}
         w = ScalableBarGraph(['bg background', color_a, color_b], satt=satt)
@@ -388,7 +425,7 @@ class GraphView(urwid.WidgetPlaceholder):
         animate_controls = urwid.GridFlow([
             self.animate_button,
             self.button("Reset", self.on_reset_button),
-            self.button('Stress Options', self.on_stress_menu),
+            self.button('Stress Options', self.on_stress_menu_open),
         ], 18, 2, 0, 'center')
 
         if urwid.get_encoding_mode() == "utf8":
@@ -428,7 +465,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def main_window(self):
         # Initiating the data
-        self.graph_util = self.bar_graph('bg 1', 'bg 2', 'util[%]', [], [0, 50, 100], smooth=True)
+        self.graph_util = self.bar_graph('bg 1', 'bg 2', 'util[%]', [], [0, 50, 100])
         self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'temp[C]', [], [0, 25, 50, 75, 100])
         self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
         self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")
@@ -462,9 +499,9 @@ class GraphView(urwid.WidgetPlaceholder):
         w = urwid.Padding(w, ('fixed left', 1), ('fixed right', 0))
         w = urwid.AttrWrap(w, 'body')
         w = urwid.LineBox(w)
-        self.main_window_w = urwid.AttrWrap(w, 'line')
-        w = self.main_shadow(self.main_window_w)
-        return w
+        w = urwid.AttrWrap(w, 'line')
+        self.main_window_w = self.main_shadow(w)
+        return self.main_window_w
 
 
 class GraphController:
