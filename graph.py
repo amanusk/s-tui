@@ -86,7 +86,6 @@ class GraphData:
         self.cur_freq = 0
         self.perf_lost = 0
         self.max_perf_lost = 0
-
         self.samples_taken = 0
 
         self.core_num = psutil.cpu_count()
@@ -108,6 +107,18 @@ class GraphData:
             self.perf_lost = int(self.top_freq) - int(self.cur_freq)
             self.perf_lost = round(float(self.perf_lost) / float(self.top_freq) * 100,1)
             if self.perf_lost > self.max_perf_lost: self.max_perf_lost = self.perf_lost
+
+    def reset(self):
+        self.cpu_util = [0] * self.graph_num_bars
+        self.cpu_temp = [0] * self.graph_num_bars
+        self.max_temp = 0
+        self.cur_temp = 0
+        self.cur_freq = 0
+        self.perf_lost = 0
+        self.max_perf_lost = 0
+        self.samples_taken = 0
+
+
 
 
 
@@ -265,6 +276,7 @@ class GraphView(urwid.WidgetWrap):
         self.offset = 0
         self.start_time = time.time()
         self.update_graph(True)
+        self.graph_data.reset()
 
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
