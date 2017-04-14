@@ -26,6 +26,8 @@ import urwid
 from ComplexBarGraphs import ScalableBarGraph
 from ComplexBarGraphs import LabeledBarGraph
 from StressMenu import StressMenu
+from HelpMenu import HelpMenu
+from HelpMenu import HELP_MESSAGE
 
 import psutil
 import time
@@ -59,17 +61,10 @@ INTRO_MESSAGE = "\
 -Gil Tsuker         \n\
 April 2017\n\
 \n\
-s-tui is a terminal UI add-on for stress. The software uses stress to run CPU\n\
+s-tui is a terminal UI add-on for stress. The software uses stress to run CPU\
 hogs, while monitoring the CPU usage, temperature and frequency.\n\
-The software was conceived with the vision of being able to stress test your\n\
+The software was conceived with the vision of being able to stress test your\
 computer without the need for a GUI\n\
-\n\
-Usage:\n\
-* Toggle between stressed and regular operation using the radio buttons.\n\
-* If you wish to alternate stress defaults, you can do it in 'stress options\n\
-* If your system supports it, you can use the utf8 button to get a smoother graph\n\
-* Reset buttons resets the graph and the max statistics\n\
-* Use the quit button to quit the software\n\
 "
 
 class GraphMode:
@@ -237,6 +232,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.main_window_w = []
         self.stress_menu = StressMenu(self.on_stress_menu_close)
 
+        self.help_menu = HelpMenu(self.on_help_menu_close)
+
         self.stress_menu.sqrt_workers = str(self.graph_data.core_num)
 
         self.animate_progress = []
@@ -333,10 +330,18 @@ class GraphView(urwid.WidgetPlaceholder):
     def on_stress_menu_close(self):
         self.original_widget = self.main_window_w
 
+    def on_help_menu_close(self):
+        self.original_widget = self.main_window_w
+
     def on_stress_menu_open(self, w):
         self.original_widget = urwid.Overlay(self.stress_menu.main_window, self.original_widget,
                                              ('fixed left', 3), self.stress_menu.get_size()[1],
                                              ('fixed top', 2), self.stress_menu.get_size()[0])
+
+    def on_help_menu_open(self, w):
+        self.original_widget = urwid.Overlay(self.help_menu.main_window, self.original_widget,
+                                             ('fixed left', 3), self.help_menu.get_size()[1],
+                                             ('fixed top', 2), self.help_menu.get_size()[0])
 
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
@@ -484,6 +489,7 @@ class GraphView(urwid.WidgetPlaceholder):
             #self.animate_button,
             self.button("Reset", self.on_reset_button),
             self.button('Stress Options', self.on_stress_menu_open),
+            self.button('Help', self.on_help_menu_open),
         ], 18, 2, 0, 'center')
 
         if urwid.get_encoding_mode() == "utf8":
