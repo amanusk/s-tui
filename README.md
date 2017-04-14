@@ -9,6 +9,10 @@ You can now monitor your server over ssh.
 ## Screen Shots
 ![](./ScreenShots/stui1.png?raw=true "Full Screen")
 
+![](./ScreenShots/stui2.png?raw=true "Overheat detected")
+
+![](./ScreenShots/stui3.png?raw=true "Two Graphs")
+
 
 ## Dependencies
 s-tui uses stress. To install stress on Ubuntu run:
