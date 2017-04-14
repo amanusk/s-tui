@@ -41,7 +41,6 @@ from aux import readmsr
 # Constants
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
-FNULL = open(os.devnull, 'w')
 TURBO_MSR = 429
 WAIT_SAMPLES = 5
 
@@ -381,9 +380,10 @@ class GraphView(urwid.WidgetPlaceholder):
                     stress_cmd.append('-t')
                     stress_cmd.append(self.stress_menu.time_out)
 
-                self.stress_process = subprocess.Popen(stress_cmd,
-                                                       stdout=FNULL, stderr=FNULL, shell=False)
-                self.stress_process = psutil.Process(self.stress_process.pid)
+                with open(os.devnull, 'w') as DEVNULL:
+                    self.stress_process = subprocess.Popen(stress_cmd,
+                                                           stdout=DEVNULL, stderr=DEVNULL, shell=False)
+                    self.stress_process = psutil.Process(self.stress_process.pid)
 
                 self.graph_data.max_perf_lost = 0
                 self.graph_data.samples_taken = 0
