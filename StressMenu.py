@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-
-#!/usr/bin/env python
-
+#
 # Copyright (C) 2017 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or

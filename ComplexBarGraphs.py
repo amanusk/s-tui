@@ -25,6 +25,7 @@ import urwid
 
 
 class ScalableBarGraph(urwid.BarGraph):
+    """Scale the graph acording to screen size"""
     _size = (0, 0)
 
     def render(self, size, focus=False):
@@ -45,7 +46,7 @@ class ScalableBarGraph(urwid.BarGraph):
 
 
 class LabeledBarGraph(urwid.Pile):
-
+    """Add option to add lables for X and Y axes """
     def __init__(self, widget_list, focus_item=None):
         if len(widget_list) != 4:
             raise Exception(

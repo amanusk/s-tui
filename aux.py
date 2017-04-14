@@ -28,7 +28,8 @@ import os
 def readmsr(msr, cpu = 0):
     if not os.path.exists("/dev/cpu/0/msr"):
         try:
-            os.system("/sbin/modprobe msr")
+            os.system("modprobe msr")
+            logging.debug("Ran modprobe sucessfully")
         except:
             pass
         return None

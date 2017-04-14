@@ -14,6 +14,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# This implementation was inspired by Ian Ward
+# Urwid web site: http://excess.org/urwid/
 
 """An urwid program to stress and monitor you computer"""
 
@@ -478,7 +481,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.offset = 0
         self.animate_progress = self.progress_bar()
         animate_controls = urwid.GridFlow([
-            self.animate_button,
+            #self.animate_button,
             self.button("Reset", self.on_reset_button),
             self.button('Stress Options', self.on_stress_menu_open),
         ], 18, 2, 0, 'center')
