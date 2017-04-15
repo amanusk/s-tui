@@ -64,51 +64,53 @@ class LabeledBarGraph(urwid.Pile):
         self.bar_graph = []
         self.set_graph(widget_list[0])
 
-        self.x_label = []
-        self.set_x_label(widget_list[1])
-
-        self.y_label = []
+        self.y_label = urwid.WidgetPlaceholder(urwid.Columns([]))
         self.set_y_label(widget_list[2])
 
-        self.title = []
+        self.x_label = urwid.WidgetPlaceholder(urwid.Columns([]))
+        self.set_x_label(widget_list[1])
+
+        self.title = urwid.WidgetPlaceholder(urwid.ListBox([]))
         self.set_title(widget_list[3])
 
-        if self.y_label is not None and self.x_label is not None:
-            self.y_label = ('weight', 1, self.y_label)
-            super(LabeledBarGraph, self).__init__([self.title, self.y_label, self.x_label], focus_item=focus_item)
-        elif self.y_label is not None:
-            super(LabeledBarGraph, self).__init__([self.title, self.y_label], focus_item=focus_item)
-        elif self.x_label is not None:
-            super(LabeledBarGraph, self).__init__([self.title, self.bar_graph, self.x_label], focus_item=focus_item)
-        else:
-            super(LabeledBarGraph, self).__init__([self.title, self.bar_graph], focus_item=focus_item)
+        super(LabeledBarGraph, self).__init__([
+            ('fixed', 0 if len(widget_list[3]) == 0 else 1, self.title),
+            self.y_label,
+            ('fixed', 0 if len(widget_list[1]) == 0 else 1, self.x_label)
+        ], focus_item=focus_item)
+        # if self.y_label is not None and self.x_label is not None:
+        #     self.y_label = ('weight', 1, self.y_label)
+        #
+        # elif self.y_label is not None:
+        #     super(LabeledBarGraph, self).__init__([self.title, self.y_label], focus_item=focus_item)
+        # elif self.x_label is not None:
+        #     super(LabeledBarGraph, self).__init__([self.title, self.bar_graph, self.x_label], focus_item=focus_item)
+        # else:
+        #     super(LabeledBarGraph, self).__init__([self.title, self.bar_graph], focus_item=focus_item)
 
     def set_title(self, title):
         if len(title) == 0:
-            self.title = None
             return
 
-        self.title = ('fixed', 1, urwid.ListBox([urwid.Text(title, align="center")]))
+        self.title.original_widget = urwid.ListBox([urwid.Text(title, align="center")])
 
     def set_x_label(self, x_label):
         if len(x_label) == 0:
-            self.x_label = None
             return
 
-        x_label = [str(i) for i in x_label]
+        str_x_label = [str(i) for i in x_label]
+        x_label_nums = str_x_label[1:]
 
-        x_label_nums = x_label[1:]
-        x_label_num_list = [urwid.ListBox([urwid.Text('  ' + x_label[0])])]
+        x_label_num_list = [urwid.ListBox([urwid.Text('  ' + str_x_label[0])])]
+
         for num in x_label_nums:
             x_label_num_list = x_label_num_list + [urwid.ListBox([urwid.Text(num)])]
-
         x_label_num_list[-1] = (1, x_label_num_list[-1])
 
-        self.x_label = ('fixed', 1, urwid.Columns(x_label_num_list))
+        self.x_label.original_widget = urwid.Columns(x_label_num_list)
 
     def set_y_label(self, y_label):
         if len(y_label) == 0:
-            self.y_label = None
             return
 
         str_y_label = [str(i) for i in y_label]
@@ -124,8 +126,8 @@ class LabeledBarGraph(urwid.Pile):
         y_notation = [('fixed',  y_scale_len,        y_list_walker),
                       ('weight', 1,                  self.bar_graph)]
 
-        self.y_label = urwid.Columns(y_notation,
-                                     dividechars=1)
+        self.y_label.original_widget = urwid.Columns(y_notation,
+                                                     dividechars=1)
 
     def set_graph(self, graph):
         self.bar_graph = graph

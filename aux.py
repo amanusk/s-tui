@@ -27,7 +27,7 @@ import os
 import logging
 
 
-def readmsr(msr, cpu = 0):
+def read_msr(msr, cpu=0):
     if not os.path.exists("/dev/cpu/0/msr"):
         try:
             os.system("/sbin/modprobe msr")
@@ -35,8 +35,8 @@ def readmsr(msr, cpu = 0):
         except:
             pass
         return None
+    msr_file = '/dev/cpu/%d/msr' % (cpu,)
     try:
-        msr_file = '/dev/cpu/%d/msr' % (cpu,)
         with open(msr_file, 'r') as f:
             f.seek(msr)
             read_res = f.read(8)
@@ -46,5 +46,5 @@ def readmsr(msr, cpu = 0):
         e.message = e.message + "Unable to read file " + msr_file
         raise e
     except OSError as e:
-        e.message = e.message + "File " + msr_file  + " does not exist"
+        e.message = e.message + "File " + msr_file + " does not exist"
         raise e

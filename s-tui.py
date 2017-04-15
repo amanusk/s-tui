@@ -27,7 +27,6 @@ from ComplexBarGraphs import ScalableBarGraph
 from ComplexBarGraphs import LabeledBarGraph
 from StressMenu import StressMenu
 from HelpMenu import HelpMenu
-from HelpMenu import HELP_MESSAGE
 
 import psutil
 import time
@@ -36,7 +35,7 @@ import ctypes
 import os
 import argparse
 import logging
-from aux import readmsr
+from aux import read_msr
 
 # Constants
 UPDATE_INTERVAL = 1
@@ -48,8 +47,8 @@ log_file = "_s-tui.log"
 
 VERSION = 0.1
 VERSION_MESSAGE = " s-tui " + str(VERSION) +\
-" - (C) 2017 Alex Manuskin, Gil Tsuker\n\
-Relased under GNU GPLv2"
+                  " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
+                  Relased under GNU GPLv2"
 
 # globals
 is_admin = None
@@ -65,6 +64,7 @@ hogs, while monitoring the CPU usage, temperature and frequency.\n\
 The software was conceived with the vision of being able to stress test your\
 computer without the need for a GUI\n\
 "
+
 
 class GraphMode:
     """
@@ -117,7 +117,7 @@ class GraphData:
 
         if is_admin:
             try:
-                available_freq = readmsr(TURBO_MSR, 0)
+                available_freq = read_msr(TURBO_MSR, 0)
                 self.top_freq = float(available_freq[self.core_num - 1] * 100)
                 self.turbo_freq = True
             except (IOError, OSError) as e:
@@ -128,7 +128,7 @@ class GraphData:
                 self.top_freq = psutil.cpu_freq().max
                 self.turbo_freq = False
             except:
-                logging.error("Top frequancy is not sopported")
+                logging.error("Top frequency is not supported")
 
     def update_util(self):
         try:
@@ -203,35 +203,37 @@ class GraphView(urwid.WidgetPlaceholder):
     """
 
     palette = [
-        ('body',          'black',      'light gray',   'standout'),
-        ('header',        'white',      'dark red',     'bold'),
-        ('screen edge',   'light blue', 'brown'),
-        ('main shadow',   'dark gray',  'black'),
-        ('line',          'black',      'light gray',   'standout'),
-        ('menu button',   'light gray', 'black'),
-        ('bg background', 'light gray', 'black'),
-        ('bg 1',          'black',      'dark green',   'standout'),
-        ('bg 1 smooth',   'dark green', 'black'),
-        ('bg 2',          'dark red',   'light green',  'standout'),
-        ('bg 2 smooth',   'light green','black'),
-        ('bg 3',          'light red',  'dark red',     'standout'),
-        ('bg 3 smooth',   'dark red',   'black'),
-        ('bg 4',          'dark red',   'light red',    'standout'),
-        ('bg 4 smooth',   'light red',  'black'),
-        ('bg 5',          'black',      'dark cyan', 'standout'),
-        ('bg 5 smooth',   'dark cyan',  'black'),
-        ('bg 6',          'dark red',   'light cyan', 'standout'),
-        ('bg 6 smooth',   'light cyan', 'black'),
-        ('button normal', 'light gray', 'dark blue',    'standout'),
-        ('button select', 'white',      'dark green'),
-        ('line',          'black',      'light gray',   'standout'),
-        ('pg normal',     'white',      'black',        'standout'),
-        ('pg complete',   'white',      'dark magenta'),
-        ('pg smooth',     'dark magenta', 'black')
+        ('body',          'black',          'light gray',   'standout'),
+        ('header',        'white',          'dark red',     'bold'),
+        ('screen edge',   'light blue',     'brown'),
+        ('main shadow',   'dark gray',      'black'),
+        ('line',          'black',          'light gray',   'standout'),
+        ('menu button',   'light gray',     'black'),
+        ('bg background', 'light gray',     'black'),
+        ('bg 1',          'black',          'dark green',   'standout'),
+        ('bg 1 smooth',   'dark green',     'black'),
+        ('bg 2',          'dark red',       'light green',  'standout'),
+        ('bg 2 smooth',   'light green',    'black'),
+        ('bg 3',          'light red',      'dark red',     'standout'),
+        ('bg 3 smooth',   'dark red',       'black'),
+        ('bg 4',          'dark red',       'light red',    'standout'),
+        ('bg 4 smooth',   'light red',      'black'),
+        ('bg 5',          'black',          'dark cyan',    'standout'),
+        ('bg 5 smooth',   'dark cyan',      'black'),
+        ('bg 6',          'dark red',       'light cyan',   'standout'),
+        ('bg 6 smooth',   'light cyan',     'black'),
+        ('button normal', 'light gray',     'dark blue',    'standout'),
+        ('button select', 'white',          'dark green'),
+        ('line',          'black',          'light gray',   'standout'),
+        ('pg normal',     'white',          'black',        'standout'),
+        ('pg complete',   'white',          'dark magenta'),
+        ('pg smooth',     'dark magenta',   'black')
         ]
 
-    graph_samples_per_bar = 10
-    graph_offset_per_second = 5
+    GRAPH_OFFSET_PER_SECOND = 5
+    SCALE_DENSITY = 5
+    MAX_UTIL = 100
+    MAX_TEMP = 100
 
     def __init__(self, controller):
 
@@ -240,31 +242,26 @@ class GraphView(urwid.WidgetPlaceholder):
         self.start_time = None
         self.offset = 0
         self.last_offset = None
-        self.graph_data = GraphData(0)
         self.mode_buttons = []
-        self.animate_button = []
 
+        self.graph_data = GraphData(0)
         self.graph_util = []
         self.graph_temp = []
         self.graph_freq = []
-
-        self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
         self.visible_graphs = []
+        self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
 
         self.max_temp = None
         self.cur_temp = None
         self.top_freq = None
         self.cur_freq = None
         self.perf_lost = None
+
         self.main_window_w = []
+
         self.stress_menu = StressMenu(self.on_stress_menu_close)
-
         self.help_menu = HelpMenu(self.on_help_menu_close)
-
         self.stress_menu.sqrt_workers = str(self.graph_data.core_num)
-
-        self.animate_progress = []
-        self.animate_progress_wrap = []
 
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
 
@@ -274,7 +271,7 @@ class GraphView(urwid.WidgetPlaceholder):
         if not self.started:
             return self.offset
         tdelta = time.time() - self.start_time
-        return int(self.offset + (tdelta*self.graph_offset_per_second))
+        return int(self.offset + (tdelta * self.GRAPH_OFFSET_PER_SECOND))
 
     def update_stats(self):
         if self.controller.mode.current_mode == 'Regular Operation':
@@ -294,13 +291,13 @@ class GraphView(urwid.WidgetPlaceholder):
         self.last_offset = o
 
         # TODO set maximum value dynamically and per graph
-        l = []
 
         self.graph_data.update_temp()
         self.graph_data.update_util()
         self.graph_data.update_freq()
 
         # Updating CPU utilization
+        l = []
         for n in range(self.graph_data.graph_num_bars):
             value = self.graph_data.cpu_util[n]
             # toggle between two bar types
@@ -309,6 +306,8 @@ class GraphView(urwid.WidgetPlaceholder):
             else:
                 l.append([value, 0])
         self.graph_util.bar_graph.set_data(l, self.graph_data.util_max_value)
+        y_label_size = self.graph_util.bar_graph.get_size()[0]
+        self.graph_util.set_y_label(self.get_label_scale(0, self.MAX_UTIL, y_label_size))
 
         # Updating CPU temperature
         l = []
@@ -320,8 +319,10 @@ class GraphView(urwid.WidgetPlaceholder):
             else:
                 l.append([value, 0])
         self.graph_temp.bar_graph.set_data(l, self.graph_data.temp_max_value)
+        y_label_size = self.graph_temp.bar_graph.get_size()[0]
+        self.graph_temp.set_y_label(self.get_label_scale(0, self.MAX_TEMP, y_label_size))
 
-        # Updating CPU frequancy
+        # Updating CPU frequency
         l = []
         for n in range(self.graph_data.graph_num_bars):
             value = self.graph_data.cpu_freq[n]
@@ -331,19 +332,27 @@ class GraphView(urwid.WidgetPlaceholder):
             else:
                 l.append([value, 0])
         self.graph_freq.bar_graph.set_data(l, self.graph_data.top_freq)
-
+        y_label_size = self.graph_freq.bar_graph.get_size()[0]
+        self.graph_freq.set_y_label(self.get_label_scale(0, self.graph_data.top_freq, y_label_size))
 
         self.update_stats()
 
-    def on_animate_button(self, button):
-        """Toggle started state and button text."""
+    def get_label_scale(self, min, max, size):
+
+        if size < self.SCALE_DENSITY:
+            label_cnt = 1
+        else:
+            label_cnt = (size / self.SCALE_DENSITY)
+
+        label = [int(min + i * (max - min) / label_cnt) for i in range(label_cnt + 1)]
+        return label
+
+    def toggle_animation(self):
         if self.started:  # stop animation
-            button.set_label("Start")
             self.offset = self.get_offset_now()
             self.started = False
             self.controller.stop_animation()
         else:
-            button.set_label("Stop")
             self.started = True
             self.start_time = time.time()
             self.controller.animate_graph()
@@ -374,9 +383,7 @@ class GraphView(urwid.WidgetPlaceholder):
         """Notify the controller of a new mode setting."""
 
         def start_stress(mode):
-            # Start stress here?
             if mode == 'Stress Operation':
-
                 stress_cmd = ['stress']
 
                 if int(self.stress_menu.sqrt_workers) > 0:
@@ -443,16 +450,22 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def on_unicode_checkbox(self, w, state):
 
-        if state: satt = {(1, 0): 'bg 1 smooth', (2, 0): 'bg 2 smooth'}
-        else: satt = None
+        if state:
+            satt = {(1, 0): 'bg 1 smooth', (2, 0): 'bg 2 smooth'}
+        else:
+            satt = None
         self.graph_util.bar_graph.set_segment_attributes(['bg background', 'bg 1', 'bg 2'], satt=satt)
 
-        if state: satt = {(1, 0): 'bg 3 smooth', (2, 0): 'bg 4 smooth'}
-        else: satt = None
+        if state:
+            satt = {(1, 0): 'bg 3 smooth', (2, 0): 'bg 4 smooth'}
+        else:
+            satt = None
         self.graph_temp.bar_graph.set_segment_attributes(['bg background', 'bg 3', 'bg 4'], satt=satt)
 
-        if state: satt = {(1, 0): 'bg 5 smooth', (2, 0): 'bg 6 smooth'}
-        else: satt = None
+        if state:
+            satt = {(1, 0): 'bg 5 smooth', (2, 0): 'bg 6 smooth'}
+        else:
+            satt = None
         self.graph_freq.bar_graph.set_segment_attributes(['bg background', 'bg 5', 'bg 6'], satt=satt)
 
         self.update_graph(True)
@@ -487,14 +500,6 @@ class GraphView(urwid.WidgetPlaceholder):
         w = urwid.AttrWrap(w, 'button normal', 'button select')
         return w
 
-    def progress_bar(self, smooth=False):
-        if smooth:
-            return urwid.ProgressBar('pg normal', 'pg complete',
-                                     0, 1, 'pg smooth')
-        else:
-            return urwid.ProgressBar('pg normal', 'pg complete',
-                                     0, 1)
-
     def exit_program(self, w):
         try:
             # Kill all the subprocess of stress
@@ -511,13 +516,8 @@ class GraphView(urwid.WidgetPlaceholder):
         for m in modes:
             rb = self.radio_button(group, m, self.on_mode_button)
             self.mode_buttons.append(rb)
-        # setup animate button
-        self.animate_button = self.button("", self.on_animate_button)
-        self.on_animate_button(self.animate_button)
         self.offset = 0
-        self.animate_progress = self.progress_bar()
         animate_controls = urwid.GridFlow([
-            #self.animate_button,
             self.button("Reset", self.on_reset_button),
             self.button('Stress Options', self.on_stress_menu_open),
             self.button('Help', self.on_help_menu_open),
@@ -532,7 +532,7 @@ class GraphView(urwid.WidgetPlaceholder):
                 "UTF-8 encoding not detected")
 
         buttons = [urwid.Text("Mode", align="center"),
-             ] + self.mode_buttons + [
+                   ] + self.mode_buttons + [
             urwid.Divider(),
             urwid.Text("Control Options", align="center"),
             animate_controls,
@@ -605,7 +605,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_util = self.bar_graph('bg 1', 'bg 2', 'Utilization[%]', [], [0, 50, 100])
         self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'Temperature[C]', [], [0, 25, 50, 75, 100])
         top_freq = self.graph_data.top_freq
-        self.graph_freq = self.bar_graph('bg 5', 'bg 6', 'Frequency[MHz]', [], [0, int(top_freq / 3), int(2 * top_freq / 3), int(top_freq)])
+        self.graph_freq = self.bar_graph('bg 5', 'bg 6', 'Frequency[MHz]', [],
+                                         [0, int(top_freq / 3), int(2 * top_freq / 3), int(top_freq)])
         self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
         self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")
         self.top_freq = urwid.Text(str(self.graph_data.top_freq) + 'MHz', align="right")
@@ -672,7 +673,7 @@ class GraphController:
         self.loop = urwid.MainLoop(self.view, self.view.palette)
 
         self.view.started = False  # simulate pressing to start button
-        self.view.on_animate_button(self.view.animate_button)
+        self.view.toggle_animation()
 
         self.loop.run()
 
@@ -697,17 +698,16 @@ def main():
         exit(0)
 
     # Setup logging util
-    log_file
+    global log_file
     level = ""
     if args.debug:
-        level=logging.DEBUG
-        logFormatter = logging.Formatter("%(asctime)s [%(funcName)s()] [%(levelname)-5.5s]  %(message)s")
-        rootLogger = logging.getLogger()
-        fileHandler = logging.FileHandler(log_file)
-        fileHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(fileHandler)
-        rootLogger.setLevel(level)
-
+        level = logging.DEBUG
+        log_formatter = logging.Formatter("%(asctime)s [%(funcName)s()] [%(levelname)-5.5s]  %(message)s")
+        root_logger = logging.getLogger()
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(log_formatter)
+        root_logger.addHandler(file_handler)
+        root_logger.setLevel(level)
 
     global is_admin
     try:
@@ -720,6 +720,7 @@ def main():
         time.sleep(2)
 
     GraphController().main()
+
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -735,4 +736,3 @@ def get_args():
 
 if '__main__' == __name__:
     main()
-
