@@ -25,18 +25,26 @@
 """
 import os
 
+
 def readmsr(msr, cpu = 0):
     if not os.path.exists("/dev/cpu/0/msr"):
         try:
-            os.system("modprobe msr")
+            os.system("/sbin/modprobe msr")
             logging.debug("Ran modprobe sucessfully")
         except:
             pass
         return None
-    f = os.open('/dev/cpu/%d/msr' % (cpu,), os.O_RDONLY)
-    os.lseek(f, msr, os.SEEK_SET)
-    read_res = os.read(f, 8)
-    s_decoded = [ord(c) for c in read_res]
-    os.close(f)
-    m = min(i for i in s_decoded if i > 0)
-    return float(m * 100)
+    try:
+        msr_file = '/dev/cpu/%d/msr' % (cpu,)
+        f = os.open(msr_file, os.O_RDONLY)
+        os.lseek(f, msr, os.SEEK_SET)
+        read_res = os.read(f, 8)
+        s_decoded = [ord(c) for c in read_res]
+        return s_decoded
+        os.close(f)
+    except IOError as e:
+        e.message = e.message + "Unable to read file " + msr_file
+        raise e
+    except OSError as e:
+        e.message = e.message + "File " + msr_file  + " does not exist"
+        raise e

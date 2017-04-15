@@ -106,22 +106,46 @@ class GraphData:
         self.perf_lost = 0
         self.max_perf_lost = 0
         self.samples_taken = 0
+        self.core_num = "N/A"
+        try:
+            self.core_num = psutil.cpu_count()
+        except:
+            self.core_num = 1
+            logging.error("Num of cores unavailable")
+        self.top_freq = "N/A"
+        self.turbo_freq = False
 
-        self.core_num = psutil.cpu_count()
         if is_admin:
-            self.top_freq = readmsr(TURBO_MSR, 0)
-            if self.top_freq is None:
+            try:
+                available_freq = readmsr(TURBO_MSR, 0)
+                self.top_freq = float(available_freq[self.core_num - 1] * 100)
+                self.turbo_freq = True
+            except (IOError, OSError) as e:
+                logging.error(e.message)
+
+        if self.top_freq is "N/A":
+            try:
                 self.top_freq = psutil.cpu_freq().max
-        else:
-            self.top_freq = psutil.cpu_freq().max
+                self.turbo_freq = False
+            except:
+                logging.error("Top frequancy is not sopported")
 
     def update_util(self):
-        last_value = psutil.cpu_percent(interval=None)
+        try:
+            last_value = psutil.cpu_percent(interval=None)
+        except:
+            last_value = 0
+            logging.error("Cpu Utilization unavailable")
+
         self.cpu_util = self.update_graph_val(self.cpu_util, last_value)
 
     def update_freq(self):
         self.samples_taken += 1
-        self.cur_freq = int(psutil.cpu_freq().current)
+        try:
+            self.cur_freq = int(psutil.cpu_freq().current)
+        except:
+            self.cur_freq = 0
+            logging.error("Frequency unavailable")
 
         self.cpu_freq = self.update_graph_val(self.cpu_freq, self.cur_freq)
 
@@ -145,9 +169,13 @@ class GraphData:
         self.samples_taken = 0
 
     def update_temp(self):
-        # TODO make this more robust
         # TODO change color according to last recorded temp
-        last_value = psutil.sensors_temperatures()['acpitz'][0].current
+        try:
+            last_value = psutil.sensors_temperatures()['acpitz'][0].current
+        except:
+            last_value = 0
+            logging.error("Temperature sensor unavailable")
+
         self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
         # Update max temp
         if last_value > int(self.max_temp):
@@ -381,9 +409,12 @@ class GraphView(urwid.WidgetPlaceholder):
                     stress_cmd.append(self.stress_menu.time_out)
 
                 with open(os.devnull, 'w') as DEVNULL:
-                    self.stress_process = subprocess.Popen(stress_cmd,
-                                                           stdout=DEVNULL, stderr=DEVNULL, shell=False)
-                    self.stress_process = psutil.Process(self.stress_process.pid)
+                    try:
+                        self.stress_process = subprocess.Popen(stress_cmd,
+                                                               stdout=DEVNULL, stderr=DEVNULL, shell=False)
+                        self.stress_process = psutil.Process(self.stress_process.pid)
+                    except:
+                        logging.error ("Unable to start stress")
 
                 self.graph_data.max_perf_lost = 0
                 self.graph_data.samples_taken = 0
@@ -552,11 +583,16 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_place_holder.original_widget = urwid.Pile(graph_list)
 
     def graph_stats(self):
+        top_freq_string = "Top Freq"
+        if self.graph_data.turbo_freq:
+            top_freq_string += " " + str(self.graph_data.core_num) + " Cores"
+        else:
+            top_freq_string += " 1 Core"
         fixed_stats = [urwid.Divider(), urwid.Text("Max Temp", align="left"),
                        self.max_temp] + \
-                      [urwid.Divider(), urwid.Text("Current Temp", align="left"),
+                      [urwid.Divider(), urwid.Text("Cur Temp", align="left"),
                        self.cur_temp] + \
-                      [urwid.Divider(), urwid.Text("Top Freq", align="left"),
+                      [urwid.Divider(), urwid.Text(top_freq_string, align="left"),
                        self.top_freq] + \
                       [urwid.Divider(), urwid.Text("Cur Freq", align="left"),
                        self.cur_freq] + \
