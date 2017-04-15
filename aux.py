@@ -24,6 +24,7 @@
 """ Reads the value of the msr containing information on Turbo Boost on intel CPUs
 """
 import os
+import logging
 
 
 def readmsr(msr, cpu = 0):
@@ -36,12 +37,11 @@ def readmsr(msr, cpu = 0):
         return None
     try:
         msr_file = '/dev/cpu/%d/msr' % (cpu,)
-        f = os.open(msr_file, os.O_RDONLY)
-        os.lseek(f, msr, os.SEEK_SET)
-        read_res = os.read(f, 8)
+        with open(msr_file, 'r') as f:
+            f.seek(msr)
+            read_res = f.read(8)
         s_decoded = [ord(c) for c in read_res]
         return s_decoded
-        os.close(f)
     except IOError as e:
         e.message = e.message + "Unable to read file " + msr_file
         raise e
