@@ -121,8 +121,10 @@ class GraphData:
 
         if is_admin:
             try:
+                num_cpus = psutil.cpu_count(logical=False)
                 available_freq = read_msr(TURBO_MSR, 0)
-                self.top_freq = float(available_freq[self.core_num - 1] * 100)
+                logging.debug(available_freq)
+                self.top_freq = float(available_freq[num_cpus - 1] * 100)
                 self.turbo_freq = True
             except (IOError, OSError) as e:
                 logging.error(e.message)
@@ -155,7 +157,10 @@ class GraphData:
 
         if is_admin and self.samples_taken > WAIT_SAMPLES:
             self.perf_lost = int(self.top_freq) - int(self.cur_freq)
-            self.perf_lost = round(float(self.perf_lost) / float(self.top_freq) * 100, 1)
+            if self.top_freq is not "N/A":
+                self.perf_lost = round(float(self.perf_lost) / float(self.top_freq) * 100, 1)
+            else:
+                self.perf_lost = 0
             if self.perf_lost > self.max_perf_lost:
                 self.max_perf_lost = self.perf_lost
         elif not is_admin:
@@ -641,6 +646,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_util = self.bar_graph('util light', 'util dark', 'Utilization[%]', [], [0, 50, 100])
         self.graph_temp = self.bar_graph('temp dark', 'temp light', 'Temperature[C]', [], [0, 25, 50, 75, 100])
         top_freq = self.graph_data.top_freq
+        if top_freq is "N/A":
+            top_freq = 0
         self.graph_freq = self.bar_graph('freq dark', 'freq light', 'Frequency[MHz]', [],
                                          [0, int(top_freq / 3), int(2 * top_freq / 3), int(top_freq)])
         self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
