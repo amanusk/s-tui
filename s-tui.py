@@ -663,8 +663,9 @@ class GraphView(urwid.WidgetPlaceholder):
         except:
             one_third = 0
             two_third = 0
+            top_freq = 0
         self.graph_freq = self.bar_graph('freq dark', 'freq light', 'Frequency[MHz]', [],
-                                         [0, one_third, two_third, int(top_freq)])
+                                         [0, one_third, two_third, top_freq])
         self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
         self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")
         self.top_freq = urwid.Text(str(self.graph_data.top_freq) + 'MHz', align="right")
