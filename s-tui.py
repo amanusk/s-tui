@@ -91,7 +91,10 @@ class GraphMode:
 
 
 class GraphData:
+    THRESHOLD_TEMP = 80
+
     def __init__(self, graph_num_bars):
+        # Constants data
         self.temp_max_value = 100
         self.util_max_value = 100
         self.graph_num_bars = graph_num_bars
@@ -99,7 +102,8 @@ class GraphData:
         self.cpu_util = [0] * graph_num_bars
         self.cpu_temp = [0] * graph_num_bars
         self.cpu_freq = [0] * graph_num_bars
-        # Constants data
+        # Data for statistics
+        self.overheat = False
         self.max_temp = 0
         self.cur_temp = 0
         self.cur_freq = 0
@@ -158,6 +162,7 @@ class GraphData:
             self.max_perf_lost = "N/A (no root)"
 
     def reset(self):
+        self.overheat = False
         self.cpu_util = [0] * self.graph_num_bars
         self.cpu_temp = [0] * self.graph_num_bars
         self.cpu_freq = [0] * self.graph_num_bars
@@ -169,7 +174,6 @@ class GraphData:
         self.samples_taken = 0
 
     def update_temp(self):
-        # TODO change color according to last recorded temp
         try:
             last_value = psutil.sensors_temperatures()['acpitz'][0].current
         except:
@@ -180,8 +184,12 @@ class GraphData:
         # Update max temp
         if last_value > int(self.max_temp):
             self.max_temp = last_value
-        # Update currnet temp
+        # Update current temp
         self.cur_temp = last_value
+        if self.cur_temp >= self.THRESHOLD_TEMP:
+            self.overheat = True
+        else:
+            self.overheat = False
 
     def update_graph_val(self, values, new_val):
         values_num = len(values)
@@ -203,31 +211,36 @@ class GraphView(urwid.WidgetPlaceholder):
     """
 
     palette = [
-        ('body',          'black',          'light gray',   'standout'),
-        ('header',        'white',          'dark red',     'bold'),
-        ('screen edge',   'light blue',     'brown'),
-        ('main shadow',   'dark gray',      'black'),
-        ('line',          'black',          'light gray',   'standout'),
-        ('menu button',   'light gray',     'black'),
-        ('bg background', 'light gray',     'black'),
-        ('bg 1',          'black',          'dark green',   'standout'),
-        ('bg 1 smooth',   'dark green',     'black'),
-        ('bg 2',          'dark red',       'light green',  'standout'),
-        ('bg 2 smooth',   'light green',    'black'),
-        ('bg 3',          'light red',      'dark red',     'standout'),
-        ('bg 3 smooth',   'dark red',       'black'),
-        ('bg 4',          'dark red',       'light red',    'standout'),
-        ('bg 4 smooth',   'light red',      'black'),
-        ('bg 5',          'black',          'dark cyan',    'standout'),
-        ('bg 5 smooth',   'dark cyan',      'black'),
-        ('bg 6',          'dark red',       'light cyan',   'standout'),
-        ('bg 6 smooth',   'light cyan',     'black'),
-        ('button normal', 'light gray',     'dark blue',    'standout'),
-        ('button select', 'white',          'dark green'),
-        ('line',          'black',          'light gray',   'standout'),
-        ('pg normal',     'white',          'black',        'standout'),
-        ('pg complete',   'white',          'dark magenta'),
-        ('pg smooth',     'dark magenta',   'black')
+        ('body',                    'black',          'light gray',   'standout'),
+        ('header',                  'white',          'dark red',     'bold'),
+        ('screen edge',             'light blue',     'brown'),
+        ('main shadow',             'dark gray',      'black'),
+        ('line',                    'black',          'light gray',   'standout'),
+        ('menu button',             'light gray',     'black'),
+        ('bg background',           'light gray',     'black'),
+        ('util light',              'black',          'dark green',   'standout'),
+        ('util light smooth',       'dark green',     'black'),
+        ('util dark',               'dark red',       'light green',  'standout'),
+        ('util dark smooth',        'light green',    'black'),
+        ('high temp dark',          'light red',      'dark red',     'standout'),
+        ('high temp dark smooth',   'dark red',       'black'),
+        ('high temp light',         'dark red',       'light red',    'standout'),
+        ('high temp light smooth',  'light red',      'black'),
+        ('temp dark',               'black',          'dark cyan',    'standout'),
+        ('temp dark smooth',        'dark cyan',      'black'),
+        ('temp light',              'dark red',       'light cyan',   'standout'),
+        ('temp light smooth',       'light cyan',     'black'),
+        ('freq dark',               'dark red',       'dark magenta', 'standout'),
+        ('freq dark smooth',        'dark magenta',   'black'),
+        ('freq light',              'dark red',       'light magenta', 'standout'),
+        ('freq light smooth',       'light magenta',  'black'),
+        ('button normal',           'light gray',     'dark blue',    'standout'),
+        ('button select',           'white',          'dark green'),
+        ('line',                    'black',          'light gray',   'standout'),
+        ('pg normal',               'white',          'black',        'standout'),
+        ('pg complete',             'white',          'dark magenta'),
+        ('high temp txt',           'light red',      'light gray'),
+        ('pg smooth',               'dark magenta',   'black')
         ]
 
     GRAPH_OFFSET_PER_SECOND = 5
@@ -242,6 +255,9 @@ class GraphView(urwid.WidgetPlaceholder):
         self.start_time = None
         self.offset = 0
         self.last_offset = None
+        self.temp_color = (['bg background', 'temp dark', 'temp light'],
+                           {(1, 0): 'temp dark smooth', (2, 0): 'temp light smooth'},
+                           'line')
         self.mode_buttons = []
 
         self.graph_data = GraphData(0)
@@ -277,7 +293,7 @@ class GraphView(urwid.WidgetPlaceholder):
         if self.controller.mode.current_mode == 'Regular Operation':
             self.graph_data.max_perf_lost = 0
         self.max_temp.set_text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c')
-        self.cur_temp.set_text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c')
+        self.cur_temp.set_text((self.temp_color[2], str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c'))
         self.top_freq.set_text(str(self.graph_data.top_freq) + 'MHz')
         self.cur_freq.set_text(str(self.graph_data.cur_freq) + 'MHz')
         self.perf_lost.set_text(str(self.graph_data.max_perf_lost) + '%')
@@ -289,8 +305,6 @@ class GraphView(urwid.WidgetPlaceholder):
         if o == self.last_offset and not force_update:
             return False
         self.last_offset = o
-
-        # TODO set maximum value dynamically and per graph
 
         self.graph_data.update_temp()
         self.graph_data.update_util()
@@ -319,6 +333,7 @@ class GraphView(urwid.WidgetPlaceholder):
             else:
                 l.append([value, 0])
         self.graph_temp.bar_graph.set_data(l, self.graph_data.temp_max_value)
+        self.set_temp_color()
         y_label_size = self.graph_temp.bar_graph.get_size()[0]
         self.graph_temp.set_y_label(self.get_label_scale(0, self.MAX_TEMP, y_label_size))
 
@@ -336,6 +351,31 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_freq.set_y_label(self.get_label_scale(0, self.graph_data.top_freq, y_label_size))
 
         self.update_stats()
+
+    def set_temp_color(self, smooth=None):
+        if self.graph_data.overheat:
+            new_color = (['bg background', 'high temp dark', 'high temp light'],
+                         {(1, 0): 'high temp dark smooth', (2, 0): 'high temp light smooth'},
+                         'high temp txt')
+        else:
+            new_color = (['bg background', 'temp dark', 'temp light'],
+                         {(1, 0): 'temp dark smooth', (2, 0): 'temp light smooth'},
+                         'line')
+
+        if new_color[2] == self.temp_color[2] and smooth is None:
+            return
+
+        if smooth is None:
+            if self.temp_color[1] is None:
+                self.temp_color = (new_color[0], None, new_color[2])
+            else:
+                self.temp_color = new_color
+        elif smooth:
+            self.temp_color = new_color
+        else:
+            self.temp_color = (new_color[0], None, new_color[2])
+
+        self.graph_temp.bar_graph.set_segment_attributes(self.temp_color[0], satt=self.temp_color[1])
 
     def get_label_scale(self, min, max, size):
 
@@ -451,22 +491,18 @@ class GraphView(urwid.WidgetPlaceholder):
     def on_unicode_checkbox(self, w, state):
 
         if state:
-            satt = {(1, 0): 'bg 1 smooth', (2, 0): 'bg 2 smooth'}
+            satt = {(1, 0): 'util light smooth', (2, 0): 'util dark smooth'}
         else:
             satt = None
-        self.graph_util.bar_graph.set_segment_attributes(['bg background', 'bg 1', 'bg 2'], satt=satt)
+        self.graph_util.bar_graph.set_segment_attributes(['bg background', 'util light', 'util dark'], satt=satt)
+
+        self.set_temp_color(smooth=state)
 
         if state:
-            satt = {(1, 0): 'bg 3 smooth', (2, 0): 'bg 4 smooth'}
+            satt = {(1, 0): 'freq dark smooth', (2, 0): 'freq light smooth'}
         else:
             satt = None
-        self.graph_temp.bar_graph.set_segment_attributes(['bg background', 'bg 3', 'bg 4'], satt=satt)
-
-        if state:
-            satt = {(1, 0): 'bg 5 smooth', (2, 0): 'bg 6 smooth'}
-        else:
-            satt = None
-        self.graph_freq.bar_graph.set_segment_attributes(['bg background', 'bg 5', 'bg 6'], satt=satt)
+        self.graph_freq.bar_graph.set_segment_attributes(['bg background', 'freq dark', 'freq light'], satt=satt)
 
         self.update_graph(True)
 
@@ -602,10 +638,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def main_window(self):
         # Initiating the data
-        self.graph_util = self.bar_graph('bg 1', 'bg 2', 'Utilization[%]', [], [0, 50, 100])
-        self.graph_temp = self.bar_graph('bg 3', 'bg 4', 'Temperature[C]', [], [0, 25, 50, 75, 100])
+        self.graph_util = self.bar_graph('util light', 'util dark', 'Utilization[%]', [], [0, 50, 100])
+        self.graph_temp = self.bar_graph('temp dark', 'temp light', 'Temperature[C]', [], [0, 25, 50, 75, 100])
         top_freq = self.graph_data.top_freq
-        self.graph_freq = self.bar_graph('bg 5', 'bg 6', 'Frequency[MHz]', [],
+        self.graph_freq = self.bar_graph('freq dark', 'freq light', 'Frequency[MHz]', [],
                                          [0, int(top_freq / 3), int(2 * top_freq / 3), int(top_freq)])
         self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
         self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")
