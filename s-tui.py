@@ -104,6 +104,7 @@ class GraphData:
         self.cpu_freq = [0] * graph_num_bars
         # Data for statistics
         self.overheat = False
+        self.overheat_detected = False
         self.max_temp = 0
         self.cur_temp = 0
         self.cur_freq = 0
@@ -177,6 +178,7 @@ class GraphData:
         self.perf_lost = 0
         self.max_perf_lost = 0
         self.samples_taken = 0
+        self.overheat_detected = False
 
     def update_temp(self):
         try:
@@ -193,6 +195,7 @@ class GraphData:
         self.cur_temp = last_value
         if self.cur_temp >= self.THRESHOLD_TEMP:
             self.overheat = True
+            self.overheat_detected = True
         else:
             self.overheat = False
 
@@ -228,6 +231,7 @@ class GraphView(urwid.WidgetPlaceholder):
         ('util dark',               'dark red',       'light green',  'standout'),
         ('util dark smooth',        'light green',    'black'),
         ('high temp dark',          'light red',      'dark red',     'standout'),
+        ('overheat dark',           'black',          'light red',     'standout'),
         ('high temp dark smooth',   'dark red',       'black'),
         ('high temp light',         'dark red',       'light red',    'standout'),
         ('high temp light smooth',  'light red',      'black'),
@@ -297,8 +301,13 @@ class GraphView(urwid.WidgetPlaceholder):
     def update_stats(self):
         if self.controller.mode.current_mode == 'Regular Operation':
             self.graph_data.max_perf_lost = 0
-        self.max_temp.set_text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c')
+        if self.graph_data.overheat_detected:
+            self.max_temp.set_text(('overheat dark', str(self.graph_data.max_temp) + DEGREE_SIGN + 'c'))
+        else:
+            self.max_temp.set_text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c')
+
         self.cur_temp.set_text((self.temp_color[2], str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c'))
+
         self.top_freq.set_text(str(self.graph_data.top_freq) + 'MHz')
         self.cur_freq.set_text(str(self.graph_data.cur_freq) + 'MHz')
         self.perf_lost.set_text(str(self.graph_data.max_perf_lost) + '%')
@@ -646,10 +655,16 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_util = self.bar_graph('util light', 'util dark', 'Utilization[%]', [], [0, 50, 100])
         self.graph_temp = self.bar_graph('temp dark', 'temp light', 'Temperature[C]', [], [0, 25, 50, 75, 100])
         top_freq = self.graph_data.top_freq
-        if top_freq is "N/A":
-            top_freq = 0
+        one_third = 0
+        two_third = 0
+        try:
+            one_third = int(top_freq / 3)
+            two_third = int(2 * top_freq / 3)
+        except:
+            one_third = 0
+            two_third = 0
         self.graph_freq = self.bar_graph('freq dark', 'freq light', 'Frequency[MHz]', [],
-                                         [0, int(top_freq / 3), int(2 * top_freq / 3), int(top_freq)])
+                                         [0, one_third, two_third, int(top_freq)])
         self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
         self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")
         self.top_freq = urwid.Text(str(self.graph_data.top_freq) + 'MHz', align="right")
