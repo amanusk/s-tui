@@ -34,7 +34,7 @@ def read_msr(msr, cpu=0):
             logging.debug("Ran modprobe sucessfully")
         except:
             pass
-        return None
+            return None
     msr_file = '/dev/cpu/%d/msr' % (cpu,)
     try:
         with open(msr_file, 'r') as f:
