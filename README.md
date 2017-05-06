@@ -10,16 +10,14 @@ This software makes it possible to stress and monitor your computer without a ne
 * Requires minimal resources
 
 
-## Simple Installation:
-* Download and unzip the directory or clone from github
-```
-git clone https://github.com/amanusk/s-tui.git
-```
-* install stress (See dependencies)
+## Usage:
+* Download the latest release version from https://github.com/amanusk/s-tui/releases
+* Install stress (See dependencies)
 ```
 sudo apt-get install stress
 ```
-* run `(sudo) ./s-tui`
+* Change s-tui to exectuable `chmod +x s-tui`
+* Run `(sudo) ./s-tui`
 
 ## Screen Shots
 ![](./ScreenShots/stui1.png?raw=true "Full Screen")
@@ -35,22 +33,25 @@ s-tui uses stress. To install stress on Ubuntu run:
 sudo apt-get install stress
 ```
 
-## Usage
-To run the compiled executable simply run:
-```
-(sudo) ./s-tui
-```
 
-## To run .py file
+## Build
 If would like to make changes to s-tui, you can test your work by running s-tui.py.
-
+Clone
+```
+git clone https://github.com/amanusk/s-tui.git
+```
 s-tui uses psutil and urwid libraries.
 These need to be installed to run s-tui.py
 ```
 (sudo) pip install urwid
 (sudo) pip install psutil
 ```
-then run 
+Install stress
+```
+sudo apt-get install stress
+```
+
+Run the .py file
 ```
 (sudo) ./s-tui.py
 ```
