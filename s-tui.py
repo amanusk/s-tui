@@ -55,7 +55,7 @@ is_admin = None
 
 INTRO_MESSAGE = "\
 ********s-tui manual********\n\
--Alex Manuskin      alex.manuskin@gmail.com\n\
+-Alex Manuskin      \n\
 -Gil Tsuker         \n\
 April 2017\n\
 \n\
