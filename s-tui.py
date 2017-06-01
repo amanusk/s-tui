@@ -91,7 +91,7 @@ class GraphMode:
         self.modes = [
             'Regular Operation',
             'Stress Operation',
-            'FIRESTARTER'
+            #'FIRESTARTER'
             ]
         self.data = {}
 
