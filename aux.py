@@ -25,6 +25,7 @@
 """
 import os
 import logging
+import signal, psutil
 
 
 def read_msr(msr, cpu=0):
@@ -48,3 +49,12 @@ def read_msr(msr, cpu=0):
     except OSError as e:
         e.message = e.message + "File " + msr_file + " does not exist"
         raise e
+
+def kill_child_processes(parent_proc, sig=signal.SIGTERM):
+	try:
+		for proc in parent_proc.children(recursive=True):
+			logging.debug('Killing' + str(proc))
+			proc.kill()
+		parent_proc.kill()
+	except:
+		logging.debug('No such process')

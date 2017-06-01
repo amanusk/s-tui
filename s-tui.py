@@ -36,6 +36,8 @@ import os
 import argparse
 import logging
 from aux import read_msr
+from aux import kill_child_processes
+
 
 # Constants
 UPDATE_INTERVAL = 1
@@ -43,15 +45,18 @@ DEGREE_SIGN = u'\N{DEGREE SIGN}'
 TURBO_MSR = 429
 WAIT_SAMPLES = 5
 
-log_file = "_s-tui.log"
+log_file = os.devnull
 
-VERSION = 0.1
+VERSION = 0.2
 VERSION_MESSAGE = " s-tui " + str(VERSION) +\
                   " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
                   Relased under GNU GPLv2"
 
+fire_starter = "FIRESTARTER/FIRESTARTER"
+
 # globals
 is_admin = None
+graph_controller = None
 
 INTRO_MESSAGE = "\
 ********s-tui manual********\n\
@@ -66,6 +71,16 @@ computer without the need for a GUI\n\
 "
 
 
+class ViListBox(urwid.ListBox):
+    # Catch key presses in box and pass them as arrow keys
+    def keypress(self, size, key):
+        if key == 'j':
+            key = 'down'
+        elif key == 'k':
+            key = 'up'
+        return super(ViListBox, self).keypress(size, key)
+
+
 class GraphMode:
     """
     A class responsible for storing the data related to 
@@ -76,18 +91,43 @@ class GraphMode:
         self.modes = [
             'Regular Operation',
             'Stress Operation',
+            #'FIRESTARTER'
             ]
         self.data = {}
 
         self.current_mode = self.modes[0]
         self.stress_process = None
 
+
     def get_modes(self):
         return self.modes
+
+    def get_current_mode(self):
+        return self.current_mode
 
     def set_mode(self, m):
         self.current_mode = m
         return True
+
+    def get_stress_process(self):
+        return self.stress_process
+
+    def set_stress_process(self, proc):
+        self.stress_process = proc
+        return True
+
+
+class MainLoop(urwid.MainLoop):
+    def unhandled_input(self, input):
+        logging.debug('Caught ' + str(input))
+
+        if input == 'q':
+            logging.debug(graph_controller.mode.get_stress_process())
+            kill_child_processes(graph_controller.mode)
+            raise urwid.ExitMainLoop()
+
+        if input == 'esc':
+            graph_controller.view.on_stress_menu_close()
 
 
 class GraphData:
@@ -116,7 +156,7 @@ class GraphData:
             self.core_num = psutil.cpu_count()
         except:
             self.core_num = 1
-            logging.error("Num of cores unavailable")
+            logging.debug("Num of cores unavailable")
         self.top_freq = "N/A"
         self.turbo_freq = False
 
@@ -128,21 +168,21 @@ class GraphData:
                 self.top_freq = float(available_freq[num_cpus - 1] * 100)
                 self.turbo_freq = True
             except (IOError, OSError) as e:
-                logging.error(e.message)
+                logging.debug(e.message)
 
         if self.top_freq is "N/A":
             try:
                 self.top_freq = psutil.cpu_freq().max
                 self.turbo_freq = False
             except:
-                logging.error("Top frequency is not supported")
+                logging.debug("Top frequency is not supported")
 
     def update_util(self):
         try:
             last_value = psutil.cpu_percent(interval=None)
         except:
             last_value = 0
-            logging.error("Cpu Utilization unavailable")
+            logging.debug("Cpu Utilization unavailable")
 
         self.cpu_util = self.update_graph_val(self.cpu_util, last_value)
 
@@ -152,7 +192,7 @@ class GraphData:
             self.cur_freq = int(psutil.cpu_freq().current)
         except:
             self.cur_freq = 0
-            logging.error("Frequency unavailable")
+            logging.debug("Frequency unavailable")
 
         self.cpu_freq = self.update_graph_val(self.cpu_freq, self.cur_freq)
 
@@ -182,10 +222,10 @@ class GraphData:
 
     def update_temp(self):
         try:
-            last_value = psutil.sensors_temperatures()['acpitz'][0].current
+            last_value = psutil.sensors_temperatures()['coretemp'][0].current
         except:
             last_value = 0
-            logging.error("Temperature sensor unavailable")
+            logging.debug("Temperature sensor unavailable")
 
         self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
         # Update max temp
@@ -437,7 +477,13 @@ class GraphView(urwid.WidgetPlaceholder):
         """Notify the controller of a new mode setting."""
 
         def start_stress(mode):
-            if mode == 'Stress Operation':
+            if mode.get_current_mode() == 'Stress Operation':
+
+                try:
+                    kill_child_processes(mode.get_stress_process())
+                except:
+                    logging.debug('Could not kill process')
+
                 stress_cmd = ['stress']
 
                 if int(self.stress_menu.sqrt_workers) > 0:
@@ -471,26 +517,46 @@ class GraphView(urwid.WidgetPlaceholder):
 
                 with open(os.devnull, 'w') as DEVNULL:
                     try:
-                        self.stress_process = subprocess.Popen(stress_cmd,
+                        stress_proc = subprocess.Popen(stress_cmd,
                                                                stdout=DEVNULL, stderr=DEVNULL, shell=False)
-                        self.stress_process = psutil.Process(self.stress_process.pid)
+                        mode.set_stress_process(psutil.Process(stress_proc.pid))
                     except:
-                        logging.error ("Unable to start stress")
+                        logging.debug ("Unable to start stress")
 
                 self.graph_data.max_perf_lost = 0
                 self.graph_data.samples_taken = 0
-            else:
+
+            elif mode.get_current_mode() == 'FIRESTARTER':
+                logging.debug('Started FIRESTARTER mode')
                 try:
-                    # Kill all the subprocess of stress
-                    for proc in self.stress_process.children(recursive=True):
-                        proc.kill()
+                    kill_child_processes(mode.get_stress_process())
                 except:
-                    print('Could not kill process')
+                    logging.debug('Could not kill process')
+
+                stress_cmd = [os.path.join(os.getcwd(), fire_starter)]
+                with open(os.devnull, 'w') as DEVNULL:
+                    try:
+                        stress_proc = subprocess.Popen(stress_cmd,
+                                                               stdout=DEVNULL, stderr=DEVNULL, shell=False)
+                        mode.set_stress_process(psutil.Process(stress_proc.pid))
+                        logging.debug('Started process' + str(mode.get_stress_process()))
+                    except:
+                        logging.debug ("Unable to start stress")
+
+            else:
+                logging.debug('Regular operation mode');
+                try:
+                    kill_child_processes(mode.get_stress_process())
+                except:
+                    try:
+                        logging.debug('Could not kill process' + str(mode.get_stress_process()))
+                    except:
+                        logging.debug('Could not kill process FIRESTARTER')
 
         if state:
             # The new mode is the label of the button
             self.controller.set_mode(button.get_label())
-            start_stress(self.controller.mode.current_mode)
+            start_stress(self.controller.mode)
 
         self.last_offset = None
 
@@ -552,11 +618,9 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def exit_program(self, w):
         try:
-            # Kill all the subprocess of stress
-            for proc in self.stress_process.children(recursive=True):
-                proc.kill()
+            kill_child_processes(self.controller.mode.get_stress_process())
         except:
-            print('Could not kill process')
+            logging.debug('Could not kill process')
         raise urwid.ExitMainLoop()
 
     def graph_controls(self):
@@ -686,7 +750,7 @@ class GraphView(urwid.WidgetPlaceholder):
         graph_controls = self.graph_controls()
         graph_stats = self.graph_stats()
 
-        text_col = urwid.ListBox(urwid.SimpleListWalker(graph_controls + [urwid.Divider()] + graph_stats))
+        text_col = ViListBox(urwid.SimpleListWalker(graph_controls + [urwid.Divider()] + graph_stats))
 
         w = urwid.Columns([('weight', 2, self.graph_place_holder),
                            ('fixed',  1, vline),
@@ -706,6 +770,8 @@ class GraphController:
     A class responsible for setting up the model and view and running
     the application.
     """
+
+
     def __init__(self):
         self.loop = []
         self.animate_alarm = None
@@ -729,7 +795,7 @@ class GraphController:
         return rval
 
     def main(self):
-        self.loop = urwid.MainLoop(self.view, self.view.palette)
+        self.loop = MainLoop(self.view, self.view.palette)
 
         self.view.started = False  # simulate pressing to start button
         self.view.toggle_animation()
@@ -761,6 +827,7 @@ def main():
     level = ""
     if args.debug:
         level = logging.DEBUG
+        log_file = "_s-tui.log"
         log_formatter = logging.Formatter("%(asctime)s [%(funcName)s()] [%(levelname)-5.5s]  %(message)s")
         root_logger = logging.getLogger()
         file_handler = logging.FileHandler(log_file)
@@ -778,7 +845,9 @@ def main():
         logging.info("Started without root permissions")
         time.sleep(2)
 
-    GraphController().main()
+    global graph_controller
+    graph_controller = GraphController()
+    graph_controller.main()
 
 
 def get_args():
