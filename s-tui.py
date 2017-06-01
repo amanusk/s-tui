@@ -222,7 +222,7 @@ class GraphData:
 
     def update_temp(self):
         try:
-            last_value = psutil.sensors_temperatures()['acpitz'][0].current
+            last_value = psutil.sensors_temperatures()['coretemp'][0].current
         except:
             last_value = 0
             logging.debug("Temperature sensor unavailable")
