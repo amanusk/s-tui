@@ -47,7 +47,7 @@ WAIT_SAMPLES = 5
 
 log_file = os.devnull
 
-VERSION = 0.1
+VERSION = 0.2
 VERSION_MESSAGE = " s-tui " + str(VERSION) +\
                   " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
                   Relased under GNU GPLv2"
@@ -56,6 +56,7 @@ fire_starter = "FIRESTARTER/FIRESTARTER"
 
 # globals
 is_admin = None
+graph_controller = None
 
 INTRO_MESSAGE = "\
 ********s-tui manual********\n\
@@ -68,6 +69,16 @@ hogs, while monitoring the CPU usage, temperature and frequency.\n\
 The software was conceived with the vision of being able to stress test your\
 computer without the need for a GUI\n\
 "
+
+
+class ViListBox(urwid.ListBox):
+    # Catch key presses in box and pass them as arrow keys
+    def keypress(self, size, key):
+        if key == 'j':
+            key = 'down'
+        elif key == 'k':
+            key = 'up'
+        return super(ViListBox, self).keypress(size, key)
 
 
 class GraphMode:
@@ -87,12 +98,36 @@ class GraphMode:
         self.current_mode = self.modes[0]
         self.stress_process = None
 
+
     def get_modes(self):
         return self.modes
+
+    def get_current_mode(self):
+        return self.current_mode
 
     def set_mode(self, m):
         self.current_mode = m
         return True
+
+    def get_stress_process(self):
+        return self.stress_process
+
+    def set_stress_process(self, proc):
+        self.stress_process = proc
+        return True
+
+
+class MainLoop(urwid.MainLoop):
+    def unhandled_input(self, input):
+        logging.debug('Caught ' + str(input))
+
+        if input == 'q':
+            logging.debug(graph_controller.mode.get_stress_process())
+            kill_child_processes(graph_controller.mode)
+            raise urwid.ExitMainLoop()
+
+        if input == 'esc':
+            graph_controller.view.on_stress_menu_close()
 
 
 class GraphData:
@@ -442,10 +477,10 @@ class GraphView(urwid.WidgetPlaceholder):
         """Notify the controller of a new mode setting."""
 
         def start_stress(mode):
-            if mode == 'Stress Operation':
+            if mode.get_current_mode() == 'Stress Operation':
 
                 try:
-                    kill_child_processes(self.stress_process)
+                    kill_child_processes(mode.get_stress_process())
                 except:
                     logging.debug('Could not kill process')
 
@@ -482,46 +517,46 @@ class GraphView(urwid.WidgetPlaceholder):
 
                 with open(os.devnull, 'w') as DEVNULL:
                     try:
-                        self.stress_process = subprocess.Popen(stress_cmd,
+                        stress_proc = subprocess.Popen(stress_cmd,
                                                                stdout=DEVNULL, stderr=DEVNULL, shell=False)
-                        self.stress_process = psutil.Process(self.stress_process.pid)
+                        mode.set_stress_process(psutil.Process(stress_proc.pid))
                     except:
                         logging.debug ("Unable to start stress")
 
                 self.graph_data.max_perf_lost = 0
                 self.graph_data.samples_taken = 0
 
-            elif mode == 'FIRESTARTER':
+            elif mode.get_current_mode() == 'FIRESTARTER':
                 logging.debug('Started FIRESTARTER mode')
                 try:
-                    kill_child_processes(self.stress_process)
+                    kill_child_processes(mode.get_stress_process())
                 except:
                     logging.debug('Could not kill process')
 
                 stress_cmd = [os.path.join(os.getcwd(), fire_starter)]
                 with open(os.devnull, 'w') as DEVNULL:
                     try:
-                        self.stress_process = subprocess.Popen(stress_cmd,
+                        stress_proc = subprocess.Popen(stress_cmd,
                                                                stdout=DEVNULL, stderr=DEVNULL, shell=False)
-                        self.stress_process = psutil.Process(self.stress_process.pid)
-                        logging.debug('Started process' + str(self.stress_process))
+                        mode.set_stress_process(psutil.Process(stress_proc.pid))
+                        logging.debug('Started process' + str(mode.get_stress_process()))
                     except:
                         logging.debug ("Unable to start stress")
 
             else:
                 logging.debug('Regular operation mode');
                 try:
-                    kill_child_processes(self.stress_process)
+                    kill_child_processes(mode.get_stress_process())
                 except:
                     try:
-                        logging.debug('Could not kill process' + str(self.stress_process))
+                        logging.debug('Could not kill process' + str(mode.get_stress_process()))
                     except:
                         logging.debug('Could not kill process FIRESTARTER')
 
         if state:
             # The new mode is the label of the button
             self.controller.set_mode(button.get_label())
-            start_stress(self.controller.mode.current_mode)
+            start_stress(self.controller.mode)
 
         self.last_offset = None
 
@@ -583,7 +618,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def exit_program(self, w):
         try:
-            kill_child_processes(self.stress_process)
+            kill_child_processes(self.controller.mode.get_stress_process())
         except:
             logging.debug('Could not kill process')
         raise urwid.ExitMainLoop()
@@ -715,7 +750,7 @@ class GraphView(urwid.WidgetPlaceholder):
         graph_controls = self.graph_controls()
         graph_stats = self.graph_stats()
 
-        text_col = urwid.ListBox(urwid.SimpleListWalker(graph_controls + [urwid.Divider()] + graph_stats))
+        text_col = ViListBox(urwid.SimpleListWalker(graph_controls + [urwid.Divider()] + graph_stats))
 
         w = urwid.Columns([('weight', 2, self.graph_place_holder),
                            ('fixed',  1, vline),
@@ -735,6 +770,8 @@ class GraphController:
     A class responsible for setting up the model and view and running
     the application.
     """
+
+
     def __init__(self):
         self.loop = []
         self.animate_alarm = None
@@ -758,7 +795,7 @@ class GraphController:
         return rval
 
     def main(self):
-        self.loop = urwid.MainLoop(self.view, self.view.palette)
+        self.loop = MainLoop(self.view, self.view.palette)
 
         self.view.started = False  # simulate pressing to start button
         self.view.toggle_animation()
@@ -808,7 +845,9 @@ def main():
         logging.info("Started without root permissions")
         time.sleep(2)
 
-    GraphController().main()
+    global graph_controller
+    graph_controller = GraphController()
+    graph_controller.main()
 
 
 def get_args():
