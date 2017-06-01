@@ -1,2 +1,4 @@
 .*.swp
 *.pyc
+s-tui
+_s-tui.log

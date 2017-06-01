@@ -36,6 +36,8 @@ import os
 import argparse
 import logging
 from aux import read_msr
+from aux import kill_child_processes
+
 
 # Constants
 UPDATE_INTERVAL = 1
@@ -43,12 +45,14 @@ DEGREE_SIGN = u'\N{DEGREE SIGN}'
 TURBO_MSR = 429
 WAIT_SAMPLES = 5
 
-log_file = "_s-tui.log"
+log_file = os.devnull
 
 VERSION = 0.1
 VERSION_MESSAGE = " s-tui " + str(VERSION) +\
                   " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
                   Relased under GNU GPLv2"
+
+fire_starter = "FIRESTARTER/FIRESTARTER"
 
 # globals
 is_admin = None
@@ -76,6 +80,7 @@ class GraphMode:
         self.modes = [
             'Regular Operation',
             'Stress Operation',
+            'FIRESTARTER'
             ]
         self.data = {}
 
@@ -116,7 +121,7 @@ class GraphData:
             self.core_num = psutil.cpu_count()
         except:
             self.core_num = 1
-            logging.error("Num of cores unavailable")
+            logging.debug("Num of cores unavailable")
         self.top_freq = "N/A"
         self.turbo_freq = False
 
@@ -128,21 +133,21 @@ class GraphData:
                 self.top_freq = float(available_freq[num_cpus - 1] * 100)
                 self.turbo_freq = True
             except (IOError, OSError) as e:
-                logging.error(e.message)
+                logging.debug(e.message)
 
         if self.top_freq is "N/A":
             try:
                 self.top_freq = psutil.cpu_freq().max
                 self.turbo_freq = False
             except:
-                logging.error("Top frequency is not supported")
+                logging.debug("Top frequency is not supported")
 
     def update_util(self):
         try:
             last_value = psutil.cpu_percent(interval=None)
         except:
             last_value = 0
-            logging.error("Cpu Utilization unavailable")
+            logging.debug("Cpu Utilization unavailable")
 
         self.cpu_util = self.update_graph_val(self.cpu_util, last_value)
 
@@ -152,7 +157,7 @@ class GraphData:
             self.cur_freq = int(psutil.cpu_freq().current)
         except:
             self.cur_freq = 0
-            logging.error("Frequency unavailable")
+            logging.debug("Frequency unavailable")
 
         self.cpu_freq = self.update_graph_val(self.cpu_freq, self.cur_freq)
 
@@ -185,7 +190,7 @@ class GraphData:
             last_value = psutil.sensors_temperatures()['acpitz'][0].current
         except:
             last_value = 0
-            logging.error("Temperature sensor unavailable")
+            logging.debug("Temperature sensor unavailable")
 
         self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
         # Update max temp
@@ -438,6 +443,12 @@ class GraphView(urwid.WidgetPlaceholder):
 
         def start_stress(mode):
             if mode == 'Stress Operation':
+
+                try:
+                    kill_child_processes(self.stress_process)
+                except:
+                    logging.debug('Could not kill process')
+
                 stress_cmd = ['stress']
 
                 if int(self.stress_menu.sqrt_workers) > 0:
@@ -475,17 +486,37 @@ class GraphView(urwid.WidgetPlaceholder):
                                                                stdout=DEVNULL, stderr=DEVNULL, shell=False)
                         self.stress_process = psutil.Process(self.stress_process.pid)
                     except:
-                        logging.error ("Unable to start stress")
+                        logging.debug ("Unable to start stress")
 
                 self.graph_data.max_perf_lost = 0
                 self.graph_data.samples_taken = 0
-            else:
+
+            elif mode == 'FIRESTARTER':
+                logging.debug('Started FIRESTARTER mode')
                 try:
-                    # Kill all the subprocess of stress
-                    for proc in self.stress_process.children(recursive=True):
-                        proc.kill()
+                    kill_child_processes(self.stress_process)
                 except:
-                    print('Could not kill process')
+                    logging.debug('Could not kill process')
+
+                stress_cmd = [os.path.join(os.getcwd(), fire_starter)]
+                with open(os.devnull, 'w') as DEVNULL:
+                    try:
+                        self.stress_process = subprocess.Popen(stress_cmd,
+                                                               stdout=DEVNULL, stderr=DEVNULL, shell=False)
+                        self.stress_process = psutil.Process(self.stress_process.pid)
+                        logging.debug('Started process' + str(self.stress_process))
+                    except:
+                        logging.debug ("Unable to start stress")
+
+            else:
+                logging.debug('Regular operation mode');
+                try:
+                    kill_child_processes(self.stress_process)
+                except:
+                    try:
+                        logging.debug('Could not kill process' + str(self.stress_process))
+                    except:
+                        logging.debug('Could not kill process FIRESTARTER')
 
         if state:
             # The new mode is the label of the button
@@ -552,11 +583,9 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def exit_program(self, w):
         try:
-            # Kill all the subprocess of stress
-            for proc in self.stress_process.children(recursive=True):
-                proc.kill()
+            kill_child_processes(self.stress_process)
         except:
-            print('Could not kill process')
+            logging.debug('Could not kill process')
         raise urwid.ExitMainLoop()
 
     def graph_controls(self):
@@ -761,6 +790,7 @@ def main():
     level = ""
     if args.debug:
         level = logging.DEBUG
+        log_file = "_s-tui.log"
         log_formatter = logging.Formatter("%(asctime)s [%(funcName)s()] [%(levelname)-5.5s]  %(message)s")
         root_logger = logging.getLogger()
         file_handler = logging.FileHandler(log_file)
