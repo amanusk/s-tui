@@ -221,15 +221,23 @@ class GraphData:
         self.overheat_detected = False
 
     def update_temp(self):
-        try:
-            last_value = psutil.sensors_temperatures()['coretemp'][0].current
-        except:
-            pass
-        try:
-            last_value = psutil.sensors_temperatures()['it8622'][0].current
-        except:
-            last_value = 0
-            logging.debug("Temperature sensor unavailable")
+        # Reading for temperature might be different between systems
+        # Support for additional systems can be added here
+        last_value = 0
+        # NOTE: Negative values might not be supported
+        if last_value <= 0:
+            try:
+                last_value = psutil.sensors_temperatures()['coretemp'][0].current
+            except:
+                pass
+        if last_value <= 0:
+            try:
+                last_value = psutil.sensors_temperatures()['it8622'][0].current
+            except:
+                pass
+
+        if last_value <=0:
+                logging.debug("Temperature sensor unavailable")
 
         self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
         # Update max temp
