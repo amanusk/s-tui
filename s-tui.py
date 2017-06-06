@@ -83,7 +83,7 @@ class ViListBox(urwid.ListBox):
 
 class GraphMode:
     """
-    A class responsible for storing the data related to 
+    A class responsible for storing the data related to
     the current mode of operation
     """
 
@@ -223,6 +223,10 @@ class GraphData:
     def update_temp(self):
         try:
             last_value = psutil.sensors_temperatures()['coretemp'][0].current
+        except:
+            pass
+        try:
+            last_value = psutil.sensors_temperatures()['it8622'][0].current
         except:
             last_value = 0
             logging.debug("Temperature sensor unavailable")
