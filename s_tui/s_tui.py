@@ -157,7 +157,7 @@ class GraphData:
         except:
             self.core_num = 1
             logging.debug("Num of cores unavailable")
-        self.top_freq = "N/A"
+        self.top_freq = 100
         self.turbo_freq = False
 
         if is_admin:
@@ -170,7 +170,7 @@ class GraphData:
             except (IOError, OSError) as e:
                 logging.debug(e.message)
 
-        if self.top_freq is "N/A":
+        if self.top_freq == 100:
             try:
                 self.top_freq = psutil.cpu_freq().max
                 self.turbo_freq = False
@@ -198,7 +198,7 @@ class GraphData:
 
         if is_admin and self.samples_taken > WAIT_SAMPLES:
             self.perf_lost = int(self.top_freq) - int(self.cur_freq)
-            if self.top_freq is not "N/A":
+            if self.top_freq != 0:
                 self.perf_lost = round(float(self.perf_lost) / float(self.top_freq) * 100, 1)
             else:
                 self.perf_lost = 0
@@ -449,8 +449,10 @@ class GraphView(urwid.WidgetPlaceholder):
             label_cnt = 1
         else:
             label_cnt = (size / self.SCALE_DENSITY)
-
-        label = [int(min_val + i * (int(max_val) - int(min_val)) / label_cnt) for i in range(label_cnt + 1)]
+        try:
+            label = [int(min_val + i * (int(max_val) - int(min_val)) / label_cnt) for i in range(label_cnt + 1)]
+        except:
+            pass
         return label
 
     def toggle_animation(self):

@@ -1,4 +1,4 @@
 #!/bin/bash
-pyinstaller s-tui.py -F -n s-tui &&
+pyinstaller s_tui/s_tui.py -F -n s-tui &&
 cp dist/s-tui . &&
 ./clean_build.sh
