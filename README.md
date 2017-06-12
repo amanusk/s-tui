@@ -12,10 +12,16 @@ This software makes it possible to stress and monitor your computer without a ne
 ## Installation
 Installation is available from ppa  
 ```
-sudo add-apt-repository ppa:amanusk/s-tui
+sudo add-apt-repository ppa:amanusk/python-s-tui
 sudo apt-get update
-sudo apt-get install s-tui
+sudo apt-get install python-s-tui
 ```
+
+## Usage
+```s-tui```
+or  
+```sudo s-tui```
+
 
 ## Run local executable:
 * Download the latest release version from https://github.com/amanusk/s-tui/releases
