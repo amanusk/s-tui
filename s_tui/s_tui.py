@@ -443,14 +443,14 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.graph_temp.bar_graph.set_segment_attributes(self.temp_color[0], satt=self.temp_color[1])
 
-    def get_label_scale(self, min, max, size):
+    def get_label_scale(self, min_val, max_val, size):
 
         if size < self.SCALE_DENSITY:
             label_cnt = 1
         else:
             label_cnt = (size / self.SCALE_DENSITY)
 
-        label = [int(min + i * (max - min) / label_cnt) for i in range(label_cnt + 1)]
+        label = [int(min_val + i * (int(max_val) - int(min_val)) / label_cnt) for i in range(label_cnt + 1)]
         return label
 
     def toggle_animation(self):

@@ -2,3 +2,6 @@
 *.pyc
 s-tui
 _s-tui.log
+
+*.tar.gz
+s_tui.egg-info/
