@@ -9,18 +9,16 @@ This software makes it possible to stress and monitor your computer without a ne
 * See performance dips caused by thermal throttling 
 * Requires minimal resources
 
-## Installation
-Installation is available from ppa  
-```
-sudo add-apt-repository ppa:amanusk/python-s-tui
-sudo apt-get update
-sudo apt-get install python-s-tui
-```
+
 
 ## Usage
-```s-tui```
+```
+s-tui
+```
 or  
-```sudo s-tui```
+```
+sudo s-tui
+```
 
 
 ## Run local executable:
@@ -46,6 +44,15 @@ s-tui uses stress. To install stress on Ubuntu run:
 sudo apt-get install stress
 ```
 
+## Installation
+Installation is available from ppa. Apt does not hold the latest versions of psutil and urwid. Some features will not work.
+```
+sudo add-apt-repository ppa:amanusk/python-s-tui
+sudo apt-get update
+sudo apt-get install python-s-tui
+```
+
+* Installation with pip comming soon
 
 ## Build
 If would like to make changes to s-tui, you can test your work by running s-tui.py.
