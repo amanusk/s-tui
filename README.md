@@ -52,7 +52,7 @@ sudo apt-get update
 sudo apt-get install python-s-tui
 ```
 
-* Installation with pip comming soon
+* Installation with pip coming soon
 
 ## Build
 If would like to make changes to s-tui, you can test your work by running s-tui.py.
