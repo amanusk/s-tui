@@ -21,7 +21,6 @@
 
 from __future__ import print_function
 import urwid
-import re
 
 HELP_MESSAGE = " \n\
 Usage:\n\
@@ -33,6 +32,7 @@ Usage:\n\
 "
 
 MESSAGE_LEN = 20
+
 
 class HelpMenu:
     MAX_TITLE_LEN = 50
@@ -60,4 +60,3 @@ class HelpMenu:
 
     def on_cancel(self, w):
         self.return_fn()
-

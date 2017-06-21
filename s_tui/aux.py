@@ -1,7 +1,5 @@
 #!/usr/bin/python2.7
 
-#!/usr/bin/python
-
 # Copyright (C) 2017 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
@@ -25,7 +23,7 @@
 """
 import os
 import logging
-import signal, psutil
+import signal
 
 
 def read_msr(msr, cpu=0):
@@ -50,11 +48,12 @@ def read_msr(msr, cpu=0):
         e.message = e.message + "File " + msr_file + " does not exist"
         raise e
 
+
 def kill_child_processes(parent_proc, sig=signal.SIGTERM):
-	try:
-		for proc in parent_proc.children(recursive=True):
-			logging.debug('Killing' + str(proc))
-			proc.kill()
-		parent_proc.kill()
-	except:
-		logging.debug('No such process')
+    try:
+        for proc in parent_proc.children(recursive=True):
+            logging.debug('Killing' + str(proc))
+            proc.kill()
+        parent_proc.kill()
+    except:
+        logging.debug('No such process')

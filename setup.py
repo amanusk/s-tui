@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name = "s-tui",
-    version = "0.2",
+    version = "0.2.1",
     author = "Alex Manuskin",
     author_email = "alex.manuskin@gmail.com",
     description = "Terminal UI stress test and monitoring tool",

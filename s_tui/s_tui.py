@@ -47,8 +47,8 @@ WAIT_SAMPLES = 5
 
 log_file = os.devnull
 
-VERSION = 0.2
-VERSION_MESSAGE = " s-tui " + str(VERSION) +\
+VERSION = "0.2.2"
+VERSION_MESSAGE = " s-tui " + VERSION +\
                   " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
                   Relased under GNU GPLv2"
 
@@ -91,13 +91,12 @@ class GraphMode:
         self.modes = [
             'Regular Operation',
             'Stress Operation',
-            #'FIRESTARTER'
+            # 'FIRESTARTER'
             ]
         self.data = {}
 
         self.current_mode = self.modes[0]
         self.stress_process = None
-
 
     def get_modes(self):
         return self.modes
@@ -199,7 +198,7 @@ class GraphData:
         if is_admin and self.samples_taken > WAIT_SAMPLES:
             self.perf_lost = int(self.top_freq) - int(self.cur_freq)
             if self.top_freq != 0:
-                self.perf_lost = round(float(self.perf_lost) / float(self.top_freq) * 100, 1)
+                self.perf_lost = (round(float(self.perf_lost) / float(self.top_freq) * 100, 1))
             else:
                 self.perf_lost = 0
             if self.perf_lost > self.max_perf_lost:
@@ -235,8 +234,14 @@ class GraphData:
                 last_value = psutil.sensors_temperatures()['it8622'][0].current
             except:
                 pass
+        if last_value <= 0:
+            try:
+                last_value = psutil.sensors_temperatures()['bcm2835_thermal'][0].current
+            except:
+                pass
 
-        if last_value <=0:
+
+        if last_value <= 0:
                 logging.debug("Temperature sensor unavailable")
 
         self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
@@ -450,7 +455,8 @@ class GraphView(urwid.WidgetPlaceholder):
         else:
             label_cnt = (size / self.SCALE_DENSITY)
         try:
-            label = [int(min_val + i * (int(max_val) - int(min_val)) / label_cnt) for i in range(label_cnt + 1)]
+            label = [int(min_val + i * (int(max_val) - int(min_val)) / label_cnt)
+                     for i in range(label_cnt + 1)]
         except:
             pass
         return label
@@ -478,14 +484,20 @@ class GraphView(urwid.WidgetPlaceholder):
         self.original_widget = self.main_window_w
 
     def on_stress_menu_open(self, w):
-        self.original_widget = urwid.Overlay(self.stress_menu.main_window, self.original_widget,
-                                             ('fixed left', 3), self.stress_menu.get_size()[1],
-                                             ('fixed top', 2), self.stress_menu.get_size()[0])
+        self.original_widget = urwid.Overlay(self.stress_menu.main_window,
+                                             self.original_widget,
+                                             ('fixed left', 3),
+                                             self.stress_menu.get_size()[1],
+                                             ('fixed top', 2),
+                                             self.stress_menu.get_size()[0])
 
     def on_help_menu_open(self, w):
-        self.original_widget = urwid.Overlay(self.help_menu.main_window, self.original_widget,
-                                             ('fixed left', 3), self.help_menu.get_size()[1],
-                                             ('fixed top', 2), self.help_menu.get_size()[0])
+        self.original_widget = urwid.Overlay(self.help_menu.main_window,
+                                             self.original_widget,
+                                             ('fixed left', 3),
+                                             self.help_menu.get_size()[1],
+                                             ('fixed top', 2),
+                                             self.help_menu.get_size()[0])
 
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
@@ -531,11 +543,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
                 with open(os.devnull, 'w') as DEVNULL:
                     try:
-                        stress_proc = subprocess.Popen(stress_cmd,
-                                                               stdout=DEVNULL, stderr=DEVNULL, shell=False)
+                        stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL, stderr=DEVNULL, shell=False)
                         mode.set_stress_process(psutil.Process(stress_proc.pid))
                     except:
-                        logging.debug ("Unable to start stress")
+                        logging.debug("Unable to start stress")
 
                 self.graph_data.max_perf_lost = 0
                 self.graph_data.samples_taken = 0
@@ -550,15 +561,14 @@ class GraphView(urwid.WidgetPlaceholder):
                 stress_cmd = [os.path.join(os.getcwd(), fire_starter)]
                 with open(os.devnull, 'w') as DEVNULL:
                     try:
-                        stress_proc = subprocess.Popen(stress_cmd,
-                                                               stdout=DEVNULL, stderr=DEVNULL, shell=False)
+                        stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL, stderr=DEVNULL, shell=False)
                         mode.set_stress_process(psutil.Process(stress_proc.pid))
                         logging.debug('Started process' + str(mode.get_stress_process()))
                     except:
-                        logging.debug ("Unable to start stress")
+                        logging.debug("Unable to start stress")
 
             else:
-                logging.debug('Regular operation mode');
+                logging.debug('Regular operation mode')
                 try:
                     kill_child_processes(mode.get_stress_process())
                 except:
@@ -784,8 +794,6 @@ class GraphController:
     A class responsible for setting up the model and view and running
     the application.
     """
-
-
     def __init__(self):
         self.loop = []
         self.animate_alarm = None
@@ -875,6 +883,7 @@ def get_args():
                         default=False, action='store_true', help="Display version")
     args = parser.parse_args()
     return args
+
 
 if '__main__' == __name__:
     main()
