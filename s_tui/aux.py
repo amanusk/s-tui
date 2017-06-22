@@ -1,5 +1,5 @@
-#!/usr/bin/python2.7
-
+#!/usr/bin/env python
+#
 # Copyright (C) 2017 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
@@ -13,10 +13,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-#
-# This function was inspired by a script msr.py written by Andi Kleen
-# https://github.com/andikleen/pmu-tools/blob/master/msr.py
 
 
 """ Reads the value of the msr containing information on Turbo Boost on intel CPUs
@@ -24,6 +22,25 @@
 import os
 import logging
 import signal
+import platform
+import subprocess
+import re
+
+
+def get_processor_name():
+    if platform.system() == "Windows":
+        return platform.processor()
+    elif platform.system() == "Darwin":
+        os.environ['PATH'] = os.environ['PATH'] + os.pathsep + '/usr/sbin'
+        command ="sysctl -n machdep.cpu.brand_string"
+        return subprocess.check_output(command).strip()
+    elif platform.system() == "Linux":
+        command = "cat /proc/cpuinfo"
+        all_info = subprocess.check_output(command, shell=True).strip()
+        for line in all_info.split("\n"):
+            if "model name" in line:
+                return re.sub( ".*model name.*:", "", line,1)
+    return ""
 
 
 def read_msr(msr, cpu=0):

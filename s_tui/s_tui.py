@@ -35,8 +35,10 @@ import ctypes
 import os
 import argparse
 import logging
+import platform
 from aux import read_msr
 from aux import kill_child_processes
+from aux import get_processor_name
 
 
 # Constants
@@ -678,7 +680,7 @@ class GraphView(urwid.WidgetPlaceholder):
             urwid.LineBox(unicode_checkbox),
             urwid.Divider(),
             urwid.LineBox(urwid.Pile([
-                urwid.CheckBox('Frequency', on_state_change=self.show_frequency),
+                urwid.CheckBox('Frequency', state=True, on_state_change=self.show_frequency),
                 urwid.CheckBox('Temperature', state=True, on_state_change=self.show_temprature),
                 urwid.CheckBox('Utilization', state=True, on_state_change=self.show_utilization)])),
             urwid.Divider(),
@@ -719,6 +721,11 @@ class GraphView(urwid.WidgetPlaceholder):
                 graph_list.append(('fixed',  1, hline))
 
         self.graph_place_holder.original_widget = urwid.Pile(graph_list)
+
+    def cpu_stats(self):
+        cpu_stats = [ urwid.Text(get_processor_name(), align="center"), urwid.Divider()]
+        return cpu_stats
+
 
     def graph_stats(self):
         top_freq_string = "Top Freq"
@@ -768,13 +775,14 @@ class GraphView(urwid.WidgetPlaceholder):
 
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
 
-        self.visible_graphs = [None, self.graph_util, self.graph_temp]
+        self.visible_graphs = [self.graph_freq, self.graph_util, self.graph_temp]
         self.show_graphs()
 
+        cpu_stats = self.cpu_stats()
         graph_controls = self.graph_controls()
         graph_stats = self.graph_stats()
 
-        text_col = ViListBox(urwid.SimpleListWalker(graph_controls + [urwid.Divider()] + graph_stats))
+        text_col = ViListBox(urwid.SimpleListWalker(cpu_stats + graph_controls + [urwid.Divider()] + graph_stats))
 
         w = urwid.Columns([('weight', 2, self.graph_place_holder),
                            ('fixed',  1, vline),

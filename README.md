@@ -10,7 +10,6 @@ This software makes it possible to stress and monitor your computer without a ne
 * Requires minimal resources
 
 
-
 ## Usage
 ```
 s-tui
@@ -20,42 +19,39 @@ or
 sudo s-tui
 ```
 
+## Simplest installation with pip
+```
+sudo pip install s-tui
+```
 
 ## Run local executable:
 * Download the latest release version from https://github.com/amanusk/s-tui/releases
-* Install stress (See dependencies)
-```
-sudo apt-get install stress
-```
-* Change s-tui to exectuable `chmod +x s-tui`
+* Change s-tui to executable `chmod +x s-tui`
 * Run `(sudo) ./s-tui`
 
-## Screen Shots
-![](./ScreenShots/stui1.png?raw=true "Full Screen")
-
-![](./ScreenShots/stui2.png?raw=true "Overheat detected")
-
-![](./ScreenShots/stui3.png?raw=true "Two Graphs")
-
+## Screenshot
+![](./ScreenShots/Screen_3.png?raw=true "Full Screen")
 
 ## Dependencies
-s-tui uses stress. To install stress on Ubuntu run:
+s-tui is a great tool for monitoring. If you would like to stress your computer, install stress
 ```
 sudo apt-get install stress
 ```
 
-## Installation
+## Other installation methods
+### Ubuntu
 Installation is available from ppa. Apt does not hold the latest versions of psutil and urwid. Some features will not work.
 ```
 sudo add-apt-repository ppa:amanusk/python-s-tui
 sudo apt-get update
 sudo apt-get install python-s-tui
 ```
-
-* Installation with pip coming soon
+### Arch-Linux
+An AUR package is available called 's-tui-git'
+Thanks to @DonOregano
 
 ## Build
-If would like to make changes to s-tui, you can test your work by running s-tui.py.
+If would like to make changes to s-tui, you can test your work by running s\_tui.py.
 Clone
 ```
 git clone https://github.com/amanusk/s-tui.git
@@ -73,14 +69,13 @@ sudo apt-get install stress
 
 Run the .py file
 ```
-(sudo) ./s-tui.py
+(sudo) ./s_tui/s_tui.py
 ```
 
 ## Compatibility
 s-tui uses psutil to probe your hardware information. If your hardware is not supported, you might not see all the information.
 
-Running s-tui as root gives access to the maximum Turbo Boost frequency available to your CPU when stressing all cores. (Currently tested on Intel only).
-
+Running s-tui as root gives access to the maximum Turbo Boost frequency available to your CPU when stressing all cores. (Currently tested on Intel only).  
 Running without root will display the Turbo Boost available on a single core. 
 
 
