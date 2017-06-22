@@ -1,4 +1,4 @@
-# The Stress Terminal UI: s-tui
+# The Stress Terminal UI: s-tui :bar_chart: 
 
 s-tui is a terminal UI add-on for stress. The tool uses stress to run CPU hogs, while monitoring the CPU usage, temperature and frequency of your computer.
 
