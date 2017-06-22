@@ -5,3 +5,4 @@ _s-tui.log
 
 *.tar.gz
 s_tui.egg-info/
+deb_dist/*

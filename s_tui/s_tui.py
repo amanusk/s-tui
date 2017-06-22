@@ -27,6 +27,7 @@ from ComplexBarGraphs import ScalableBarGraph
 from ComplexBarGraphs import LabeledBarGraph
 from StressMenu import StressMenu
 from HelpMenu import HelpMenu
+from AboutMenu import AboutMenu
 
 import psutil
 import time
@@ -49,8 +50,8 @@ WAIT_SAMPLES = 5
 
 log_file = os.devnull
 
-VERSION = "0.2.2"
-VERSION_MESSAGE = " s-tui " + VERSION +\
+__version__ = "0.2.4"
+VERSION_MESSAGE = " s-tui " + __version__ +\
                   " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
                   Relased under GNU GPLv2"
 
@@ -345,6 +346,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.stress_menu = StressMenu(self.on_stress_menu_close)
         self.help_menu = HelpMenu(self.on_help_menu_close)
+        self.about_menu = AboutMenu(self.on_about_menu_close)
         self.stress_menu.sqrt_workers = str(self.graph_data.core_num)
 
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
@@ -485,6 +487,9 @@ class GraphView(urwid.WidgetPlaceholder):
     def on_help_menu_close(self):
         self.original_widget = self.main_window_w
 
+    def on_about_menu_close(self):
+        self.original_widget = self.main_window_w
+
     def on_stress_menu_open(self, w):
         self.original_widget = urwid.Overlay(self.stress_menu.main_window,
                                              self.original_widget,
@@ -500,6 +505,14 @@ class GraphView(urwid.WidgetPlaceholder):
                                              self.help_menu.get_size()[1],
                                              ('fixed top', 2),
                                              self.help_menu.get_size()[0])
+
+    def on_about_menu_open(self, w):
+        self.original_widget = urwid.Overlay(self.about_menu.main_window,
+                                             self.original_widget,
+                                             ('fixed left', 3),
+                                             self.about_menu.get_size()[1],
+                                             ('fixed top', 2),
+                                             self.about_menu.get_size()[0])
 
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
@@ -661,6 +674,7 @@ class GraphView(urwid.WidgetPlaceholder):
             self.button("Reset", self.on_reset_button),
             self.button('Stress Options', self.on_stress_menu_open),
             self.button('Help', self.on_help_menu_open),
+            self.button('About', self.on_about_menu_open),
         ], 18, 2, 0, 'center')
 
         if urwid.get_encoding_mode() == "utf8":
@@ -723,7 +737,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_place_holder.original_widget = urwid.Pile(graph_list)
 
     def cpu_stats(self):
-        cpu_stats = [ urwid.Text(get_processor_name(), align="center"), urwid.Divider()]
+        cpu_stats = [ urwid.Text(get_processor_name().strip(), align="center"), urwid.Divider()]
         return cpu_stats
 
 
