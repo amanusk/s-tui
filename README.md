@@ -23,6 +23,10 @@ sudo s-tui
 ```
 sudo pip install s-tui
 ```
+Or if you cannot use sudo:
+```
+pip install s-tui --user
+```
 
 ## Run local executable:
 * Download the latest release version from https://github.com/amanusk/s-tui/releases
