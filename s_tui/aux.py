@@ -26,6 +26,8 @@ import platform
 import subprocess
 import re
 
+__version__ = "0.2.4"
+
 
 def get_processor_name():
     if platform.system() == "Windows":

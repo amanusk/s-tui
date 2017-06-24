@@ -1,11 +1,17 @@
 import os
 from setuptools import setup
-import s_tui.s_tui as STUI
+import s_tui.aux as AUX
+import sys
+if sys.version_info < (2,7):
+        sys.exit('Sorry, Python < 2.7 is not supported')
+if sys.version_info >= (3,0):
+        sys.exit('Sorry, Python 3 is not supported\n\
+                 Please try: pip2.7 install s-tui')
 
 setup(
     name = "s-tui",
     packages=['s_tui'],
-    version=STUI.__version__,
+    version=AUX.__version__,
     author="Alex Manuskin",
     author_email="alex.manuskin@gmail.com",
     description="Terminal UI stress test and monitoring tool",

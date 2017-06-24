@@ -40,6 +40,7 @@ import platform
 from aux import read_msr
 from aux import kill_child_processes
 from aux import get_processor_name
+from aux import __version__
 
 
 # Constants
@@ -50,7 +51,6 @@ WAIT_SAMPLES = 5
 
 log_file = os.devnull
 
-__version__ = "0.2.4"
 VERSION_MESSAGE = " s-tui " + __version__ +\
                   " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
                   Relased under GNU GPLv2"
@@ -242,6 +242,14 @@ class GraphData:
                 last_value = psutil.sensors_temperatures()['bcm2835_thermal'][0].current
             except:
                 pass
+        # Raspberry pi + raspiban CPU temp
+        if last_value <= 0:
+            try:
+                last_value = os.popen('cat /sys/class/thermal/thermal_zone0/temp').read()
+                last_value = int(last_value) / 1000
+            except:
+                pass
+
 
 
         if last_value <= 0:
