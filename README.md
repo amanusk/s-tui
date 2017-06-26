@@ -1,8 +1,9 @@
 # The Stress Terminal UI: s-tui
 
-s-tui is a terminal UI add-on for stress. The tool uses stress to run CPU hogs, while monitoring the CPU usage, temperature and frequency of your computer.
+s-tui is a terminal UI for monitoring your computer. s-tui allows to monitor CPU temperature, frequency and utilization in a graphical way from the terminal. 
 
-This software makes it possible to stress and monitor your computer without a need for a GUI. 
+## Screenshot
+![](./ScreenShots/Screen_3.png?raw=true "Full Screen")
 
 ### Pros
 * Monitoring your headless server over ssh
@@ -33,8 +34,7 @@ pip install s-tui --user
 * Change s-tui to executable `chmod +x s-tui`
 * Run `(sudo) ./s-tui`
 
-## Screenshot
-![](./ScreenShots/Screen_3.png?raw=true "Full Screen")
+
 
 ## Dependencies
 s-tui is a great tool for monitoring. If you would like to stress your computer, install stress
