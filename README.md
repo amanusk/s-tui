@@ -3,7 +3,7 @@
 s-tui is a terminal UI for monitoring your computer. s-tui allows to monitor CPU temperature, frequency and utilization in a graphical way from the terminal. 
 
 ## Screenshot
-![](./ScreenShots/Screen_3.png?raw=true "Full Screen")
+![](https://thumbs.gfycat.com/SaneBadFlea-size_restricted.gif)
 
 ### Pros
 * Monitoring your headless server over ssh
