@@ -37,7 +37,7 @@ pip install s-tui --user
 
 
 ## Dependencies
-s-tui is a great tool for monitoring. If you would like to stress your computer, install stress
+s-tui is a great tool for monitoring. If you would like to stress your computer, install stress. Stress options will then show up in s-tui
 ```
 sudo apt-get install stress
 ```
@@ -55,7 +55,7 @@ An AUR package is available called 's-tui-git'
 Thanks to @DonOregano
 
 ## Build
-If would like to make changes to s-tui, you can test your work by running s\_tui.py.
+If you would like to make changes to s-tui, you can test your work by running s\_tui.py.
 Clone
 ```
 git clone https://github.com/amanusk/s-tui.git
@@ -79,7 +79,9 @@ Run the .py file
 ## Compatibility
 s-tui uses psutil to probe your hardware information. If your hardware is not supported, you might not see all the information.
 
+* On Intel machines:
 Running s-tui as root gives access to the maximum Turbo Boost frequency available to your CPU when stressing all cores. (Currently tested on Intel only).  
 Running without root will display the Turbo Boost available on a single core. 
 
+* s-tui tested to run on Raspberry-pi 3
 

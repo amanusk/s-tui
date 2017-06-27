@@ -5,8 +5,11 @@ import sys
 if sys.version_info < (2,7):
         sys.exit('Sorry, Python < 2.7 is not supported')
 if sys.version_info >= (3,0):
-        sys.exit('Sorry, Python 3 is not supported\n\
-                 Please try: pip2.7 install s-tui')
+        sys.exit("Sorry, Python 3 is not supported\n\
+Please try: \n\
+  pip2.7 install s-tui --user\n\
+or:\n\
+  sudo pip2.7 install s-tui")
 
 setup(
     name = "s-tui",

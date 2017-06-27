@@ -59,7 +59,9 @@ fire_starter = "FIRESTARTER/FIRESTARTER"
 
 # globals
 is_admin = None
+stress_installed = False
 graph_controller = None
+stress_program = None
 
 INTRO_MESSAGE = "\
 ********s-tui manual********\n\
@@ -91,11 +93,31 @@ class GraphMode:
     """
 
     def __init__(self):
-        self.modes = [
-            'Regular Operation',
-            'Stress Operation',
-            # 'FIRESTARTER'
-            ]
+        self.modes = ['Regular Operation']
+        global stress_installed
+        global stress_program
+        with open(os.devnull, 'w') as DEVNULL:
+            # Try if stress installed
+            try:
+                subprocess.Popen("stress", stdout=DEVNULL, stderr=DEVNULL, shell=False)
+            except OSError:
+                logging.debug("stress is not installed")
+            else:
+                stress_installed = True
+                stress_program = 'stress'
+
+            # Try if stress-ng installed
+            try:
+                subprocess.Popen("stress-ng", stdout=DEVNULL, stderr=DEVNULL, shell=False)
+            except OSError:
+                logging.debug("stress-ng is not installed")
+            else:
+                stress_installed = True
+                stress_program = 'stress-ng'
+
+            if stress_installed:
+                self.modes.append('Stress Operation')
+
         self.data = {}
 
         self.current_mode = self.modes[0]
@@ -533,7 +555,7 @@ class GraphView(urwid.WidgetPlaceholder):
                 except:
                     logging.debug('Could not kill process')
 
-                stress_cmd = ['stress']
+                stress_cmd = [stress_program]
 
                 if int(self.stress_menu.sqrt_workers) > 0:
                     stress_cmd.append('-c')
@@ -678,26 +700,34 @@ class GraphView(urwid.WidgetPlaceholder):
             rb = self.radio_button(group, m, self.on_mode_button)
             self.mode_buttons.append(rb)
         self.offset = 0
-        animate_controls = urwid.GridFlow([
-            self.button("Reset", self.on_reset_button),
-            self.button('Stress Options', self.on_stress_menu_open),
-            self.button('Help', self.on_help_menu_open),
-            self.button('About', self.on_about_menu_open),
-        ], 18, 2, 0, 'center')
+
+        # Create list of buttons
+        control_options = [self.button("Reset", self.on_reset_button)]
+        if stress_installed:
+            control_options.append(self.button('Stress Options', self.on_stress_menu_open))
+        control_options.append(self.button('Help', self.on_help_menu_open))
+        control_options.append(self.button('About', self.on_about_menu_open))
+
+        # Create the menu
+        animate_controls = urwid.GridFlow(control_options, 18, 2, 0, 'center')
 
         if urwid.get_encoding_mode() == "utf8":
             unicode_checkbox = urwid.CheckBox(
-                "Smooth Graph (Unicode Graphics)",
+                "Smooth Graph",
                 on_state_change=self.on_unicode_checkbox)
         else:
             unicode_checkbox = urwid.Text(
                 "UTF-8 encoding not detected")
 
+        install_stress_message = urwid.Text("")
+        if not stress_installed:
+            install_stress_message = urwid.Text("\nstress not installed")
         buttons = [urwid.Text("Mode", align="center"),
                    ] + self.mode_buttons + [
             urwid.Divider(),
             urwid.Text("Control Options", align="center"),
             animate_controls,
+            install_stress_message,
             urwid.Divider(),
             urwid.LineBox(unicode_checkbox),
             urwid.Divider(),
