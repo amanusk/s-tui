@@ -26,7 +26,7 @@ import platform
 import subprocess
 import re
 
-__version__ = "0.2.4"
+__version__ = "0.3.0"
 
 
 def get_processor_name():
@@ -76,3 +76,38 @@ def kill_child_processes(parent_proc, sig=signal.SIGTERM):
         parent_proc.kill()
     except:
         logging.debug('No such process')
+
+
+PALETTE = [
+    ('body',                    'black',          'light gray',   'standout'),
+    ('header',                  'white',          'dark red',     'bold'),
+    ('screen edge',             'light blue',     'brown'),
+    ('main shadow',             'dark gray',      'black'),
+    ('line',                    'black',          'light gray',   'standout'),
+    ('menu button',             'light gray',     'black'),
+    ('bg background',           'light gray',     'black'),
+    ('util light',              'black',          'dark green',   'standout'),
+    ('util light smooth',       'dark green',     'black'),
+    ('util dark',               'dark red',       'light green',  'standout'),
+    ('util dark smooth',        'light green',    'black'),
+    ('high temp dark',          'light red',      'dark red',     'standout'),
+    ('overheat dark',           'black',          'light red',     'standout'),
+    ('high temp dark smooth',   'dark red',       'black'),
+    ('high temp light',         'dark red',       'light red',    'standout'),
+    ('high temp light smooth',  'light red',      'black'),
+    ('temp dark',               'black',          'dark cyan',    'standout'),
+    ('temp dark smooth',        'dark cyan',      'black'),
+    ('temp light',              'dark red',       'light cyan',   'standout'),
+    ('temp light smooth',       'light cyan',     'black'),
+    ('freq dark',               'dark red',       'dark magenta', 'standout'),
+    ('freq dark smooth',        'dark magenta',   'black'),
+    ('freq light',              'dark red',       'light magenta', 'standout'),
+    ('freq light smooth',       'light magenta',  'black'),
+    ('button normal',           'light gray',     'dark blue',    'standout'),
+    ('button select',           'white',          'dark green'),
+    ('line',                    'black',          'light gray',   'standout'),
+    ('pg normal',               'white',          'black',        'standout'),
+    ('pg complete',             'white',          'dark magenta'),
+    ('high temp txt',           'light red',      'light gray'),
+    ('pg smooth',               'dark magenta',   'black')
+    ]

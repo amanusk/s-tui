@@ -22,28 +22,26 @@
 
 from __future__ import print_function
 
-import urwid
-from ComplexBarGraphs import ScalableBarGraph
-from ComplexBarGraphs import LabeledBarGraph
-from StressMenu import StressMenu
-from HelpMenu import HelpMenu
-from AboutMenu import AboutMenu
+import argparse
+import ctypes
+import logging
+import os
+import subprocess
+import time
 
 import psutil
-import time
-import subprocess
-import ctypes
-import os
-import argparse
-import logging
-import platform
-from aux import read_msr
-from aux import kill_child_processes
-from aux import get_processor_name
+import urwid
+
+from AboutMenu import AboutMenu
+from ComplexBarGraphs import LabeledBarGraph
+from ComplexBarGraphs import ScalableBarGraph
+from HelpMenu import HelpMenu
+from StressMenu import StressMenu
+from aux import PALETTE
 from aux import __version__
+from aux import get_processor_name
+from aux import kill_child_processes
 
-
-# Constants
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
 TURBO_MSR = 429
@@ -53,7 +51,7 @@ log_file = os.devnull
 
 VERSION_MESSAGE = " s-tui " + __version__ +\
                   " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
-                  Relased under GNU GPLv2"
+                  Released under GNU GPLv2"
 
 fire_starter = "FIRESTARTER/FIRESTARTER"
 
@@ -84,6 +82,162 @@ class ViListBox(urwid.ListBox):
         elif key == 'k':
             key = 'up'
         return super(ViListBox, self).keypress(size, key)
+
+
+class GraphData:
+    """
+    A class responsible for getting and storing the information stored
+    Tha data is to be displayed on the graph
+    """
+    THRESHOLD_TEMP = 80
+
+    def update_graph_val(self, values, new_val):
+        values_num = len(values)
+
+        if values_num > self.graph_num_bars:
+            values = values[values_num - self.graph_num_bars - 1:]
+        elif values_num < self.graph_num_bars:
+            zero_pad = [0] * (self.graph_num_bars - values_num)
+            values = zero_pad + values
+
+        values.append(new_val)
+        return values[1:]
+
+    def __init__(self, graph_num_bars):
+        # Constants data
+        self.temp_max_value = 100
+        self.util_max_value = 100
+        self.graph_num_bars = graph_num_bars
+        # Data for graphs
+        self.cpu_util = [0] * graph_num_bars
+        self.cpu_temp = [0] * graph_num_bars
+        self.cpu_freq = [0] * graph_num_bars
+        # Data for statistics
+        self.overheat = False
+        self.overheat_detected = False
+        self.max_temp = 0
+        self.cur_temp = 0
+        self.cur_freq = 0
+        self.perf_lost = 0
+        self.max_perf_lost = 0
+        self.samples_taken = 0
+        self.core_num = "N/A"
+        try:
+            self.core_num = psutil.cpu_count()
+        except:
+            self.core_num = 1
+            logging.debug("Num of cores unavailable")
+        self.top_freq = 100
+        self.turbo_freq = False
+
+        # Top frequency in case using Intel Turbo Boost
+        if is_admin:
+            try:
+                num_cpus = psutil.cpu_count(logical=False)
+                available_freq = read_msr(TURBO_MSR, 0)
+                logging.debug(available_freq)
+                self.top_freq = float(available_freq[num_cpus - 1] * 100)
+                self.turbo_freq = True
+            except (IOError, OSError) as e:
+                logging.debug(e.message)
+
+        if self.top_freq == 100:
+            try:
+                self.top_freq = psutil.cpu_freq().max
+                self.turbo_freq = False
+            except:
+                logging.debug("Top frequency is not supported")
+
+    def update_util(self):
+        try:
+            last_value = psutil.cpu_percent(interval=None)
+        except:
+            last_value = 0
+            logging.debug("Cpu Utilization unavailable")
+
+        self.cpu_util = self.update_graph_val(self.cpu_util, last_value)
+
+    def update_freq(self):
+        self.samples_taken += 1
+        try:
+            self.cur_freq = int(psutil.cpu_freq().current)
+        except:
+            self.cur_freq = 0
+            logging.debug("Frequency unavailable")
+
+        self.cpu_freq = self.update_graph_val(self.cpu_freq, self.cur_freq)
+
+        if is_admin and self.samples_taken > WAIT_SAMPLES:
+            self.perf_lost = int(self.top_freq) - int(self.cur_freq)
+            if self.top_freq != 0:
+                self.perf_lost = (round(float(self.perf_lost) / float(self.top_freq) * 100, 1))
+            else:
+                self.perf_lost = 0
+            if self.perf_lost > self.max_perf_lost:
+                self.max_perf_lost = self.perf_lost
+        elif not is_admin:
+            self.max_perf_lost = "N/A (no root)"
+
+    def update_temp(self):
+        # Reading for temperature might be different between systems
+        # Support for additional systems can be added here
+        last_value = 0
+        # NOTE: Negative values might not be supported
+
+        # Temperature on most common systems in in coretemp
+        if last_value <= 0:
+            try:
+                last_value = psutil.sensors_temperatures()['coretemp'][0].current
+            except:
+                pass
+        # Support for specific systems
+        if last_value <= 0:
+            try:
+                last_value = psutil.sensors_temperatures()['it8622'][0].current
+            except:
+                pass
+        # Raspberry pi 3 running Ubuntu 16.04
+        if last_value <= 0:
+            try:
+                last_value = psutil.sensors_temperatures()['bcm2835_thermal'][0].current
+            except:
+                pass
+        # Raspberry pi + raspiban CPU temp
+        if last_value <= 0:
+            try:
+                last_value = os.popen('cat /sys/class/thermal/thermal_zone0/temp').read()
+                last_value = int(last_value) / 1000
+            except:
+                pass
+        # If not relevant sensor found, do not register temperature
+        if last_value <= 0:
+            logging.debug("Temperature sensor unavailable")
+
+        self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
+        # Update max temp
+        if last_value > int(self.max_temp):
+            self.max_temp = last_value
+        # Update current temp
+        self.cur_temp = last_value
+        if self.cur_temp >= self.THRESHOLD_TEMP:
+            self.overheat = True
+            self.overheat_detected = True
+        else:
+            self.overheat = False
+
+    # On reset, restore all values to 0 and clear the graph
+    def reset(self):
+        self.overheat = False
+        self.cpu_util = [0] * self.graph_num_bars
+        self.cpu_temp = [0] * self.graph_num_bars
+        self.cpu_freq = [0] * self.graph_num_bars
+        self.max_temp = 0
+        self.cur_temp = 0
+        self.cur_freq = 0
+        self.perf_lost = 0
+        self.max_perf_lost = 0
+        self.samples_taken = 0
+        self.overheat_detected = False
 
 
 class GraphMode:
@@ -154,193 +308,11 @@ class MainLoop(urwid.MainLoop):
             graph_controller.view.on_stress_menu_close()
 
 
-class GraphData:
-    THRESHOLD_TEMP = 80
-
-    def __init__(self, graph_num_bars):
-        # Constants data
-        self.temp_max_value = 100
-        self.util_max_value = 100
-        self.graph_num_bars = graph_num_bars
-        # Data for graphs
-        self.cpu_util = [0] * graph_num_bars
-        self.cpu_temp = [0] * graph_num_bars
-        self.cpu_freq = [0] * graph_num_bars
-        # Data for statistics
-        self.overheat = False
-        self.overheat_detected = False
-        self.max_temp = 0
-        self.cur_temp = 0
-        self.cur_freq = 0
-        self.perf_lost = 0
-        self.max_perf_lost = 0
-        self.samples_taken = 0
-        self.core_num = "N/A"
-        try:
-            self.core_num = psutil.cpu_count()
-        except:
-            self.core_num = 1
-            logging.debug("Num of cores unavailable")
-        self.top_freq = 100
-        self.turbo_freq = False
-
-        if is_admin:
-            try:
-                num_cpus = psutil.cpu_count(logical=False)
-                available_freq = read_msr(TURBO_MSR, 0)
-                logging.debug(available_freq)
-                self.top_freq = float(available_freq[num_cpus - 1] * 100)
-                self.turbo_freq = True
-            except (IOError, OSError) as e:
-                logging.debug(e.message)
-
-        if self.top_freq == 100:
-            try:
-                self.top_freq = psutil.cpu_freq().max
-                self.turbo_freq = False
-            except:
-                logging.debug("Top frequency is not supported")
-
-    def update_util(self):
-        try:
-            last_value = psutil.cpu_percent(interval=None)
-        except:
-            last_value = 0
-            logging.debug("Cpu Utilization unavailable")
-
-        self.cpu_util = self.update_graph_val(self.cpu_util, last_value)
-
-    def update_freq(self):
-        self.samples_taken += 1
-        try:
-            self.cur_freq = int(psutil.cpu_freq().current)
-        except:
-            self.cur_freq = 0
-            logging.debug("Frequency unavailable")
-
-        self.cpu_freq = self.update_graph_val(self.cpu_freq, self.cur_freq)
-
-        if is_admin and self.samples_taken > WAIT_SAMPLES:
-            self.perf_lost = int(self.top_freq) - int(self.cur_freq)
-            if self.top_freq != 0:
-                self.perf_lost = (round(float(self.perf_lost) / float(self.top_freq) * 100, 1))
-            else:
-                self.perf_lost = 0
-            if self.perf_lost > self.max_perf_lost:
-                self.max_perf_lost = self.perf_lost
-        elif not is_admin:
-            self.max_perf_lost = "N/A (no root)"
-
-    def reset(self):
-        self.overheat = False
-        self.cpu_util = [0] * self.graph_num_bars
-        self.cpu_temp = [0] * self.graph_num_bars
-        self.cpu_freq = [0] * self.graph_num_bars
-        self.max_temp = 0
-        self.cur_temp = 0
-        self.cur_freq = 0
-        self.perf_lost = 0
-        self.max_perf_lost = 0
-        self.samples_taken = 0
-        self.overheat_detected = False
-
-    def update_temp(self):
-        # Reading for temperature might be different between systems
-        # Support for additional systems can be added here
-        last_value = 0
-        # NOTE: Negative values might not be supported
-        if last_value <= 0:
-            try:
-                last_value = psutil.sensors_temperatures()['coretemp'][0].current
-            except:
-                pass
-        if last_value <= 0:
-            try:
-                last_value = psutil.sensors_temperatures()['it8622'][0].current
-            except:
-                pass
-        if last_value <= 0:
-            try:
-                last_value = psutil.sensors_temperatures()['bcm2835_thermal'][0].current
-            except:
-                pass
-        # Raspberry pi + raspiban CPU temp
-        if last_value <= 0:
-            try:
-                last_value = os.popen('cat /sys/class/thermal/thermal_zone0/temp').read()
-                last_value = int(last_value) / 1000
-            except:
-                pass
-
-
-
-        if last_value <= 0:
-                logging.debug("Temperature sensor unavailable")
-
-        self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
-        # Update max temp
-        if last_value > int(self.max_temp):
-            self.max_temp = last_value
-        # Update current temp
-        self.cur_temp = last_value
-        if self.cur_temp >= self.THRESHOLD_TEMP:
-            self.overheat = True
-            self.overheat_detected = True
-        else:
-            self.overheat = False
-
-    def update_graph_val(self, values, new_val):
-        values_num = len(values)
-
-        if values_num > self.graph_num_bars:
-            values = values[values_num - self.graph_num_bars - 1:]
-        elif values_num < self.graph_num_bars:
-            zero_pad = [0] * (self.graph_num_bars - values_num)
-            values = zero_pad + values
-
-        values.append(new_val)
-        return values[1:]
-
-
 class GraphView(urwid.WidgetPlaceholder):
     """
     A class responsible for providing the application's interface and
     graph display.
     """
-
-    palette = [
-        ('body',                    'black',          'light gray',   'standout'),
-        ('header',                  'white',          'dark red',     'bold'),
-        ('screen edge',             'light blue',     'brown'),
-        ('main shadow',             'dark gray',      'black'),
-        ('line',                    'black',          'light gray',   'standout'),
-        ('menu button',             'light gray',     'black'),
-        ('bg background',           'light gray',     'black'),
-        ('util light',              'black',          'dark green',   'standout'),
-        ('util light smooth',       'dark green',     'black'),
-        ('util dark',               'dark red',       'light green',  'standout'),
-        ('util dark smooth',        'light green',    'black'),
-        ('high temp dark',          'light red',      'dark red',     'standout'),
-        ('overheat dark',           'black',          'light red',     'standout'),
-        ('high temp dark smooth',   'dark red',       'black'),
-        ('high temp light',         'dark red',       'light red',    'standout'),
-        ('high temp light smooth',  'light red',      'black'),
-        ('temp dark',               'black',          'dark cyan',    'standout'),
-        ('temp dark smooth',        'dark cyan',      'black'),
-        ('temp light',              'dark red',       'light cyan',   'standout'),
-        ('temp light smooth',       'light cyan',     'black'),
-        ('freq dark',               'dark red',       'dark magenta', 'standout'),
-        ('freq dark smooth',        'dark magenta',   'black'),
-        ('freq light',              'dark red',       'light magenta', 'standout'),
-        ('freq light smooth',       'light magenta',  'black'),
-        ('button normal',           'light gray',     'dark blue',    'standout'),
-        ('button select',           'white',          'dark green'),
-        ('line',                    'black',          'light gray',   'standout'),
-        ('pg normal',               'white',          'black',        'standout'),
-        ('pg complete',             'white',          'dark magenta'),
-        ('high temp txt',           'light red',      'light gray'),
-        ('pg smooth',               'dark magenta',   'black')
-        ]
 
     GRAPH_OFFSET_PER_SECOND = 5
     SCALE_DENSITY = 5
@@ -359,10 +331,7 @@ class GraphView(urwid.WidgetPlaceholder):
                            'line')
         self.mode_buttons = []
 
-        self.graph_data = GraphData(0)
-        self.graph_util = []
-        self.graph_temp = []
-        self.graph_freq = []
+        self.graph_data = GraphData(graph_num_bars=0)
         self.visible_graphs = []
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
 
@@ -655,7 +624,8 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.update_graph(True)
 
-    def main_shadow(self, w):
+    @staticmethod
+    def main_shadow(w):
         """Wrap a shadow and background around widget w."""
         bg = urwid.AttrWrap(urwid.SolidFill(u"\u2592"), 'screen edge')
         shadow = urwid.AttrWrap(urwid.SolidFill(u" "), 'main shadow')
@@ -733,7 +703,7 @@ class GraphView(urwid.WidgetPlaceholder):
             urwid.Divider(),
             urwid.LineBox(urwid.Pile([
                 urwid.CheckBox('Frequency', state=True, on_state_change=self.show_frequency),
-                urwid.CheckBox('Temperature', state=True, on_state_change=self.show_temprature),
+                urwid.CheckBox('Temperature', state=True, on_state_change=self.show_temperature),
                 urwid.CheckBox('Utilization', state=True, on_state_change=self.show_utilization)])),
             urwid.Divider(),
             self.button("Quit", self.exit_program),
@@ -755,7 +725,7 @@ class GraphView(urwid.WidgetPlaceholder):
             self.visible_graphs[1] = None
         self.show_graphs()
 
-    def show_temprature(self, w, state):
+    def show_temperature(self, w, state):
         if state:
             self.visible_graphs[2] = self.graph_temp
         else:
@@ -777,7 +747,6 @@ class GraphView(urwid.WidgetPlaceholder):
     def cpu_stats(self):
         cpu_stats = [ urwid.Text(get_processor_name().strip(), align="center"), urwid.Divider()]
         return cpu_stats
-
 
     def graph_stats(self):
         top_freq_string = "Top Freq"
@@ -802,8 +771,6 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_util = self.bar_graph('util light', 'util dark', 'Utilization[%]', [], [0, 50, 100])
         self.graph_temp = self.bar_graph('temp dark', 'temp light', 'Temperature[C]', [], [0, 25, 50, 75, 100])
         top_freq = self.graph_data.top_freq
-        one_third = 0
-        two_third = 0
         try:
             one_third = int(top_freq / 3)
             two_third = int(2 * top_freq / 3)
@@ -877,7 +844,7 @@ class GraphController:
         return rval
 
     def main(self):
-        self.loop = MainLoop(self.view, self.view.palette)
+        self.loop = MainLoop(self.view, PALETTE)
 
         self.view.started = False  # simulate pressing to start button
         self.view.toggle_animation()
@@ -925,7 +892,6 @@ def main():
     if not is_admin:
         print ("You are running without root permissions. Run as root for best results")
         logging.info("Started without root permissions")
-        time.sleep(2)
 
     global graph_controller
     graph_controller = GraphController()
@@ -939,6 +905,8 @@ def get_args():
 
     parser.add_argument('-d', '--debug',
                         default=False, action='store_true', help="Output debug log to " + log_file)
+    parser.add_argument('-c', '--csv',
+                        default=None, help="CSV file to save information")
     parser.add_argument('-v', '--version',
                         default=False, action='store_true', help="Display version")
     args = parser.parse_args()

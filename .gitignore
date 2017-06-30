@@ -8,3 +8,4 @@ s_tui.egg-info/
 deb_dist/*
 dist/*
 build/*
+.idea/*
