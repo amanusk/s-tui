@@ -160,14 +160,22 @@ class GraphData:
 
         self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
         # Update max temp
-        if last_value > int(self.max_temp):
-            self.max_temp = last_value
+        try:
+            if last_value > int(self.max_temp):
+                self.max_temp = last_value
+        except:
+            self.max_temp = 0
+
         # Update current temp
         self.cur_temp = last_value
-        if self.cur_temp >= self.THRESHOLD_TEMP:
-            self.overheat = True
-            self.overheat_detected = True
-        else:
+        try:
+            if self.cur_temp >= self.THRESHOLD_TEMP:
+                self.overheat = True
+                self.overheat_detected = True
+            else:
+                self.overheat = False
+        except:
+            self.cur_temp = 0
             self.overheat = False
 
     # On reset, restore all values to 0 and clear the graph
