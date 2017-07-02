@@ -27,7 +27,7 @@ import subprocess
 import re
 
 __version__ = "0.3.0"
-
+TURBO_MSR = 429
 
 def get_processor_name():
     if platform.system() == "Windows":

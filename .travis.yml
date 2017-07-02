@@ -1,0 +1,10 @@
+language: python
+python:
+  - "2.7"
+
+install:
+  - "python setup.p install"
+
+script:
+  - "make.sh"
+
