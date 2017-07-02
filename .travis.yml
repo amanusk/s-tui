@@ -3,7 +3,7 @@ python:
   - "2.7"
 
 install:
-  - "python setup.p install"
+  - "python setup.py install"
 
 script:
   - "make.sh"
