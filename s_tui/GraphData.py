@@ -22,8 +22,8 @@ import os
 
 import psutil
 
-from aux import TURBO_MSR
-from aux import read_msr
+from HelperFunctions import TURBO_MSR
+from HelperFunctions import read_msr
 
 
 class GraphData:
