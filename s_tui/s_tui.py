@@ -38,10 +38,10 @@ from ComplexBarGraphs import ScalableBarGraph
 from GraphData import GraphData
 from HelpMenu import HelpMenu
 from StressMenu import StressMenu
-from aux import PALETTE
-from aux import __version__
-from aux import get_processor_name
-from aux import kill_child_processes
+from HelperFunctions import PALETTE
+from HelperFunctions import __version__
+from HelperFunctions import get_processor_name
+from HelperFunctions import kill_child_processes
 
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
@@ -470,14 +470,14 @@ class GraphView(urwid.WidgetPlaceholder):
     def main_shadow(self, w):
         """Wrap a shadow and background around widget w."""
         bg = urwid.AttrWrap(urwid.SolidFill(u"\u2592"), 'screen edge')
-        shadow = urwid.AttrWrap(urwid.SolidFill(u" "), 'main shadow')
+        #shadow = urwid.AttrWrap(urwid.SolidFill(u" "), 'main shadow')
 
-        bg = urwid.Overlay(shadow, bg,
-                           ('fixed left', 3), ('fixed right', 1),
-                           ('fixed top', 2), ('fixed bottom', 1))
-        w = urwid.Overlay(w, bg,
-                          ('fixed left', 2), ('fixed right', 3),
-                          ('fixed top', 1), ('fixed bottom', 2))
+        #bg = urwid.Overlay(shadow, bg,
+        #                   ('fixed left', 3), ('fixed right', 1),
+        #                   ('fixed top', 2), ('fixed bottom', 1))
+        #w = urwid.Overlay(w, bg,
+        #                  ('fixed left', 2), ('fixed right', 3),
+        #                  ('fixed top', 1), ('fixed bottom', 2))
         return w
 
     def bar_graph(self, color_a, color_b, title, x_label, y_label):
