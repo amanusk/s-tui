@@ -37,7 +37,6 @@ class GraphData:
     def update_graph_val(self, values, new_val):
         values_num = len(values)
 
-        logging.info("graph_num_bars is " + str(self.graph_num_bars))
         if values_num > self.graph_num_bars:
             values = values[values_num - self.graph_num_bars - 1:]
         elif values_num < self.graph_num_bars:
@@ -124,12 +123,15 @@ class GraphData:
             self.max_perf_lost = "N/A (no root)"
 
     def update_temp(self):
-        # Reading for temperature might be different between systems
-        # Support for additional systems can be added here
+        """
+        Read the latest Temperature reading.
+        Reading for temperature might be different between systems
+        Support for additional systems can be added here
+        """
         last_value = 0
         # NOTE: Negative values might not be supported
 
-        # Temperature on most common systems in in coretemp
+        # Temperature on most common systems is in coretemp
         if last_value <= 0:
             try:
                 last_value = psutil.sensors_temperatures()['coretemp'][0].current
@@ -180,6 +182,7 @@ class GraphData:
 
     # On reset, restore all values to 0 and clear the graph
     def reset(self):
+        """Reset all data values to 0"""
         self.overheat = False
         self.cpu_util = [0] * self.graph_num_bars
         self.cpu_temp = [0] * self.graph_num_bars

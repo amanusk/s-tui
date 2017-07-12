@@ -47,6 +47,8 @@ UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
 
 log_file = os.devnull
+DEFAULT_LOG_FILE = "_s-tui.log"
+DEFAULT_CSV_FILE = "s-tui.csv"
 
 VERSION_MESSAGE = " s-tui " + __version__ +\
                   " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
@@ -59,6 +61,7 @@ is_admin = None
 stress_installed = False
 graph_controller = None
 stress_program = None
+save_csv = False
 
 INTRO_MESSAGE = "\
 ********s-tui manual********\n\
@@ -66,9 +69,9 @@ INTRO_MESSAGE = "\
 -Gil Tsuker         \n\
 April 2017\n\
 \n\
-s-tui is a terminal UI add-on for stress. The software uses stress to run CPU\
+s-tui is a terminal UI add-on for stress. The software uses stress to run CPU \
 hogs, while monitoring the CPU usage, temperature and frequency.\n\
-The software was conceived with the vision of being able to stress test your\
+The software was conceived with the vision of being able to stress test your \
 computer without the need for a GUI\n\
 "
 
@@ -139,9 +142,9 @@ class GraphMode:
 
 
 class MainLoop(urwid.MainLoop):
+    """ Inherit urwid Mainloop to catch special charachter inputs"""
     def unhandled_input(self, input):
         logging.debug('Caught ' + str(input))
-
         if input == 'q':
             logging.debug(graph_controller.mode.get_stress_process())
             kill_child_processes(graph_controller.mode.get_stress_process())
@@ -157,7 +160,6 @@ class GraphView(urwid.WidgetPlaceholder):
     graph display.
     """
 
-    GRAPH_OFFSET_PER_SECOND = 5
     SCALE_DENSITY = 5
     MAX_UTIL = 100
     MAX_TEMP = 100
@@ -166,15 +168,12 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.controller = controller
         self.started = True
-        self.start_time = None
-        self.offset = 0
-        self.last_offset = None
         self.temp_color = (['bg background', 'temp dark', 'temp light'],
                            {(1, 0): 'temp dark smooth', (2, 0): 'temp light smooth'},
                            'line')
         self.mode_buttons = []
 
-        self.graph_data = GraphData(is_admin=is_admin)
+        self.graph_data = controller.data
         self.visible_graphs = []
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
 
@@ -193,15 +192,11 @@ class GraphView(urwid.WidgetPlaceholder):
 
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
 
-    def get_offset_now(self):
-        if self.start_time is None:
-            return 0
-        if not self.started:
-            return self.offset
-        tdelta = time.time() - self.start_time
-        return int(self.offset + (tdelta * self.GRAPH_OFFSET_PER_SECOND))
-
     def update_stats(self):
+        """
+        Dislplay the stats on the sidebar according the the information in
+        GraphData
+        """
         if self.controller.mode.current_mode == 'Regular Operation':
             self.graph_data.max_perf_lost = 0
         if self.graph_data.overheat_detected:
@@ -216,57 +211,47 @@ class GraphView(urwid.WidgetPlaceholder):
         self.perf_lost.set_text(str(self.graph_data.max_perf_lost) + '%')
 
     def update_graph(self, force_update=False):
-        self.graph_data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
+        """
+        Update all the graphs that are being displayed
+        """
+        def update_graph_data(num_bars, data, data_max, graph, graph_max):
+            """
+            Update_graph_data is a general function to color the graph in
+            interleaving colors and add the latest value on the last bar
+            """
+            l = []
+            # Iteratge over all the information in the graph
+            for n in range(num_bars):
+                value = data[n]
+                # toggle between two bar types
+                if n & 1:
+                    l.append([0, value])
+                else:
+                    l.append([value, 0])
+            graph.bar_graph.set_data(l, data_max)
+            y_label_size = graph.bar_graph.get_size()[0]
+            graph.set_y_label(self.get_label_scale(0, graph_max, y_label_size))
 
-        o = self.get_offset_now()
-        if o == self.last_offset and not force_update:
-            return False
-        self.last_offset = o
+
+        self.graph_data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
 
         self.graph_data.update_temp()
         self.graph_data.update_util()
         self.graph_data.update_freq()
 
         # Updating CPU utilization
-        l = []
-        for n in range(self.graph_data.graph_num_bars):
-            value = self.graph_data.cpu_util[n]
-            # toggle between two bar types
-            if n & 1:
-                l.append([0, value])
-            else:
-                l.append([value, 0])
-        self.graph_util.bar_graph.set_data(l, self.graph_data.util_max_value)
-        y_label_size = self.graph_util.bar_graph.get_size()[0]
-        self.graph_util.set_y_label(self.get_label_scale(0, self.MAX_UTIL, y_label_size))
+        update_graph_data(self.graph_data.graph_num_bars, self.graph_data.cpu_util,
+                        self.graph_data.util_max_value, self.graph_util, self.MAX_UTIL)
 
         # Updating CPU temperature
-        l = []
-        for n in range(self.graph_data.graph_num_bars):
-            value = self.graph_data.cpu_temp[n]
-            # toggle between two bar types
-            if n & 1:
-                l.append([0, value])
-            else:
-                l.append([value, 0])
-        self.graph_temp.bar_graph.set_data(l, self.graph_data.temp_max_value)
-        self.set_temp_color()
-        y_label_size = self.graph_temp.bar_graph.get_size()[0]
-        self.graph_temp.set_y_label(self.get_label_scale(0, self.MAX_TEMP, y_label_size))
+        update_graph_data(self.graph_data.graph_num_bars, self.graph_data.cpu_temp,
+                        self.graph_data.temp_max_value, self.graph_temp, self.MAX_TEMP)
 
         # Updating CPU frequency
-        l = []
-        for n in range(self.graph_data.graph_num_bars):
-            value = self.graph_data.cpu_freq[n]
-            # toggle between two bar types
-            if n & 1:
-                l.append([0, value])
-            else:
-                l.append([value, 0])
-        self.graph_freq.bar_graph.set_data(l, self.graph_data.top_freq)
-        y_label_size = self.graph_freq.bar_graph.get_size()[0]
-        self.graph_freq.set_y_label(self.get_label_scale(0, self.graph_data.top_freq, y_label_size))
+        update_graph_data(self.graph_data.graph_num_bars, self.graph_data.cpu_freq,
+                        self.graph_data.top_freq, self.graph_freq, self.graph_data.top_freq)
 
+        # Update static data
         self.update_stats()
 
     def set_temp_color(self, smooth=None):
@@ -307,19 +292,12 @@ class GraphView(urwid.WidgetPlaceholder):
         except:
             return ""
 
-    def toggle_animation(self):
-        if self.started:  # stop animation
-            self.offset = self.get_offset_now()
-            self.started = False
-            self.controller.stop_animation()
-        else:
-            self.started = True
-            self.start_time = time.time()
-            self.controller.animate_graph()
+    def start_animation(self):
+        self.started = True
+        self.controller.animate_graph()
 
     def on_reset_button(self, w):
-        self.offset = 0
-        self.start_time = time.time()
+        """Reset graph data and display empty graph"""
         self.graph_data.reset()
         self.update_graph(True)
 
@@ -333,6 +311,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.original_widget = self.main_window_w
 
     def on_stress_menu_open(self, w):
+        """Open stress options"""
         self.original_widget = urwid.Overlay(self.stress_menu.main_window,
                                              self.original_widget,
                                              ('fixed left', 3),
@@ -341,6 +320,7 @@ class GraphView(urwid.WidgetPlaceholder):
                                              self.stress_menu.get_size()[0])
 
     def on_help_menu_open(self, w):
+        """Open Help menu"""
         self.original_widget = urwid.Overlay(self.help_menu.main_window,
                                              self.original_widget,
                                              ('fixed left', 3),
@@ -349,6 +329,7 @@ class GraphView(urwid.WidgetPlaceholder):
                                              self.help_menu.get_size()[0])
 
     def on_about_menu_open(self, w):
+        """Open About menu"""
         self.original_widget = urwid.Overlay(self.about_menu.main_window,
                                              self.original_widget,
                                              ('fixed left', 3),
@@ -439,7 +420,6 @@ class GraphView(urwid.WidgetPlaceholder):
             self.controller.set_mode(button.get_label())
             start_stress(self.controller.mode)
 
-        self.last_offset = None
 
     def on_mode_change(self, m):
         """Handle external mode change by updating radio buttons."""
@@ -447,9 +427,9 @@ class GraphView(urwid.WidgetPlaceholder):
             if rb.get_label() == m:
                 rb.set_state(True, do_callback=False)
                 break
-        self.last_offset = None
 
     def on_unicode_checkbox(self, w, state):
+        """Enable smooth edges if utf-8 is supported"""
 
         if state:
             satt = {(1, 0): 'util light smooth', (2, 0): 'util dark smooth'}
@@ -470,8 +450,8 @@ class GraphView(urwid.WidgetPlaceholder):
     def main_shadow(self, w):
         """Wrap a shadow and background around widget w."""
         bg = urwid.AttrWrap(urwid.SolidFill(u"\u2592"), 'screen edge')
-        #shadow = urwid.AttrWrap(urwid.SolidFill(u" "), 'main shadow')
 
+        #shadow = urwid.AttrWrap(urwid.SolidFill(u" "), 'main shadow')
         #bg = urwid.Overlay(shadow, bg,
         #                   ('fixed left', 3), ('fixed right', 1),
         #                   ('fixed top', 2), ('fixed bottom', 1))
@@ -493,11 +473,13 @@ class GraphView(urwid.WidgetPlaceholder):
         return w
 
     def radio_button(self, g, l, fn):
+        """ Inhereting radio button of urwid """
         w = urwid.RadioButton(g, l, False, on_state_change=fn)
         w = urwid.AttrWrap(w, 'button normal', 'button select')
         return w
 
     def exit_program(self, w):
+        """ Kill all stress operations upon exit"""
         try:
             kill_child_processes(self.controller.mode.get_stress_process())
         except:
@@ -505,13 +487,13 @@ class GraphView(urwid.WidgetPlaceholder):
         raise urwid.ExitMainLoop()
 
     def graph_controls(self):
+        """ Dislplay sidebar controls. i.e. buttons, boxes"""
         modes = self.controller.get_modes()
         # setup mode radio buttons
         group = []
         for m in modes:
             rb = self.radio_button(group, m, self.on_mode_button)
             self.mode_buttons.append(rb)
-        self.offset = 0
 
         # Create list of buttons
         control_options = [self.button("Reset", self.on_reset_button)]
@@ -575,6 +557,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.show_graphs()
 
     def show_graphs(self):
+        """Show a pile of the graph selected for dislpay"""
 
         graph_list = []
         hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
@@ -587,10 +570,12 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_place_holder.original_widget = urwid.Pile(graph_list)
 
     def cpu_stats(self):
+        """Read and display processor name """
         cpu_stats = [urwid.Text(get_processor_name().strip(), align="center"), urwid.Divider()]
         return cpu_stats
 
     def graph_stats(self):
+        """Display of stats on the side bar """
         top_freq_string = "Top Freq"
         if self.graph_data.turbo_freq:
             top_freq_string += " " + str(self.graph_data.core_num) + " Cores"
@@ -666,6 +651,7 @@ class GraphController:
     def __init__(self):
         self.animate_alarm = None
         self.mode = GraphMode()
+        self.data = GraphData(is_admin=is_admin)
         self.view = GraphView(self)
         # use the first mode as the default
         mode = self.get_modes()[0]
@@ -688,21 +674,15 @@ class GraphController:
         self.loop = MainLoop(self.view, PALETTE)
 
         self.view.started = False  # simulate pressing to start button
-        self.view.toggle_animation()
-
+        self.view.start_animation()
         self.loop.run()
 
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
         self.view.update_graph()
+        self.update_csv()
         self.animate_alarm = self.loop.set_alarm_in(
             UPDATE_INTERVAL, self.animate_graph)
-
-    def stop_animation(self):
-        """stop animating the graph"""
-        if self.animate_alarm:
-            self.loop.remove_alarm(self.animate_alarm)
-        self.animate_alarm = None
 
 
 def main():
@@ -717,7 +697,7 @@ def main():
     level = ""
     if args.debug:
         level = logging.DEBUG
-        log_file = "_s-tui.log"
+        log_file = DEFAULT_LOG_FILE
         log_formatter = logging.Formatter("%(asctime)s [%(funcName)s()] [%(levelname)-5.5s]  %(message)s")
         root_logger = logging.getLogger()
         file_handler = logging.FileHandler(log_file)
@@ -731,8 +711,13 @@ def main():
     except AttributeError:
         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
     if not is_admin:
-        print ("You are running without root permissions. Run as root for best results")
+        print ("You are running without root permissions.\
+               Run as root to see max Turbo frequency")
         logging.info("Started without root permissions")
+
+    global save_csv
+    if args.csv:
+        save_csv = True
 
     global graph_controller
     graph_controller = GraphController()
@@ -747,7 +732,7 @@ def get_args():
     parser.add_argument('-d', '--debug',
                         default=False, action='store_true', help="Output debug log to " + log_file)
     parser.add_argument('-c', '--csv',
-                        default=None, help="CSV file to save information")
+                        default=False, help="Save stats to csv file " + DEFAULT_CSV_FILE)
     parser.add_argument('-v', '--version',
                         default=False, action='store_true', help="Display version")
     args = parser.parse_args()
