@@ -1,5 +1,8 @@
 # The Stress Terminal UI: s-tui
 
+[![Build Status](https://travis-ci.org/amanusk/s-tui.svg?branch=master)](https://travis-ci.org/amanusk/s-tui)
+
+
 s-tui is a terminal UI for monitoring your computer. s-tui allows to monitor CPU temperature, frequency and utilization in a graphical way from the terminal. 
 
 ## Screenshot
