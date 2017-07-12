@@ -26,7 +26,6 @@ from HelperFunctions import TURBO_MSR
 from HelperFunctions import read_msr
 
 
-
 class GraphData:
     """
     A class responsible for gathering and storing the data
