@@ -118,8 +118,6 @@ class GraphMode:
             if stress_installed:
                 self.modes.append('Stress Operation')
 
-        self.data = {}
-
         self.current_mode = self.modes[0]
         self.stress_process = None
 
@@ -159,70 +157,68 @@ class GraphView(urwid.WidgetPlaceholder):
     A class responsible for providing the application's interface and
     graph display.
     """
-
     SCALE_DENSITY = 5
-    MAX_UTIL = 100
-    MAX_TEMP = 100
 
     def __init__(self, controller):
 
         self.controller = controller
-        self.started = True
         self.temp_color = (['bg background', 'temp dark', 'temp light'],
                            {(1, 0): 'temp dark smooth', (2, 0): 'temp light smooth'},
                            'line')
         self.mode_buttons = []
 
-        self.graph_data = controller.data
+        self.data = controller.data
         self.visible_graphs = []
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
 
-        self.max_temp = None
-        self.cur_temp = None
-        self.top_freq = None
-        self.cur_freq = None
-        self.perf_lost = None
+        self.max_temp_text = None
+        self.cur_temp_text = None
+        self.top_freq_text = None
+        self.cur_freq_text = None
+        self.perf_lost_text = None
 
         self.main_window_w = []
 
         self.stress_menu = StressMenu(self.on_stress_menu_close)
         self.help_menu = HelpMenu(self.on_help_menu_close)
         self.about_menu = AboutMenu(self.on_about_menu_close)
-        self.stress_menu.sqrt_workers = str(self.graph_data.core_num)
+        self.stress_menu.sqrt_workers = str(self.data.core_num)
 
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
 
-    def update_stats(self):
+    def update_displayed_stats(self):
         """
         Dislplay the stats on the sidebar according the the information in
         GraphData
         """
         if self.controller.mode.current_mode == 'Regular Operation':
-            self.graph_data.max_perf_lost = 0
-        if self.graph_data.overheat_detected:
-            self.max_temp.set_text(('overheat dark', str(self.graph_data.max_temp) + DEGREE_SIGN + 'c'))
+            self.data.max_perf_lost = 0
+        if self.data.overheat_detected:
+            self.max_temp_text.set_text(('overheat dark', str(self.data.max_temp) + DEGREE_SIGN + 'c'))
         else:
-            self.max_temp.set_text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c')
+            self.max_temp_text.set_text(str(self.data.max_temp) + DEGREE_SIGN + 'c')
 
-        self.cur_temp.set_text((self.temp_color[2], str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c'))
+        self.cur_temp_text.set_text((self.temp_color[2], str(self.data.cur_temp) + DEGREE_SIGN + 'c'))
 
-        self.top_freq.set_text(str(self.graph_data.top_freq) + 'MHz')
-        self.cur_freq.set_text(str(self.graph_data.cur_freq) + 'MHz')
-        self.perf_lost.set_text(str(self.graph_data.max_perf_lost) + '%')
+        self.top_freq_text.set_text(str(self.data.top_freq) + 'MHz')
+        self.cur_freq_text.set_text(str(self.data.cur_freq) + 'MHz')
+        self.perf_lost_text.set_text(str(self.data.max_perf_lost) + '%')
 
-    def update_graph(self, force_update=False):
+    def update_displayed_information(self):
         """
         Update all the graphs that are being displayed
         """
-        def update_graph_data(num_bars, data, data_max, graph, graph_max):
+        def update_displayed_graph_data(graph_data, data_max, graph):
             """
             Update_graph_data is a general function to color the graph in
             interleaving colors and add the latest value on the last bar
             """
             l = []
+            # Get the graph width (dimention 1)
+            num_displayed_bars = graph.bar_graph.get_size()[1]
             # Iteratge over all the information in the graph
-            for n in range(num_bars):
-                value = data[n]
+            for n in range(self.data.MAX_SAMPLES-num_displayed_bars,self.data.MAX_SAMPLES):
+                value = graph_data[n]
                 # toggle between two bar types
                 if n & 1:
                     l.append([0, value])
@@ -230,32 +226,27 @@ class GraphView(urwid.WidgetPlaceholder):
                     l.append([value, 0])
             graph.bar_graph.set_data(l, data_max)
             y_label_size = graph.bar_graph.get_size()[0]
-            graph.set_y_label(self.get_label_scale(0, graph_max, y_label_size))
+            graph.set_y_label(self.get_label_scale(0, data_max, y_label_size))
 
 
-        self.graph_data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
+        # Updating CPU utilization graph
+        update_displayed_graph_data(self.data.cpu_util,
+                        self.data.MAX_UTIL, self.graph_util)
 
-        self.graph_data.update_temp()
-        self.graph_data.update_util()
-        self.graph_data.update_freq()
+        # Updating CPU temperature graph
+        update_displayed_graph_data(self.data.cpu_temp,
+                        self.data.MAX_TEMP, self.graph_temp)
 
-        # Updating CPU utilization
-        update_graph_data(self.graph_data.graph_num_bars, self.graph_data.cpu_util,
-                        self.graph_data.util_max_value, self.graph_util, self.MAX_UTIL)
+        # Updating CPU frequency graph
+        update_displayed_graph_data(self.data.cpu_freq,
+                        self.data.top_freq, self.graph_freq)
 
-        # Updating CPU temperature
-        update_graph_data(self.graph_data.graph_num_bars, self.graph_data.cpu_temp,
-                        self.graph_data.temp_max_value, self.graph_temp, self.MAX_TEMP)
-
-        # Updating CPU frequency
-        update_graph_data(self.graph_data.graph_num_bars, self.graph_data.cpu_freq,
-                        self.graph_data.top_freq, self.graph_freq, self.graph_data.top_freq)
-
-        # Update static data
-        self.update_stats()
+        # Update static data in sidebar
+        self.update_displayed_stats()
 
     def set_temp_color(self, smooth=None):
-        if self.graph_data.overheat:
+        """Paint graph red in overheat is detected"""
+        if self.data.overheat:
             new_color = (['bg background', 'high temp dark', 'high temp light'],
                          {(1, 0): 'high temp dark smooth', (2, 0): 'high temp light smooth'},
                          'high temp txt')
@@ -280,7 +271,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_temp.bar_graph.set_segment_attributes(self.temp_color[0], satt=self.temp_color[1])
 
     def get_label_scale(self, min_val, max_val, size):
-
+        """Dinamically change the scale of the graph (y lable)"""
         if size < self.SCALE_DENSITY:
             label_cnt = 1
         else:
@@ -293,21 +284,24 @@ class GraphView(urwid.WidgetPlaceholder):
             return ""
 
     def start_animation(self):
-        self.started = True
+        """Start animation at beginning of time"""
         self.controller.animate_graph()
 
     def on_reset_button(self, w):
         """Reset graph data and display empty graph"""
-        self.graph_data.reset()
-        self.update_graph(True)
+        self.data.reset()
+        self.update_displayed_information()
 
     def on_stress_menu_close(self):
+        """Return to main screen"""
         self.original_widget = self.main_window_w
 
     def on_help_menu_close(self):
+        """Return to main screen"""
         self.original_widget = self.main_window_w
 
     def on_about_menu_close(self):
+        """Return to main screen"""
         self.original_widget = self.main_window_w
 
     def on_stress_menu_open(self, w):
@@ -386,8 +380,8 @@ class GraphView(urwid.WidgetPlaceholder):
                     except:
                         logging.debug("Unable to start stress")
 
-                self.graph_data.max_perf_lost = 0
-                self.graph_data.samples_taken = 0
+                self.data.max_perf_lost = 0
+                self.data.samples_taken = 0
 
             elif mode.get_current_mode() == 'FIRESTARTER':
                 logging.debug('Started FIRESTARTER mode')
@@ -444,24 +438,14 @@ class GraphView(urwid.WidgetPlaceholder):
         else:
             satt = None
         self.graph_freq.bar_graph.set_segment_attributes(['bg background', 'freq dark', 'freq light'], satt=satt)
-
-        self.update_graph(True)
+        self.update_displayed_information()
 
     def main_shadow(self, w):
         """Wrap a shadow and background around widget w."""
         bg = urwid.AttrWrap(urwid.SolidFill(u"\u2592"), 'screen edge')
-
-        #shadow = urwid.AttrWrap(urwid.SolidFill(u" "), 'main shadow')
-        #bg = urwid.Overlay(shadow, bg,
-        #                   ('fixed left', 3), ('fixed right', 1),
-        #                   ('fixed top', 2), ('fixed bottom', 1))
-        #w = urwid.Overlay(w, bg,
-        #                  ('fixed left', 2), ('fixed right', 3),
-        #                  ('fixed top', 1), ('fixed bottom', 2))
         return w
 
     def bar_graph(self, color_a, color_b, title, x_label, y_label):
-
         w = ScalableBarGraph(['bg background', color_a, color_b])
         bg = LabeledBarGraph([w, x_label, y_label, title])
 
@@ -487,7 +471,7 @@ class GraphView(urwid.WidgetPlaceholder):
         raise urwid.ExitMainLoop()
 
     def graph_controls(self):
-        """ Dislplay sidebar controls. i.e. buttons, boxes"""
+        """ Dislplay sidebar controls. i.e. buttons, and controls"""
         modes = self.controller.get_modes()
         # setup mode radio buttons
         group = []
@@ -550,6 +534,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.show_graphs()
 
     def show_temperature(self, w, state):
+        """Display temperature graph"""
         if state:
             self.visible_graphs[2] = self.graph_temp
         else:
@@ -577,27 +562,28 @@ class GraphView(urwid.WidgetPlaceholder):
     def graph_stats(self):
         """Display of stats on the side bar """
         top_freq_string = "Top Freq"
-        if self.graph_data.turbo_freq:
-            top_freq_string += " " + str(self.graph_data.core_num) + " Cores"
+        if self.data.turbo_freq:
+            top_freq_string += " " + str(self.data.core_num) + " Cores"
         else:
             top_freq_string += " 1 Core"
         fixed_stats = [urwid.Divider(), urwid.Text("Max Temp", align="left"),
-                       self.max_temp] + \
+                       self.max_temp_text] + \
                       [urwid.Divider(), urwid.Text("Cur Temp", align="left"),
-                       self.cur_temp] + \
+                       self.cur_temp_text] + \
                       [urwid.Divider(), urwid.Text(top_freq_string, align="left"),
-                       self.top_freq] + \
+                       self.top_freq_text] + \
                       [urwid.Divider(), urwid.Text("Cur Freq", align="left"),
-                       self.cur_freq] + \
+                       self.cur_freq_text] + \
                       [urwid.Divider(), urwid.Text("Max Perf Lost", align="left"),
-                       self.perf_lost]
+                       self.perf_lost_text]
         return fixed_stats
 
     def main_window(self):
-        # Initiating the data
+        """Format the main windows, graphs on the side and sidebar"""
         self.graph_util = self.bar_graph('util light', 'util dark', 'Utilization[%]', [], [0, 50, 100])
         self.graph_temp = self.bar_graph('temp dark', 'temp light', 'Temperature[C]', [], [0, 25, 50, 75, 100])
-        top_freq = self.graph_data.top_freq
+        top_freq = self.data.top_freq
+        # Frequency scale is dynammic according to system max
         try:
             one_third = int(top_freq / 3)
             two_third = int(2 * top_freq / 3)
@@ -607,13 +593,13 @@ class GraphView(urwid.WidgetPlaceholder):
             top_freq = 0
         self.graph_freq = self.bar_graph('freq dark', 'freq light', 'Frequency[MHz]', [],
                                          [0, one_third, two_third, top_freq])
-        self.max_temp = urwid.Text(str(self.graph_data.max_temp) + DEGREE_SIGN + 'c', align="right")
-        self.cur_temp = urwid.Text(str(self.graph_data.cur_temp) + DEGREE_SIGN + 'c', align="right")
-        self.top_freq = urwid.Text(str(self.graph_data.top_freq) + 'MHz', align="right")
-        self.cur_freq = urwid.Text(str(self.graph_data.cur_freq) + 'MHz', align="right")
-        self.perf_lost = urwid.Text(str(self.graph_data.max_perf_lost) + '%', align="right")
+        self.max_temp_text = urwid.Text(str(self.data.max_temp) + DEGREE_SIGN + 'c', align="right")
+        self.cur_temp_text = urwid.Text(str(self.data.cur_temp) + DEGREE_SIGN + 'c', align="right")
+        self.top_freq_text = urwid.Text(str(self.data.top_freq) + 'MHz', align="right")
+        self.cur_freq_text = urwid.Text(str(self.data.cur_freq) + 'MHz', align="right")
+        self.perf_lost_text = urwid.Text(str(self.data.max_perf_lost) + '%', align="right")
 
-        self.graph_data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
+        self.data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
 
         self.graph_util.bar_graph.set_bar_width(1)
         self.graph_temp.bar_graph.set_bar_width(1)
@@ -658,7 +644,7 @@ class GraphController:
         self.mode.set_mode(mode)
         # update the view
         self.view.on_mode_change(mode)
-        self.view.update_graph(True)
+        self.view.update_displayed_information()
 
     def get_modes(self):
         """Allow our view access to the list of modes."""
@@ -667,20 +653,19 @@ class GraphController:
     def set_mode(self, m):
         """Allow our view to set the mode."""
         rval = self.mode.set_mode(m)
-        self.view.update_graph(True)
+        self.view.update_displayed_information()
         return rval
 
     def main(self):
         self.loop = MainLoop(self.view, PALETTE)
-
-        self.view.started = False  # simulate pressing to start button
         self.view.start_animation()
         self.loop.run()
 
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
-        self.view.update_graph()
-        self.update_csv()
+        # Width of bar graph is needed to know how long of a list of data to keep
+        self.data.update_data()
+        self.view.update_displayed_information()
         self.animate_alarm = self.loop.set_alarm_in(
             UPDATE_INTERVAL, self.animate_graph)
 

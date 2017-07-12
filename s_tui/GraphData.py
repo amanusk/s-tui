@@ -26,36 +26,35 @@ from HelperFunctions import TURBO_MSR
 from HelperFunctions import read_msr
 
 
+
 class GraphData:
     """
-    A class responsible for getting and storing the information stored
-    Tha data is to be displayed on the graph
+    A class responsible for gathering and storing the data
     """
     THRESHOLD_TEMP = 80
     WAIT_SAMPLES = 5
+    MAX_SAMPLES = 1000
+    MAX_UTIL = 100
+    MAX_TEMP = 100
+
+    def update_data(self):
+        self.update_temp()
+        self.update_util()
+        self.update_freq()
 
     def update_graph_val(self, values, new_val):
-        values_num = len(values)
-
-        if values_num > self.graph_num_bars:
-            values = values[values_num - self.graph_num_bars - 1:]
-        elif values_num < self.graph_num_bars:
-            zero_pad = [0] * (self.graph_num_bars - values_num)
-            values = zero_pad + values
 
         values.append(new_val)
         return values[1:]
 
     def __init__(self, is_admin):
         # Constants data
-        self.temp_max_value = 100
-        self.util_max_value = 100
         self.is_admin = is_admin
-        self.graph_num_bars = 0
+        self.num_samples = self.MAX_SAMPLES
         # Data for graphs
-        self.cpu_util = [0] * self.graph_num_bars
-        self.cpu_temp = [0] * self.graph_num_bars
-        self.cpu_freq = [0] * self.graph_num_bars
+        self.cpu_util = [0] * self.num_samples
+        self.cpu_temp = [0] * self.num_samples
+        self.cpu_freq = [0] * self.num_samples
         # Data for statistics
         self.overheat = False
         self.overheat_detected = False
@@ -184,9 +183,9 @@ class GraphData:
     def reset(self):
         """Reset all data values to 0"""
         self.overheat = False
-        self.cpu_util = [0] * self.graph_num_bars
-        self.cpu_temp = [0] * self.graph_num_bars
-        self.cpu_freq = [0] * self.graph_num_bars
+        self.cpu_util = [0] * self.num_samples
+        self.cpu_temp = [0] * self.num_samples
+        self.cpu_freq = [0] * self.num_samples
         self.max_temp = 0
         self.cur_temp = 0
         self.cur_freq = 0
