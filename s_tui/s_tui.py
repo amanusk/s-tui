@@ -538,11 +538,12 @@ class GraphView(urwid.WidgetPlaceholder):
 
         text_col = ViListBox(urwid.SimpleListWalker(cpu_stats + graph_controls + [urwid.Divider()] + graph_stats))
 
-        w = urwid.Columns([('fixed',  20, text_col),
-                           ('fixed',  1, vline),
+        w = urwid.Columns([
                            ('weight', 2, self.graph_place_holder),
+                           ('fixed',  1, vline),
+                           ('fixed',  20, text_col),
                            ],
-                          dividechars=1, focus_column=0)
+                          dividechars=1, focus_column=2)
 
         w = urwid.Padding(w, ('fixed left', 1), ('fixed right', 0))
         w = urwid.AttrWrap(w, 'body')

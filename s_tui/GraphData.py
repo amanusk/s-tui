@@ -155,7 +155,7 @@ class GraphData:
         # Raspberry pi + raspiban CPU temp
         if last_value <= 0:
             try:
-                last_value = os.popen('cat /sys/class/thermal/thermal_zone0/temp').read()
+                last_value = os.popen('cat /sys/class/thermal/thermal_zone0/temp 2> /dev/null').read()
                 last_value = int(last_value) / 1000
             except:
                 pass
