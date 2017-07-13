@@ -9,3 +9,4 @@ deb_dist/*
 dist/*
 build/*
 .idea/*
+*.csv

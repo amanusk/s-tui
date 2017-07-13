@@ -28,7 +28,6 @@ import logging
 import os
 import subprocess
 import time
-
 import psutil
 import urwid
 
@@ -48,7 +47,9 @@ DEGREE_SIGN = u'\N{DEGREE SIGN}'
 
 log_file = os.devnull
 DEFAULT_LOG_FILE = "_s-tui.log"
-DEFAULT_CSV_FILE = "s-tui.csv"
+# TODO: Add timestamp
+
+DEFAULT_CSV_FILE = "stui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
 
 VERSION_MESSAGE = " s-tui " + __version__ +\
                   " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
@@ -61,7 +62,6 @@ is_admin = None
 stress_installed = False
 graph_controller = None
 stress_program = None
-save_csv = False
 
 INTRO_MESSAGE = "\
 ********s-tui manual********\n\
@@ -139,6 +139,7 @@ class GraphMode:
         return True
 
 
+
 class MainLoop(urwid.MainLoop):
     """ Inherit urwid Mainloop to catch special charachter inputs"""
     def unhandled_input(self, input):
@@ -186,37 +187,38 @@ class GraphView(urwid.WidgetPlaceholder):
 
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
 
-    def update_displayed_stats(self):
-        """
-        Dislplay the stats on the sidebar according the the information in
-        GraphData
-        """
-        if self.controller.mode.current_mode == 'Regular Operation':
-            self.data.max_perf_lost = 0
-        if self.data.overheat_detected:
-            self.max_temp_text.set_text(('overheat dark', str(self.data.max_temp) + DEGREE_SIGN + 'c'))
-        else:
-            self.max_temp_text.set_text(str(self.data.max_temp) + DEGREE_SIGN + 'c')
-
-        self.cur_temp_text.set_text((self.temp_color[2], str(self.data.cur_temp) + DEGREE_SIGN + 'c'))
-
-        self.top_freq_text.set_text(str(self.data.top_freq) + 'MHz')
-        self.cur_freq_text.set_text(str(self.data.cur_freq) + 'MHz')
-        self.perf_lost_text.set_text(str(self.data.max_perf_lost) + '%')
 
     def update_displayed_information(self):
         """
         Update all the graphs that are being displayed
         """
+        def update_displayed_stats():
+            """
+            Display the stats on the sidebar according the the information in
+            GraphData
+            """
+            if self.controller.mode.current_mode == 'Regular Operation':
+                self.data.max_perf_lost = 0
+            if self.data.overheat_detected:
+                self.max_temp_text.set_text(('overheat dark', str(self.data.max_temp) + DEGREE_SIGN + 'c'))
+            else:
+                self.max_temp_text.set_text(str(self.data.max_temp) + DEGREE_SIGN + 'c')
+
+            self.cur_temp_text.set_text((self.temp_color[2], str(self.data.cur_temp) + DEGREE_SIGN + 'c'))
+
+            self.top_freq_text.set_text(str(self.data.top_freq) + 'MHz')
+            self.cur_freq_text.set_text(str(self.data.cur_freq) + 'MHz')
+            self.perf_lost_text.set_text(str(self.data.max_perf_lost) + '%')
+
         def update_displayed_graph_data(graph_data, data_max, graph):
             """
             Update_graph_data is a general function to color the graph in
             interleaving colors and add the latest value on the last bar
             """
             l = []
-            # Get the graph width (dimention 1)
+            # Get the graph width (dimension 1)
             num_displayed_bars = graph.bar_graph.get_size()[1]
-            # Iteratge over all the information in the graph
+            # Iterage over all the information in the graph
             for n in range(self.data.MAX_SAMPLES-num_displayed_bars,self.data.MAX_SAMPLES):
                 value = graph_data[n]
                 # toggle between two bar types
@@ -242,7 +244,7 @@ class GraphView(urwid.WidgetPlaceholder):
                         self.data.top_freq, self.graph_freq)
 
         # Update static data in sidebar
-        self.update_displayed_stats()
+        update_displayed_stats()
 
     def set_temp_color(self, smooth=None):
         """Paint graph red in overheat is detected"""
@@ -271,7 +273,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_temp.bar_graph.set_segment_attributes(self.temp_color[0], satt=self.temp_color[1])
 
     def get_label_scale(self, min_val, max_val, size):
-        """Dinamically change the scale of the graph (y lable)"""
+        """Dynamically change the scale of the graph (y lable)"""
         if size < self.SCALE_DENSITY:
             label_cnt = 1
         else:
@@ -282,10 +284,6 @@ class GraphView(urwid.WidgetPlaceholder):
             return label
         except:
             return ""
-
-    def start_animation(self):
-        """Start animation at beginning of time"""
-        self.controller.animate_graph()
 
     def on_reset_button(self, w):
         """Reset graph data and display empty graph"""
@@ -333,86 +331,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
-
-        def start_stress(mode):
-            if mode.get_current_mode() == 'Stress Operation':
-
-                try:
-                    kill_child_processes(mode.get_stress_process())
-                except:
-                    logging.debug('Could not kill process')
-
-                stress_cmd = [stress_program]
-
-                if int(self.stress_menu.sqrt_workers) > 0:
-                    stress_cmd.append('-c')
-                    stress_cmd.append(self.stress_menu.sqrt_workers)
-
-                if int(self.stress_menu.sync_workers) > 0:
-                    stress_cmd.append('-i')
-                    stress_cmd.append(self.stress_menu.sync_workers)
-
-                if int(self.stress_menu.memory_workers) > 0:
-                    stress_cmd.append('--vm')
-                    stress_cmd.append(self.stress_menu.memory_workers)
-                    stress_cmd.append('--vm-bytes')
-                    stress_cmd.append(self.stress_menu.malloc_byte)
-                    stress_cmd.append('--vm-stride')
-                    stress_cmd.append(self.stress_menu.byte_touch_cnt)
-
-                if self.stress_menu.no_malloc:
-                    stress_cmd.append('--vm-keep')
-
-                if int(self.stress_menu.write_workers) > 0:
-                    stress_cmd.append('--hdd')
-                    stress_cmd.append(self.stress_menu.write_workers)
-                    stress_cmd.append('--hdd-bytes')
-                    stress_cmd.append(self.stress_menu.write_bytes)
-
-                if self.stress_menu.time_out != 'none':
-                    stress_cmd.append('-t')
-                    stress_cmd.append(self.stress_menu.time_out)
-
-                with open(os.devnull, 'w') as DEVNULL:
-                    try:
-                        stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL, stderr=DEVNULL, shell=False)
-                        mode.set_stress_process(psutil.Process(stress_proc.pid))
-                    except:
-                        logging.debug("Unable to start stress")
-
-                self.data.max_perf_lost = 0
-                self.data.samples_taken = 0
-
-            elif mode.get_current_mode() == 'FIRESTARTER':
-                logging.debug('Started FIRESTARTER mode')
-                try:
-                    kill_child_processes(mode.get_stress_process())
-                except:
-                    logging.debug('Could not kill process')
-
-                stress_cmd = [os.path.join(os.getcwd(), fire_starter)]
-                with open(os.devnull, 'w') as DEVNULL:
-                    try:
-                        stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL, stderr=DEVNULL, shell=False)
-                        mode.set_stress_process(psutil.Process(stress_proc.pid))
-                        logging.debug('Started process' + str(mode.get_stress_process()))
-                    except:
-                        logging.debug("Unable to start stress")
-
-            else:
-                logging.debug('Regular operation mode')
-                try:
-                    kill_child_processes(mode.get_stress_process())
-                except:
-                    try:
-                        logging.debug('Could not kill process' + str(mode.get_stress_process()))
-                    except:
-                        logging.debug('Could not kill process FIRESTARTER')
-
         if state:
             # The new mode is the label of the button
             self.controller.set_mode(button.get_label())
-            start_stress(self.controller.mode)
+            self.controller.start_stress()
 
 
     def on_mode_change(self, m):
@@ -457,7 +379,7 @@ class GraphView(urwid.WidgetPlaceholder):
         return w
 
     def radio_button(self, g, l, fn):
-        """ Inhereting radio button of urwid """
+        """ Inheriting radio button of urwid """
         w = urwid.RadioButton(g, l, False, on_state_change=fn)
         w = urwid.AttrWrap(w, 'button normal', 'button select')
         return w
@@ -500,7 +422,7 @@ class GraphView(urwid.WidgetPlaceholder):
         install_stress_message = urwid.Text("")
         if not stress_installed:
             install_stress_message = urwid.Text("\nstress not installed")
-        buttons = [urwid.Text("Mode", align="center"),
+        buttons = [urwid.Text(u"Mode", align="center"),
                    ] + self.mode_buttons + [
             urwid.Divider(),
             urwid.Text("Control Options", align="center"),
@@ -616,10 +538,11 @@ class GraphView(urwid.WidgetPlaceholder):
 
         text_col = ViListBox(urwid.SimpleListWalker(cpu_stats + graph_controls + [urwid.Divider()] + graph_stats))
 
-        w = urwid.Columns([('weight', 2, self.graph_place_holder),
+        w = urwid.Columns([('fixed',  20, text_col),
                            ('fixed',  1, vline),
-                           ('fixed',  20, text_col)],
-                          dividechars=1, focus_column=2)
+                           ('weight', 2, self.graph_place_holder),
+                           ],
+                          dividechars=1, focus_column=0)
 
         w = urwid.Padding(w, ('fixed left', 1), ('fixed right', 0))
         w = urwid.AttrWrap(w, 'body')
@@ -634,8 +557,10 @@ class GraphController:
     A class responsible for setting up the model and view and running
     the application.
     """
-    def __init__(self):
+    def __init__(self, args):
         self.animate_alarm = None
+        self.save_csv = args.csv
+        self.terminal = args.terminal
         self.mode = GraphMode()
         self.data = GraphData(is_admin=is_admin)
         self.view = GraphView(self)
@@ -658,16 +583,94 @@ class GraphController:
 
     def main(self):
         self.loop = MainLoop(self.view, PALETTE)
-        self.view.start_animation()
-        self.loop.run()
+        self.animate_graph()
+        if not self.terminal:
+            self.loop.run()
 
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
         # Width of bar graph is needed to know how long of a list of data to keep
         self.data.update_data()
+        if self.terminal:
+            self.data.output_to_terminal()
+        if self.save_csv:
+            self.data.output_to_csv(DEFAULT_CSV_FILE)
         self.view.update_displayed_information()
         self.animate_alarm = self.loop.set_alarm_in(
             UPDATE_INTERVAL, self.animate_graph)
+
+    def start_stress(self):
+        mode = self.mode
+        if mode.get_current_mode() == 'Stress Operation':
+            try:
+                kill_child_processes(mode.get_stress_process())
+            except:
+                logging.debug('Could not kill process')
+            stress_cmd = [stress_program]
+            if int(self.view.stress_menu.sqrt_workers) > 0:
+                stress_cmd.append('-c')
+                stress_cmd.append(self.view.stress_menu.sqrt_workers)
+
+            if int(self.view.stress_menu.sync_workers) > 0:
+                stress_cmd.append('-i')
+                stress_cmd.append(self.view.stress_menu.sync_workers)
+
+            if int(self.view.stress_menu.memory_workers) > 0:
+                stress_cmd.append('--vm')
+                stress_cmd.append(self.view.stress_menu.memory_workers)
+                stress_cmd.append('--vm-bytes')
+                stress_cmd.append(self.view.stress_menu.malloc_byte)
+                stress_cmd.append('--vm-stride')
+                stress_cmd.append(self.view.stress_menu.byte_touch_cnt)
+
+            if self.view.stress_menu.no_malloc:
+                stress_cmd.append('--vm-keep')
+
+            if int(self.view.stress_menu.write_workers) > 0:
+                stress_cmd.append('--hdd')
+                stress_cmd.append(self.view.stress_menu.write_workers)
+                stress_cmd.append('--hdd-bytes')
+                stress_cmd.append(self.view.stress_menu.write_bytes)
+
+            if self.view.stress_menu.time_out != 'none':
+                stress_cmd.append('-t')
+                stress_cmd.append(self.view.stress_menu.time_out)
+
+            with open(os.devnull, 'w') as DEVNULL:
+                try:
+                    stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL, stderr=DEVNULL, shell=False)
+                    mode.set_stress_process(psutil.Process(stress_proc.pid))
+                except:
+                    logging.debug("Unable to start stress")
+
+            self.data.max_perf_lost = 0
+            self.data.samples_taken = 0
+
+        elif mode.get_current_mode() == 'FIRESTARTER':
+            logging.debug('Started FIRESTARTER mode')
+            try:
+                kill_child_processes(mode.get_stress_process())
+            except:
+                logging.debug('Could not kill process')
+
+            stress_cmd = [os.path.join(os.getcwd(), fire_starter)]
+            with open(os.devnull, 'w') as DEVNULL:
+                try:
+                    stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL, stderr=DEVNULL, shell=False)
+                    mode.set_stress_process(psutil.Process(stress_proc.pid))
+                    logging.debug('Started process' + str(mode.get_stress_process()))
+                except:
+                    logging.debug("Unable to start stress")
+
+        else:
+            logging.debug('Regular operation mode')
+            try:
+                kill_child_processes(mode.get_stress_process())
+            except:
+                try:
+                    logging.debug('Could not kill process' + str(mode.get_stress_process()))
+                except:
+                    logging.debug('Could not kill process FIRESTARTER')
 
 
 def main():
@@ -695,17 +698,19 @@ def main():
         is_admin = os.getuid() == 0
     except AttributeError:
         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
-    if not is_admin:
-        print ("You are running without root permissions.\
-               Run as root to see max Turbo frequency")
+    if not is_admin and not args.terminal:
+        print ("You are running without root permissions. Run as root to see max Turbo frequency")
         logging.info("Started without root permissions")
 
-    global save_csv
     if args.csv:
-        save_csv = True
+        logging.info("Printing output to csv " + DEFAULT_CSV_FILE)
+
+    if args.terminal:
+        logging.info("Printing single line to terminal")
+
 
     global graph_controller
-    graph_controller = GraphController()
+    graph_controller = GraphController(args)
     graph_controller.main()
 
 
@@ -716,8 +721,10 @@ def get_args():
 
     parser.add_argument('-d', '--debug',
                         default=False, action='store_true', help="Output debug log to " + log_file)
-    parser.add_argument('-c', '--csv',
-                        default=False, help="Save stats to csv file " + DEFAULT_CSV_FILE)
+    parser.add_argument('-c', '--csv', action='store_true',
+                        default=False, help="Save stats to csv file")
+    parser.add_argument('-t', '--terminal', action='store_true',
+                        default=False, help="Display a single line of stats without tui")
     parser.add_argument('-v', '--version',
                         default=False, action='store_true', help="Display version")
     args = parser.parse_args()

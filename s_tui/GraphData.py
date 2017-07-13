@@ -19,8 +19,10 @@
 
 import logging
 import os
-
+import csv
 import psutil
+import time
+from collections import OrderedDict
 
 from HelperFunctions import TURBO_MSR
 from HelperFunctions import read_msr
@@ -41,7 +43,8 @@ class GraphData:
         self.update_util()
         self.update_freq()
 
-    def update_graph_val(self, values, new_val):
+    @staticmethod
+    def append_latest_value(values, new_val):
 
         values.append(new_val)
         return values[1:]
@@ -50,7 +53,7 @@ class GraphData:
         # Constants data
         self.is_admin = is_admin
         self.num_samples = self.MAX_SAMPLES
-        # Data for graphs
+        # Series of last sampled data
         self.cpu_util = [0] * self.num_samples
         self.cpu_temp = [0] * self.num_samples
         self.cpu_freq = [0] * self.num_samples
@@ -60,6 +63,7 @@ class GraphData:
         self.max_temp = 0
         self.cur_temp = 0
         self.cur_freq = 0
+        self.cur_util = 0
         self.perf_lost = 0
         self.max_perf_lost = 0
         self.samples_taken = 0
@@ -91,23 +95,24 @@ class GraphData:
                 logging.debug("Top frequency is not supported")
 
     def update_util(self):
+        """Update CPU utilization data"""
         try:
             last_value = psutil.cpu_percent(interval=None)
         except:
             last_value = 0
             logging.debug("Cpu Utilization unavailable")
-
-        self.cpu_util = self.update_graph_val(self.cpu_util, last_value)
+        self.cur_util = last_value
+        self.cpu_util = self.append_latest_value(self.cpu_util, last_value)
 
     def update_freq(self):
+        """Update CPU frequency data"""
         self.samples_taken += 1
         try:
             self.cur_freq = int(psutil.cpu_freq().current)
         except:
             self.cur_freq = 0
             logging.debug("Frequency unavailable")
-
-        self.cpu_freq = self.update_graph_val(self.cpu_freq, self.cur_freq)
+        self.cpu_freq = self.append_latest_value(self.cpu_freq, self.cur_freq)
 
         if self.is_admin and self.samples_taken > self.WAIT_SAMPLES:
             self.perf_lost = int(self.top_freq) - int(self.cur_freq)
@@ -158,7 +163,7 @@ class GraphData:
         if last_value <= 0:
             logging.debug("Temperature sensor unavailable")
 
-        self.cpu_temp = self.update_graph_val(self.cpu_temp, last_value)
+        self.cpu_temp = self.append_latest_value(self.cpu_temp, last_value)
         # Update max temp
         try:
             if last_value > int(self.max_temp):
@@ -178,7 +183,42 @@ class GraphData:
             self.cur_temp = 0
             self.overheat = False
 
-    # On reset, restore all values to 0 and clear the graph
+    def get_stats_dict(self):
+        """Return an OrderedDict of available statistics"""
+        stats = OrderedDict()
+        stats['Time'] = time.strftime("%Y-%m-%d_%H:%M:%S")
+        stats['Frequency'] = self.cur_freq
+        stats['Utilization'] = self.cur_util
+        stats['Temperature'] = self.cur_temp
+        stats['Max Temperature'] = self.max_temp
+        stats['Performance loss'] = self.perf_lost
+        return stats
+
+    def output_to_csv(self, csv_writeable_file):
+        """Print statistics to csv file"""
+        file_exists = os.path.isfile(csv_writeable_file)
+
+        with open(csv_writeable_file, 'a') as csvfile:
+            fieldnames = ['Time',
+                          'Frequency',
+                          'Utilization',
+                          'Temperature',
+                          'Max Temperature',
+                          'Performance loss',
+                         ]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+            if not file_exists:
+                writer.writeheader()  # file doesn't exist yet, write a header
+            stats = self.get_stats_dict()
+            writer.writerow(stats)
+
+    def output_to_terminal(self):
+        """Print statistics to the terminal"""
+        stats = self.get_stats_dict()
+        print(stats)
+
+
     def reset(self):
         """Reset all data values to 0"""
         self.overheat = False
@@ -188,6 +228,7 @@ class GraphData:
         self.max_temp = 0
         self.cur_temp = 0
         self.cur_freq = 0
+        self.cur_util = 0
         self.perf_lost = 0
         self.max_perf_lost = 0
         self.samples_taken = 0
