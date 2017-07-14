@@ -22,6 +22,7 @@ import os
 import csv
 import psutil
 import time
+import json
 from collections import OrderedDict
 
 from HelperFunctions import TURBO_MSR
@@ -166,7 +167,7 @@ class GraphData:
         self.cpu_temp = self.append_latest_value(self.cpu_temp, last_value)
         # Update max temp
         try:
-            if last_value > int(self.max_temp):
+            if int(last_value) > int(self.max_temp):
                 self.max_temp = last_value
         except:
             self.max_temp = 0
@@ -174,6 +175,9 @@ class GraphData:
         # Update current temp
         self.cur_temp = last_value
         try:
+            if self.cur_temp is None:
+                self.cur_temp = 0
+                self.overheat = False
             if self.cur_temp >= self.THRESHOLD_TEMP:
                 self.overheat = True
                 self.overheat_detected = True
@@ -217,6 +221,11 @@ class GraphData:
         """Print statistics to the terminal"""
         stats = self.get_stats_dict()
         print(stats)
+
+    def output_json(self):
+        """Print statistics to the terminal"""
+        stats = self.get_stats_dict()
+        print json.dumps(stats, indent=4)
 
 
     def reset(self):

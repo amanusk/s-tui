@@ -562,6 +562,7 @@ class GraphController:
         self.animate_alarm = None
         self.save_csv = args.csv
         self.terminal = args.terminal
+        self.json = args.json
         self.mode = GraphMode()
         self.data = GraphData(is_admin=is_admin)
         self.view = GraphView(self)
@@ -585,7 +586,7 @@ class GraphController:
     def main(self):
         self.loop = MainLoop(self.view, PALETTE)
         self.animate_graph()
-        if not self.terminal:
+        if not (self.terminal or self.json):
             self.loop.run()
 
     def animate_graph(self, loop=None, user_data=None):
@@ -594,6 +595,8 @@ class GraphController:
         self.data.update_data()
         if self.terminal:
             self.data.output_to_terminal()
+        if self.json:
+            self.data.output_json()
         if self.save_csv:
             self.data.output_to_csv(DEFAULT_CSV_FILE)
         self.view.update_displayed_information()
@@ -724,6 +727,8 @@ def get_args():
                         default=False, action='store_true', help="Output debug log to " + log_file)
     parser.add_argument('-c', '--csv', action='store_true',
                         default=False, help="Save stats to csv file")
+    parser.add_argument('-j', '--json', action='store_true',
+                        default=False, help="Display a single line in JSON format")
     parser.add_argument('-t', '--terminal', action='store_true',
                         default=False, help="Display a single line of stats without tui")
     parser.add_argument('-v', '--version',
