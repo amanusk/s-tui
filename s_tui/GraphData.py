@@ -140,26 +140,26 @@ class GraphData:
             try:
                 last_value = psutil.sensors_temperatures()['coretemp'][0].current
             except:
-                pass
+                last_value = 0
         # Support for specific systems
         if last_value <= 0:
             try:
                 last_value = psutil.sensors_temperatures()['it8622'][0].current
             except:
-                pass
+                last_value = 0
         # Raspberry pi 3 running Ubuntu 16.04
         if last_value <= 0:
             try:
                 last_value = psutil.sensors_temperatures()['bcm2835_thermal'][0].current
             except:
-                pass
+                last_value = 0
         # Raspberry pi + raspiban CPU temp
         if last_value <= 0:
             try:
                 last_value = os.popen('cat /sys/class/thermal/thermal_zone0/temp 2> /dev/null').read()
                 last_value = int(last_value) / 1000
             except:
-                pass
+                last_value = 0
         # If not relevant sensor found, do not register temperature
         if last_value <= 0:
             logging.debug("Temperature sensor unavailable")
