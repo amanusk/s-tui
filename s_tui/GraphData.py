@@ -147,6 +147,12 @@ class GraphData:
                 last_value = psutil.sensors_temperatures()['it8622'][0].current
             except:
                 last_value = 0
+        # Support for specific systems
+        if last_value <= 0:
+            try:
+                last_value = psutil.sensors_temperatures()['it8721'][0].current
+            except:
+                last_value = 0
         # Raspberry pi 3 running Ubuntu 16.04
         if last_value <= 0:
             try:
@@ -157,6 +163,7 @@ class GraphData:
         if last_value <= 0:
             try:
                 last_value = os.popen('cat /sys/class/thermal/thermal_zone0/temp 2> /dev/null').read()
+                logging.info("Recorded temp " + last_value)
                 last_value = int(last_value) / 1000
             except:
                 last_value = 0
