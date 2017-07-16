@@ -30,6 +30,7 @@ import subprocess
 import time
 import psutil
 import urwid
+import signal
 
 from AboutMenu import AboutMenu
 from ComplexBarGraphs import LabeledBarGraph
@@ -74,6 +75,8 @@ hogs, while monitoring the CPU usage, temperature and frequency.\n\
 The software was conceived with the vision of being able to stress test your \
 computer without the need for a GUI\n\
 "
+
+
 
 
 class ViListBox(urwid.ListBox):
@@ -139,8 +142,13 @@ class GraphMode:
         return True
 
 
-
 class MainLoop(urwid.MainLoop):
+    def signal_handler(signal, frame):
+        """singnal handler for properly exiting Ctrl+C"""
+        logging.debug(graph_controller.mode.get_stress_process())
+        kill_child_processes(graph_controller.mode.get_stress_process())
+        raise urwid.ExitMainLoop()
+
     """ Inherit urwid Mainloop to catch special charachter inputs"""
     def unhandled_input(self, input):
         logging.debug('Caught ' + str(input))
@@ -151,6 +159,8 @@ class MainLoop(urwid.MainLoop):
 
         if input == 'esc':
             graph_controller.view.on_stress_menu_close()
+
+    signal.signal(signal.SIGINT, signal_handler)
 
 
 class GraphView(urwid.WidgetPlaceholder):
