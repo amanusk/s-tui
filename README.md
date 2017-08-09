@@ -9,10 +9,28 @@ s-tui is a terminal UI for monitoring your computer. s-tui allows to monitor CPU
 ## Screenshot
 ![](https://thumbs.gfycat.com/SaneBadFlea-size_restricted.gif)
 
-### Pros
-* Monitoring your headless server over ssh
-* See performance dips caused by thermal throttling 
+* [The Stress Terminal UI: s-tui](#the-stress-terminal-ui-s-tui)
+  * [Screenshot](#screenshot)
+  * [What it does](#what-it-does)
+  * [Usage](#usage)
+  * [Simple installation](#simple-installation)
+	 * [pip (x86   ARM)](#pip-x86--arm)
+	 * [Run local executable (x86 only):](#run-local-executable-x86-only)
+  * [Options](#options)
+  * [Dependencies](#dependencies)
+  * [Other installation methods](#other-installation-methods)
+	 * [Ubuntu](#ubuntu)
+	 * [Arch-Linux](#arch-linux)
+  * [Build](#build)
+  * [Compatibility](#compatibility)
+
+
+## What it does
+* Monitoring your CPU temperature/utilization/frequency
+* Shows performance dips caused by thermal throttling 
 * Requires minimal resources
+* Requires no X-server
+* Built in options for stressing the CPU (stress/stress-ng)
 
 
 ## Usage
@@ -24,7 +42,8 @@ or
 sudo s-tui
 ```
 
-## Simplest installation with pip
+## Simple installation
+### pip (x86 + ARM)
 ```
 sudo pip install s-tui
 ```
@@ -33,12 +52,30 @@ Or if you cannot use sudo:
 pip install s-tui --user
 ```
 
-## Run local executable:
+If you are installing s-tui on a Raspberry-Pi you might need to install `python-dev` first
+
+### Run local executable (x86 only):
 * Download the latest release version from https://github.com/amanusk/s-tui/releases
 * Change s-tui to executable `chmod +x s-tui`
 * Run `(sudo) ./s-tui`
 
+## Options
+```
+********s-tui manual********
+Usage in graphical mode:
+* Toggle between stressed and regular operation using the radio buttons.
+* If you wish to alternate stress defaults, you can do it in 'stress options'
+* If your system supports it, you can use the utf8 button to get a smoother graph
+* Reset buttons resets the graph and the max statistics
 
+optional arguments:
+  -h, --help      show this help message and exit
+  -d, --debug     Output debug log to _s-tui.log
+  -c, --csv       Save stats to csv file
+  -t, --terminal  Display a single line of stats without tui
+  -j, --json      Display a single line of stats in JSON format
+  -v, --version   Display version
+```
 
 ## Dependencies
 s-tui is a great tool for monitoring. If you would like to stress your computer, install stress. Stress options will then show up in s-tui
@@ -87,5 +124,7 @@ s-tui uses psutil to probe your hardware information. If your hardware is not su
 Running s-tui as root gives access to the maximum Turbo Boost frequency available to your CPU when stressing all cores. (Currently tested on Intel only).  
 Running without root will display the Turbo Boost available on a single core. 
 
-* s-tui tested to run on Raspberry-pi 3
+* s-tui tested to run on Raspberry-Pi 3
+
+* If the temperature does not show up, your sensor might not be supported. Try opening an issue on github and we can look into it.
 

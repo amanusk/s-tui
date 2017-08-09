@@ -37,6 +37,7 @@ from ComplexBarGraphs import LabeledBarGraph
 from ComplexBarGraphs import ScalableBarGraph
 from GraphData import GraphData
 from HelpMenu import HelpMenu
+from HelpMenu import HELP_MESSAGE
 from StressMenu import StressMenu
 from HelperFunctions import PALETTE
 from HelperFunctions import __version__
@@ -52,9 +53,10 @@ DEFAULT_LOG_FILE = "_s-tui.log"
 
 DEFAULT_CSV_FILE = "stui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
 
-VERSION_MESSAGE = " s-tui " + __version__ +\
-                  " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
-                  Released under GNU GPLv2"
+VERSION_MESSAGE = \
+"s-tui " + __version__ +\
+" - (C) 2017 Alex Manuskin, Gil Tsuker\n\
+Released under GNU GPLv2"
 
 fire_starter = "FIRESTARTER/FIRESTARTER"
 
@@ -64,17 +66,8 @@ stress_installed = False
 graph_controller = None
 stress_program = None
 
-INTRO_MESSAGE = "\
-********s-tui manual********\n\
--Alex Manuskin      \n\
--Gil Tsuker         \n\
-April 2017\n\
-\n\
-s-tui is a terminal UI add-on for stress. The software uses stress to run CPU \
-hogs, while monitoring the CPU usage, temperature and frequency.\n\
-The software was conceived with the vision of being able to stress test your \
-computer without the need for a GUI\n\
-"
+INTRO_MESSAGE = HELP_MESSAGE
+
 
 
 
@@ -246,6 +239,7 @@ class GraphView(urwid.WidgetPlaceholder):
                         self.data.MAX_UTIL, self.graph_util)
 
         # Updating CPU temperature graph
+        self.set_temp_color()
         update_displayed_graph_data(self.data.cpu_temp,
                         self.data.MAX_TEMP, self.graph_temp)
 
@@ -259,6 +253,7 @@ class GraphView(urwid.WidgetPlaceholder):
     def set_temp_color(self, smooth=None):
         """Paint graph red in overheat is detected"""
         if self.data.overheat:
+            logging.info("Overheat detected ")
             new_color = (['bg background', 'high temp dark', 'high temp light'],
                          {(1, 0): 'high temp dark smooth', (2, 0): 'high temp light smooth'},
                          'high temp txt')
@@ -734,13 +729,13 @@ def get_args():
         formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-d', '--debug',
-                        default=False, action='store_true', help="Output debug log to " + log_file)
+                        default=False, action='store_true', help="Output debug log to _s-tui.log")
     parser.add_argument('-c', '--csv', action='store_true',
                         default=False, help="Save stats to csv file")
-    parser.add_argument('-j', '--json', action='store_true',
-                        default=False, help="Display a single line in JSON format")
     parser.add_argument('-t', '--terminal', action='store_true',
                         default=False, help="Display a single line of stats without tui")
+    parser.add_argument('-j', '--json', action='store_true',
+                        default=False, help="Display a single line of stats in JSON format")
     parser.add_argument('-v', '--version',
                         default=False, action='store_true', help="Display version")
     args = parser.parse_args()

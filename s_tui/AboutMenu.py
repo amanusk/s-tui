@@ -26,11 +26,16 @@ ABOUT_MESSAGE = " \n\
 About:\n\
 s-tui is a monitoring tool for your CPU temperature, frequency and utilization. s-tui makes it possilble to monitor your computer over SSH without a need for a GUI\n\
 \n\
-Authors:\n\
-Alex Manuskin, Gil Tsuker\n\
-\n\
 Code for s-tui is available on github\n\
 https://github.com/amanusk/s-tui\n\
+\n\
+***    Please star on github :)    ***\n\
+\n\
+Created by:\n\
+    - Alex Manuskin\n\
+    - Gil Tsuker\n\
+\n\
+April 2017\n\
 "
 
 MESSAGE_LEN = 20

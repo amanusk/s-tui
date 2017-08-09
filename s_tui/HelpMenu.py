@@ -22,14 +22,15 @@
 from __future__ import print_function
 import urwid
 
-HELP_MESSAGE = " \n\
-Usage:\n\
+HELP_MESSAGE = """
+********s-tui manual********
+Usage in graphical mode:\n\
 * Toggle between stressed and regular operation using the radio buttons.\n\
 * If you wish to alternate stress defaults, you can do it in 'stress options\n\
 * If your system supports it, you can use the utf8 button to get a smoother graph\n\
 * Reset buttons resets the graph and the max statistics\n\
-* Use the quit button to quit the software\n\
-"
+\n\
+"""
 
 MESSAGE_LEN = 20
 

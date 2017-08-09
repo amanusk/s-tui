@@ -16,7 +16,6 @@ setup(
     packages=['s_tui'],
     version=AUX.__version__,
     author="Alex Manuskin",
-    author_email="alex.manuskin@gmail.com",
     description="Terminal UI stress test and monitoring tool",
     license="GPLv2",
     url="https://github.com/amanusk/s-tui",
