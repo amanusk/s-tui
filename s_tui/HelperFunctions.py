@@ -26,7 +26,7 @@ import platform
 import subprocess
 import re
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 TURBO_MSR = 429
 
 def get_processor_name():
