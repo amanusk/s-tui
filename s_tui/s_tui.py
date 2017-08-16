@@ -40,6 +40,7 @@ from HelpMenu import HelpMenu
 from HelpMenu import HELP_MESSAGE
 from StressMenu import StressMenu
 from HelperFunctions import PALETTE
+from HelperFunctions import DEFAULT_PALETTE
 from HelperFunctions import __version__
 from HelperFunctions import get_processor_name
 from HelperFunctions import kill_child_processes
@@ -589,7 +590,7 @@ class GraphController:
         return rval
 
     def main(self):
-        self.loop = MainLoop(self.view, PALETTE)
+        self.loop = MainLoop(self.view, DEFAULT_PALETTE)
         self.animate_graph()
         if not (self.terminal or self.json):
             self.loop.run()
