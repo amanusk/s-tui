@@ -425,11 +425,13 @@ class GraphView(urwid.WidgetPlaceholder):
             unicode_checkbox = urwid.Text(
                 "UTF-8 encoding not detected")
 
+        hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
+
         install_stress_message = urwid.Text("")
         if not stress_installed:
             install_stress_message = urwid.Text("\nstress not installed")
         buttons = [urwid.Text(u"Mode", align="center"),
-                   ] + self.mode_buttons + [
+                   ] +  self.mode_buttons + [
             urwid.Divider(),
             urwid.Text("Control Options", align="center"),
             animate_controls,

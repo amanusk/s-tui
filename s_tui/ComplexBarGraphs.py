@@ -22,6 +22,7 @@ get_size() - returns the tuple (row, col)
 """
 
 import urwid
+#from graphics import BarGraph
 
 
 class ScalableBarGraph(urwid.BarGraph):

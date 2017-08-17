@@ -37,7 +37,7 @@ class GraphData:
     WAIT_SAMPLES = 5
     MAX_SAMPLES = 1000
     MAX_UTIL = 100
-    MAX_TEMP = 100
+    MAX_TEMP = 105 # Usual processor Tjunction
 
     def update_data(self):
         self.update_temp()
@@ -139,6 +139,12 @@ class GraphData:
         if last_value <= 0:
             try:
                 last_value = psutil.sensors_temperatures()['coretemp'][0].current
+            except:
+                last_value = 0
+        # Support for Ryzen 7 + asus
+        if last_value <= 0:
+            try:
+                last_value = psutil.sensors_temperatures()['it8655'][0].current
             except:
                 last_value = 0
         # Support for specific systems

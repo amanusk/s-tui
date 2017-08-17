@@ -26,7 +26,7 @@ import platform
 import subprocess
 import re
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 TURBO_MSR = 429
 
 def get_processor_name():
@@ -137,7 +137,7 @@ DEFAULT_PALETTE = [
     ('freq dark smooth',        'dark magenta',   'default'),
     ('freq light',              'dark red',       'light magenta', 'standout'),
     ('freq light smooth',       'light magenta',  'default'),
-    ('button normal',           'light gray',     'dark blue',    'standout'),
+    ('button normal',           'dark green',     'default',    'standout'),
     ('button select',           'white',          'dark green'),
     ('line',                    'default',         'default',      'standout'),
     ('pg normal',               'white',          'default',        'standout'),
