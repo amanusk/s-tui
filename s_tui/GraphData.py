@@ -173,6 +173,16 @@ class GraphData:
                 last_value = int(last_value) / 1000
             except:
                 last_value = 0
+        # Fall back for most single processor systems
+        # Take the first value of the first processor
+        if last_value <= 0:
+            try:
+                temperatures = psutil.sensors_temperatures()
+                chips = list(temperatures.keys())
+                last_value = temperatures[chips[0]][0].current
+            except:
+                last_value = 0
+
         # If not relevant sensor found, do not register temperature
         if last_value <= 0:
             logging.debug("Temperature sensor unavailable")
