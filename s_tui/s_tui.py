@@ -44,6 +44,7 @@ from HelperFunctions import DEFAULT_PALETTE
 from HelperFunctions import __version__
 from HelperFunctions import get_processor_name
 from HelperFunctions import kill_child_processes
+from RaplPower import RaplPower
 
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
