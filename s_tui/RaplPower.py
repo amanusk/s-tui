@@ -18,9 +18,6 @@ class RaplPower:
 		self.last_measurement_time = time.time()
 		self.last_measurement_value = self.read_power_measurement_file()
 		self.is_available = True
-
-		# if (not os.path.exists(self.intel_rapl_package_energy_file)):
-	# this shouldn't be a startable class
 	
 	def read_power_measurement_file(self):
 		if not self.is_available:

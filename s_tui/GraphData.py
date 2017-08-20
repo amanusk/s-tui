@@ -43,6 +43,7 @@ class GraphData:
         self.update_temp()
         self.update_util()
         self.update_freq()
+        self.update_power()
 
     @staticmethod
     def append_latest_value(values, new_val):
@@ -103,13 +104,13 @@ class GraphData:
                 logging.debug("Top frequency is not supported")
 
     def update_power(self):
-        if rapl_power_reader.is_available:
+        if self.rapl_power_reader.is_available:
             try:
-                self.cur_power = rapl_power_reader.get_power_usage()
+                self.cur_power = self.rapl_power_reader.get_power_usage()
             except (IOError) as e:
                 logging.debug("Unable to read power usage from the rapl sysfs interfaces")
                 self.cur_power = 0
-                
+
             self.cpu_power = self.append_latest_value(self.cpu_power, self.cur_power)
 
     def update_util(self):
@@ -284,3 +285,6 @@ class GraphData:
         self.samples_taken = 0
         self.overheat_detected = False
         self.cpu_power = 0
+
+    def is_power_measurement_available(self):
+        return self.rapl_power_reader.get_is_available()
