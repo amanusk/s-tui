@@ -15,9 +15,9 @@ class RaplPower:
 			self.is_available = False
 			return
 
+		self.is_available = True
 		self.last_measurement_time = time.time()
 		self.last_measurement_value = self.read_power_measurement_file()
-		self.is_available = True
 	
 	def read_power_measurement_file(self):
 		if not self.is_available:
@@ -37,8 +37,16 @@ class RaplPower:
 		jaul_used = (current_measurement_value - self.last_measurement_value) / self.MICRO_JAUL_IN_JAUL
 		seconds_passed = current_measurement_time - self.last_measurement_time
 		jaul_used_per_second = jaul_used / seconds_passed
-		
+
+		self.last_measurement_value = current_measurement_value
+		self.last_measurement_time = current_measurement_time	
 		return jaul_used_per_second
 
 	def get_is_available(self):
 		return self.is_available
+
+if '__main__' == __name__:
+    rapl = RaplPower()
+    while True:
+	print(rapl.get_power_usage())
+	time.sleep(2)

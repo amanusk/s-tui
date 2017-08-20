@@ -76,7 +76,7 @@ class GraphData:
         self.core_num = "N/A"
 
         self.cur_power = 0
-        self.max_power = 100
+        self.max_power = 40
         try:
             self.core_num = psutil.cpu_count()
         except:
@@ -284,7 +284,6 @@ class GraphData:
         self.max_perf_lost = 0
         self.samples_taken = 0
         self.overheat_detected = False
-        self.cpu_power = 0
 
     def is_power_measurement_available(self):
         return self.rapl_power_reader.get_is_available()
