@@ -11,30 +11,37 @@ class RaplPower:
 		self.package_number = package_number
 		self.intel_rapl_package_energy_file = os.path.join(self.intel_rapl_folder, 'intel-rapl:%d'%package_number, 'energy_uj')
 		
+		if (not os.path.exists(self.intel_rapl_package_energy_file)):
+			self.is_available = False
+			return
+
+		self.last_measurement_time = time.time()
+		self.last_measurement_value = self.read_power_measurement_file()
+		self.is_available = True
+
 		# if (not os.path.exists(self.intel_rapl_package_energy_file)):
 	# this shouldn't be a startable class
 	
 	def read_power_measurement_file(self):
+		if not self.is_available:
+			return -1
 		file = open(self.intel_rapl_package_energy_file)
 		current_measurement_value = file.read()
 		file.close()
 		return float(current_measurement_value)
 
-	def start(self):
-		if (not os.path.exists(self.intel_rapl_package_energy_file)):
-			return False
-
-		self.last_measurement_time = time.time()
-		self.last_measurement_value = self.read_power_measurement_file()
-
 
 	def get_power_usage(self):
+		if not self.is_available:
+			return -1
 		current_measurement_value = self.read_power_measurement_file()
 		current_measurement_time = time.time()
 
 		jaul_used = (current_measurement_value - self.last_measurement_value) / self.MICRO_JAUL_IN_JAUL
 		seconds_passed = current_measurement_time - self.last_measurement_time
 		jaul_used_per_second = jaul_used / seconds_passed
-		print jaul_used
-		print seconds_passed	
+		
 		return jaul_used_per_second
+
+	def get_is_available(self):
+		return self.is_available

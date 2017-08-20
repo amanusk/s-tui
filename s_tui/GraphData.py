@@ -27,7 +27,7 @@ from collections import OrderedDict
 
 from HelperFunctions import TURBO_MSR
 from HelperFunctions import read_msr
-
+from RaplPower import RaplPower
 
 class GraphData:
     """
@@ -51,6 +51,9 @@ class GraphData:
         return values[1:]
 
     def __init__(self, is_admin):
+
+        self.rapl_power_reader = RaplPower()
+
         # Constants data
         self.is_admin = is_admin
         self.num_samples = self.MAX_SAMPLES
@@ -58,6 +61,7 @@ class GraphData:
         self.cpu_util = [0] * self.num_samples
         self.cpu_temp = [0] * self.num_samples
         self.cpu_freq = [0] * self.num_samples
+        self.cpu_power = [0] * self.num_samples
         # Data for statistics
         self.overheat = False
         self.overheat_detected = False
@@ -69,6 +73,9 @@ class GraphData:
         self.max_perf_lost = 0
         self.samples_taken = 0
         self.core_num = "N/A"
+
+        self.cur_power = 0
+        self.max_power = 100
         try:
             self.core_num = psutil.cpu_count()
         except:
@@ -94,6 +101,16 @@ class GraphData:
                 self.turbo_freq = False
             except:
                 logging.debug("Top frequency is not supported")
+
+    def update_power(self):
+        if rapl_power_reader.is_available:
+            try:
+                self.cur_power = rapl_power_reader.get_power_usage()
+            except (IOError) as e:
+                logging.debug("Unable to read power usage from the rapl sysfs interfaces")
+                self.cur_power = 0
+                
+            self.cpu_power = self.append_latest_value(self.cpu_power, self.cur_power)
 
     def update_util(self):
         """Update CPU utilization data"""
@@ -257,6 +274,7 @@ class GraphData:
         self.cpu_util = [0] * self.num_samples
         self.cpu_temp = [0] * self.num_samples
         self.cpu_freq = [0] * self.num_samples
+        self.cpu_power = [0] * self.num_samples
         self.max_temp = 0
         self.cur_temp = 0
         self.cur_freq = 0
@@ -265,3 +283,4 @@ class GraphData:
         self.max_perf_lost = 0
         self.samples_taken = 0
         self.overheat_detected = False
+        self.cpu_power = 0
