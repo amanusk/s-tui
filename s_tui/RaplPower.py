@@ -47,5 +47,5 @@ class RaplPower:
 if '__main__' == __name__:
     rapl = RaplPower()
     while True:
-    print(rapl.get_power_usage())
-    time.sleep(2)
+        print(rapl.get_power_usage())
+        time.sleep(2)
