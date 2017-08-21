@@ -528,7 +528,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def main_window(self):
         """Format the main windows, graphs on the side and sidebar"""
-        self.graph_power = self.bar_graph('util light', 'util dark', 'Power Usage [J/s]', [], [0, 50, 100])
+        self.graph_power = self.bar_graph('power light', 'power dark', 'Power Usage [J/s]', [], [0, 20, 40])
         self.graph_util = self.bar_graph('util light', 'util dark', 'Utilization[%]', [], [0, 50, 100])
         self.graph_temp = self.bar_graph('temp dark', 'temp light', 'Temperature[C]', [], [0, 25, 50, 75, 100])
         top_freq = self.data.top_freq
