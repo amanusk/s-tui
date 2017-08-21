@@ -24,10 +24,13 @@ import psutil
 import time
 import json
 import sys
+import subprocess
+import re
 from collections import OrderedDict
 
 from HelperFunctions import TURBO_MSR
 from HelperFunctions import read_msr
+from HelperFunctions import get_avarage_cpu_freq
 from RaplPower import RaplPower
 
 class GraphData:
@@ -107,7 +110,16 @@ class GraphData:
                 self.top_freq = psutil.cpu_freq().max
                 self.turbo_freq = False
             except:
-                logging.debug("Top frequency is not supported")
+                try:
+                    cmd = "lscpu | grep 'CPU max MHz'"
+                    ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+                    output = ps.communicate()[0]
+                    self.top_freq = float(re.findall("\d+\.\d+", output)[0])
+                except:
+                    logging.debug("CPU top freqency N/A")
+                    self.top_freq = 100
+
+
 
     def update_power(self):
         if self.rapl_power_reader.get_is_available():
@@ -136,7 +148,14 @@ class GraphData:
             self.cur_freq = int(psutil.cpu_freq().current)
         except:
             self.cur_freq = 0
-            logging.debug("Frequency unavailable")
+            try:
+                self.cur_freq = get_avarage_cpu_freq()
+            except:
+                self.cur_freq = 0
+                logging.debug("Frequency unavailable")
+
+
+
         self.cpu_freq = self.append_latest_value(self.cpu_freq, self.cur_freq)
 
         if self.is_admin and self.samples_taken > self.WAIT_SAMPLES:
