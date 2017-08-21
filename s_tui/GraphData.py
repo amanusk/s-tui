@@ -88,10 +88,14 @@ class GraphData:
         # Top frequency in case using Intel Turbo Boost
         if self.is_admin:
             try:
-                num_cpus = psutil.cpu_count(logical=False)
+                logging.info("num cpus " + str(num_cpus))
                 available_freq = read_msr(TURBO_MSR, 0)
                 logging.debug(available_freq)
-                self.top_freq = float(available_freq[num_cpus - 1] * 100)
+                max_turbo_msr = num_cpus
+                # The MSR only holds 8 values. Number of cores could be higher
+                if num_cpus > 8:
+                    max_turbo_msr = 8
+                self.top_freq = float(available_freq[max_turbo_msr - 1] * 100)
                 self.turbo_freq = True
             except (IOError, OSError) as e:
                 logging.debug(e.message)
