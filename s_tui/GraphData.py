@@ -88,6 +88,7 @@ class GraphData:
         # Top frequency in case using Intel Turbo Boost
         if self.is_admin:
             try:
+                num_cpus = psutil.cpu_count()
                 logging.info("num cpus " + str(num_cpus))
                 available_freq = read_msr(TURBO_MSR, 0)
                 logging.debug(available_freq)
