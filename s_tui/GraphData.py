@@ -76,7 +76,7 @@ class GraphData:
         self.core_num = "N/A"
 
         self.cur_power = 0
-        self.max_power = 40
+        self.max_power = self.rapl_power_reader.max_power
         try:
             self.core_num = psutil.cpu_count()
         except:
@@ -104,7 +104,7 @@ class GraphData:
                 logging.debug("Top frequency is not supported")
 
     def update_power(self):
-        if self.rapl_power_reader.is_available:
+        if self.rapl_power_reader.get_is_available():
             try:
                 self.cur_power = self.rapl_power_reader.get_power_usage()
             except (IOError) as e:
