@@ -26,16 +26,14 @@ import platform
 import subprocess
 import re
 
-__version__ = "0.4.3"
+__version__ = "0.5.0"
 TURBO_MSR = 429
 
 def get_processor_name():
     if platform.system() == "Windows":
         return platform.processor()
     elif platform.system() == "Darwin":
-        os.environ['PATH'] = os.environ['PATH'] + os.pathsep + '/usr/sbin'
-        command ="sysctl -n machdep.cpu.brand_string"
-        return subprocess.check_output(command).strip()
+         return subprocess.check_output(['/usr/sbin/sysctl', "-n", "machdep.cpu.brand_string"]).strip()
     elif platform.system() == "Linux":
         command = "cat /proc/cpuinfo"
         all_info = subprocess.check_output(command, shell=True).strip()
