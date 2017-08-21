@@ -260,8 +260,8 @@ class GraphData:
                           'Max Temperature',
                           'Performance loss',
                          ]
-        if is_power_measurement_available():
-            fieldnames += 'Power'
+            if self.is_power_measurement_available():
+                fieldnames.append("Power")
 
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
