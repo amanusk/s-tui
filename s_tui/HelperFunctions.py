@@ -26,16 +26,26 @@ import platform
 import subprocess
 import re
 
-__version__ = "0.4.3"
+__version__ = "0.5.0"
 TURBO_MSR = 429
+
+
+def get_avarage_cpu_freq():
+    with open("/proc/cpuinfo") as cpuinfo:
+        cores_freq = []
+        for line in cpuinfo:
+            if "cpu MHz" in line:
+                core_freq = re.findall("\d+\.\d+", line)
+                cores_freq += core_freq
+        return round(reduce(lambda x, y: float(x) + float(y), cores_freq) / len(cores_freq), 1)
+
+
 
 def get_processor_name():
     if platform.system() == "Windows":
         return platform.processor()
     elif platform.system() == "Darwin":
-        os.environ['PATH'] = os.environ['PATH'] + os.pathsep + '/usr/sbin'
-        command ="sysctl -n machdep.cpu.brand_string"
-        return subprocess.check_output(command).strip()
+         return subprocess.check_output(['/usr/sbin/sysctl', "-n", "machdep.cpu.brand_string"]).strip()
     elif platform.system() == "Linux":
         command = "cat /proc/cpuinfo"
         all_info = subprocess.check_output(command, shell=True).strip()
@@ -95,6 +105,9 @@ PALETTE = [
     ('high temp dark smooth',   'dark red',       'black'),
     ('high temp light',         'dark red',       'light red',    'standout'),
     ('high temp light smooth',  'light red',      'black'),
+    ('power dark',               'dark gray',          'dark cyan',    'standout'),
+    ('power dark smooth',        'dark gray',      'black'),
+    ('power light',              'light gray',       'light cyan',   'standout'),
     ('temp dark',               'black',          'dark cyan',    'standout'),
     ('temp dark smooth',        'dark cyan',      'black'),
     ('temp light',              'dark red',       'light cyan',   'standout'),
@@ -120,28 +133,42 @@ DEFAULT_PALETTE = [
     ('line',                    'default',          'light gray',   'standout'),
     ('menu button',             'light gray',     'black'),
     ('bg background',           'default',         'default'),
+    ('overheat dark',           'white',          'light red',     'standout'),
+
     ('util light',              'default',          'dark green',   'standout'),
     ('util light smooth',       'dark green',     'default'),
     ('util dark',               'dark red',       'light green',  'standout'),
     ('util dark smooth',        'light green',    'default'),
-    ('high temp dark',          'light red',      'dark red',     'standout'),
-    ('overheat dark',           'white',          'light red',     'standout'),
-    ('high temp dark smooth',   'dark red',       'default'),
-    ('high temp light',         'dark red',       'light red',    'standout'),
-    ('high temp light smooth',  'light red',      'default'),
-    ('temp dark',               'default',          'dark cyan',    'standout'),
+
+    ('high temp dark',          'default',       'dark red',     'standout'),
+    ('high temp dark smooth',   'dark red',      'default'),
+    ('high temp light',         'default',       'light red',    'standout'),
+    ('high temp light smooth',  'light red',     'default'),
+
+    ('power dark',               'default',      'black',    'standout'),
+    ('power dark smooth',        'black',        'default'),
+    ('power light',              'default',      'light gray',   'standout'),
+    ('power light smooth',       'light gray',   'default'),
+
+    ('temp dark',               'default',        'dark cyan',    'standout'),
     ('temp dark smooth',        'dark cyan',      'default'),
-    ('temp light',              'dark red',       'light cyan',   'standout'),
+    ('temp light',              'default',       'light cyan',   'standout'),
     ('temp light smooth',       'light cyan',     'default'),
-    ('freq dark',               'dark red',       'dark magenta', 'standout'),
+
+    ('freq dark',               'default',        'dark magenta', 'standout'),
     ('freq dark smooth',        'dark magenta',   'default'),
-    ('freq light',              'dark red',       'light magenta', 'standout'),
+    ('freq light',              'default',        'light magenta', 'standout'),
     ('freq light smooth',       'light magenta',  'default'),
+
     ('button normal',           'dark green',     'default',    'standout'),
     ('button select',           'white',          'dark green'),
-    ('line',                    'default',         'default',      'standout'),
+    ('line',                    'default',        'default',      'standout'),
     ('pg normal',               'white',          'default',        'standout'),
     ('pg complete',             'white',          'dark magenta'),
     ('high temp txt',           'light red',      'default'),
     ('pg smooth',               'dark magenta',   'default')
     ]
+
+if '__main__' == __name__:
+    avg = get_avarage_cpu_freq()
+    print(avg)

@@ -23,11 +23,15 @@ import csv
 import psutil
 import time
 import json
+import sys
+import subprocess
+import re
 from collections import OrderedDict
 
 from HelperFunctions import TURBO_MSR
 from HelperFunctions import read_msr
-
+from HelperFunctions import get_avarage_cpu_freq
+from RaplPower import RaplPower
 
 class GraphData:
     """
@@ -43,6 +47,7 @@ class GraphData:
         self.update_temp()
         self.update_util()
         self.update_freq()
+        self.update_power()
 
     @staticmethod
     def append_latest_value(values, new_val):
@@ -51,6 +56,9 @@ class GraphData:
         return values[1:]
 
     def __init__(self, is_admin):
+
+        self.rapl_power_reader = RaplPower()
+
         # Constants data
         self.is_admin = is_admin
         self.num_samples = self.MAX_SAMPLES
@@ -58,6 +66,7 @@ class GraphData:
         self.cpu_util = [0] * self.num_samples
         self.cpu_temp = [0] * self.num_samples
         self.cpu_freq = [0] * self.num_samples
+        self.cpu_power = [0] * self.num_samples
         # Data for statistics
         self.overheat = False
         self.overheat_detected = False
@@ -69,6 +78,9 @@ class GraphData:
         self.max_perf_lost = 0
         self.samples_taken = 0
         self.core_num = "N/A"
+
+        self.cur_power = 0
+        self.max_power = self.rapl_power_reader.max_power
         try:
             self.core_num = psutil.cpu_count()
         except:
@@ -80,10 +92,15 @@ class GraphData:
         # Top frequency in case using Intel Turbo Boost
         if self.is_admin:
             try:
-                num_cpus = psutil.cpu_count(logical=False)
+                num_cpus = psutil.cpu_count()
+                logging.info("num cpus " + str(num_cpus))
                 available_freq = read_msr(TURBO_MSR, 0)
                 logging.debug(available_freq)
-                self.top_freq = float(available_freq[num_cpus - 1] * 100)
+                max_turbo_msr = num_cpus
+                # The MSR only holds 8 values. Number of cores could be higher
+                if num_cpus > 8:
+                    max_turbo_msr = 8
+                self.top_freq = float(available_freq[max_turbo_msr - 1] * 100)
                 self.turbo_freq = True
             except (IOError, OSError) as e:
                 logging.debug(e.message)
@@ -93,7 +110,26 @@ class GraphData:
                 self.top_freq = psutil.cpu_freq().max
                 self.turbo_freq = False
             except:
-                logging.debug("Top frequency is not supported")
+                try:
+                    cmd = "lscpu | grep 'CPU max MHz'"
+                    ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+                    output = ps.communicate()[0]
+                    self.top_freq = float(re.findall("\d+\.\d+", output)[0])
+                except:
+                    logging.debug("CPU top freqency N/A")
+                    self.top_freq = 100
+
+
+
+    def update_power(self):
+        if self.rapl_power_reader.get_is_available():
+            try:
+                self.cur_power = self.rapl_power_reader.get_power_usage()
+            except (IOError) as e:
+                logging.debug("Unable to read power usage from the rapl sysfs interfaces")
+                self.cur_power = 0
+
+            self.cpu_power = self.append_latest_value(self.cpu_power, self.cur_power)
 
     def update_util(self):
         """Update CPU utilization data"""
@@ -112,7 +148,14 @@ class GraphData:
             self.cur_freq = int(psutil.cpu_freq().current)
         except:
             self.cur_freq = 0
-            logging.debug("Frequency unavailable")
+            try:
+                self.cur_freq = get_avarage_cpu_freq()
+            except:
+                self.cur_freq = 0
+                logging.debug("Frequency unavailable")
+
+
+
         self.cpu_freq = self.append_latest_value(self.cpu_freq, self.cur_freq)
 
         if self.is_admin and self.samples_taken > self.WAIT_SAMPLES:
@@ -219,6 +262,9 @@ class GraphData:
         stats['Temperature'] = self.cur_temp
         stats['Max Temperature'] = self.max_temp
         stats['Performance loss'] = self.perf_lost
+        if self.is_power_measurement_available():
+            stats['Power'] = round(self.cur_power,2)
+
         return stats
 
     def output_to_csv(self, csv_writeable_file):
@@ -233,6 +279,9 @@ class GraphData:
                           'Max Temperature',
                           'Performance loss',
                          ]
+            if self.is_power_measurement_available():
+                fieldnames.append("Power")
+
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             if not file_exists:
@@ -242,8 +291,9 @@ class GraphData:
 
     def output_to_terminal(self):
         """Print statistics to the terminal"""
-        stats = self.get_stats_dict()
-        print(stats)
+        for key,value in  self.get_stats_dict().iteritems():
+            if not (("Performance loss") in key):
+                sys.stdout.write(str(key) + ": " + str(value) + ", ")
 
     def output_json(self):
         """Print statistics to the terminal"""
@@ -257,6 +307,7 @@ class GraphData:
         self.cpu_util = [0] * self.num_samples
         self.cpu_temp = [0] * self.num_samples
         self.cpu_freq = [0] * self.num_samples
+        self.cpu_power = [0] * self.num_samples
         self.max_temp = 0
         self.cur_temp = 0
         self.cur_freq = 0
@@ -265,3 +316,6 @@ class GraphData:
         self.max_perf_lost = 0
         self.samples_taken = 0
         self.overheat_detected = False
+
+    def is_power_measurement_available(self):
+        return self.rapl_power_reader.get_is_available()
