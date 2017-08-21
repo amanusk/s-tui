@@ -19,13 +19,11 @@ class RaplPower:
             return
 
         self.is_available = True
-        
         self.last_measurement_time = time.time()
         self.last_measurement_value = self.read_power_measurement_file()
-        self.max_power = read_max_power_file()
+        self.max_power = self.read_max_power_file() / self.MICRO_JAUL_IN_JAUL
 
-
-    def read_measurement(file_path):
+    def read_measurement(self, file_path):
         file = open(file_path)
         value = file.read()
         file.close()
@@ -34,12 +32,12 @@ class RaplPower:
     def read_max_power_file(self):
         if not self.is_available:
             return -1
-        return float(read_measurement(self.intel_rapl_package_max_energy_file))   
+        return float(self.read_measurement(self.intel_rapl_package_max_energy_file))
 
     def read_power_measurement_file(self):
         if not self.is_available:
             return -1
-        return float(read_measurement(self.intel_rapl_package_energy_file))   
+        return float(self.read_measurement(self.intel_rapl_package_energy_file))
 
     def get_power_usage(self):
         if not self.is_available:
@@ -52,7 +50,7 @@ class RaplPower:
         jaul_used_per_second = jaul_used / seconds_passed
 
         self.last_measurement_value = current_measurement_value
-        self.last_measurement_time = current_measurement_time   
+        self.last_measurement_time = current_measurement_time
         return jaul_used_per_second
 
     def get_is_available(self):
