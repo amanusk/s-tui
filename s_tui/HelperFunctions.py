@@ -129,27 +129,27 @@ DEFAULT_PALETTE = [
     ('util light smooth',       'dark green',     'default'),
     ('util dark',               'dark red',       'light green',  'standout'),
     ('util dark smooth',        'light green',    'default'),
-    
-    ('high temp dark',          'light red',      'dark red',     'standout'),
-    ('high temp dark smooth',   'dark red',       'default'),
-    ('high temp light',         'dark red',       'light red',    'standout'),
-    ('high temp light smooth',  'light red',      'default'),
-    
-    ('power dark',               'default',      'dark gray',    'standout'),
-    ('power dark smooth',        'dark gray',    'default'),
+
+    ('high temp dark',          'default',       'dark red',     'standout'),
+    ('high temp dark smooth',   'dark red',      'default'),
+    ('high temp light',         'default',       'light red',    'standout'),
+    ('high temp light smooth',  'light red',     'default'),
+
+    ('power dark',               'default',      'black',    'standout'),
+    ('power dark smooth',        'black',        'default'),
     ('power light',              'default',      'light gray',   'standout'),
     ('power light smooth',       'light gray',   'default'),
-    
+
     ('temp dark',               'default',        'dark cyan',    'standout'),
     ('temp dark smooth',        'dark cyan',      'default'),
     ('temp light',              'default',       'light cyan',   'standout'),
     ('temp light smooth',       'light cyan',     'default'),
-    
+
     ('freq dark',               'default',        'dark magenta', 'standout'),
     ('freq dark smooth',        'dark magenta',   'default'),
     ('freq light',              'default',        'light magenta', 'standout'),
     ('freq light smooth',       'light magenta',  'default'),
-    
+
     ('button normal',           'dark green',     'default',    'standout'),
     ('button select',           'white',          'dark green'),
     ('line',                    'default',        'default',      'standout'),

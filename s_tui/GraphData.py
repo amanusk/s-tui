@@ -242,6 +242,9 @@ class GraphData:
         stats['Temperature'] = self.cur_temp
         stats['Max Temperature'] = self.max_temp
         stats['Performance loss'] = self.perf_lost
+        if self.is_power_measurement_available():
+            stats['Power'] = self.cur_power
+
         return stats
 
     def output_to_csv(self, csv_writeable_file):
@@ -256,6 +259,9 @@ class GraphData:
                           'Max Temperature',
                           'Performance loss',
                          ]
+        if is_power_measurement_available():
+            fieldnames += 'Power'
+
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             if not file_exists:

@@ -169,7 +169,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.controller = controller
         self.temp_color = (['bg background', 'temp dark', 'temp light'],
-                           {(1, 0): 'temp dark smooth', (2, 0): 'temp light smooth'},
+                           {(1, 0): 'temp dark smooth', (2, 1): 'temp light smooth'},
                            'line')
         self.mode_buttons = []
 
@@ -537,7 +537,7 @@ class GraphView(urwid.WidgetPlaceholder):
                        self.top_freq_text] + \
                       [urwid.Divider(), urwid.Text("Cur Freq", align="left"),
                        self.cur_freq_text] + \
-                      [urwid.Divider(), urwid.Text("Thermal Throttle", align="left"),
+                      [urwid.Divider(), urwid.Text("Performance Loss", align="left"),
                        self.perf_lost_text]
         if self.data.is_power_measurement_available(): 
             fixed_stats += [urwid.Divider(), urwid.Text("Power", align="left"), self.cur_power_text]
