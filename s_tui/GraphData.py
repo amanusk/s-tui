@@ -23,6 +23,7 @@ import csv
 import psutil
 import time
 import json
+import sys
 from collections import OrderedDict
 
 from HelperFunctions import TURBO_MSR
@@ -243,7 +244,7 @@ class GraphData:
         stats['Max Temperature'] = self.max_temp
         stats['Performance loss'] = self.perf_lost
         if self.is_power_measurement_available():
-            stats['Power'] = self.cur_power
+            stats['Power'] = round(self.cur_power,2)
 
         return stats
 
@@ -271,8 +272,9 @@ class GraphData:
 
     def output_to_terminal(self):
         """Print statistics to the terminal"""
-        stats = self.get_stats_dict()
-        print(stats)
+        for key,value in  self.get_stats_dict().iteritems():
+            if not (("Performance loss") in key):
+                sys.stdout.write(str(key) + ": " + str(value) + ", ")
 
     def output_json(self):
         """Print statistics to the terminal"""
