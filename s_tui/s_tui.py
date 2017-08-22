@@ -60,7 +60,7 @@ VERSION_MESSAGE = \
 " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
 Released under GNU GPLv2"
 
-fire_starter = "FIRESTARTER/FIRESTARTER"
+fire_starter = "../FIRESTARTER/FIRESTARTER"
 
 # globals
 is_admin = None
@@ -115,6 +115,9 @@ class GraphMode:
 
             if stress_installed:
                 self.modes.append('Stress Operation')
+
+            if os.path.isfile(fire_starter):
+                self.modes.append('FIRESTARTER')
 
         self.current_mode = self.modes[0]
         self.stress_process = None

@@ -10,3 +10,5 @@ dist/*
 build/*
 .idea/*
 *.csv
+env/*
+FIRESTARTER/*
