@@ -60,7 +60,7 @@ VERSION_MESSAGE = \
 " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
 Released under GNU GPLv2"
 
-fire_starter = "../FIRESTARTER/FIRESTARTER"
+fire_starter = "./FIRESTARTER/FIRESTARTER"
 
 # globals
 is_admin = None
@@ -174,6 +174,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.temp_color = (['bg background', 'temp dark', 'temp light'],
                            {(1, 0): 'temp dark smooth', (2, 1): 'temp light smooth'},
                            'line')
+        self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
         self.mode_buttons = []
 
         self.data = controller.data
@@ -365,6 +366,11 @@ class GraphView(urwid.WidgetPlaceholder):
         """Enable smooth edges if utf-8 is supported"""
 
         if state:
+            self.hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
+        else:
+            self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
+
+        if state:
             satt = {(1, 0): 'util light smooth', (2, 0): 'util dark smooth'}
         else:
             satt = None
@@ -385,6 +391,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_power.bar_graph.set_segment_attributes(['bg background', 'power dark', 'power light'], satt=satt)
 
         self.update_displayed_information()
+        self.show_graphs()
 
     def main_shadow(self, w):
         """Wrap a shadow and background around widget w."""
@@ -435,6 +442,7 @@ class GraphView(urwid.WidgetPlaceholder):
         # Create the menu
         animate_controls = urwid.GridFlow(control_options, 18, 2, 0, 'center')
 
+
         if urwid.get_encoding_mode() == "utf8":
             unicode_checkbox = urwid.CheckBox(
                 "Smooth Graph",
@@ -443,7 +451,6 @@ class GraphView(urwid.WidgetPlaceholder):
             unicode_checkbox = urwid.Text(
                 "UTF-8 encoding not detected")
 
-        hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
 
         install_stress_message = urwid.Text("")
         if not stress_installed:
@@ -506,12 +513,11 @@ class GraphView(urwid.WidgetPlaceholder):
         """Show a pile of the graph selected for dislpay"""
 
         graph_list = []
-        hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
 
         for g in self.visible_graphs:
             if g is not None:
                 graph_list.append(g)
-                graph_list.append(('fixed',  1, hline))
+                graph_list.append(('fixed',  1, self.hline))
 
         self.graph_place_holder.original_widget = urwid.Pile(graph_list)
 
@@ -583,6 +589,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.visible_graphs = [self.graph_freq, self.graph_util, self.graph_temp]
         if self.data.is_power_measurement_available():
             self.visible_graphs.append(self.graph_power)
+
         self.show_graphs()
 
         cpu_stats = self.cpu_stats()
