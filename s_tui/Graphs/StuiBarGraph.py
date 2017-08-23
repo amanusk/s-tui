@@ -62,7 +62,7 @@ class StuiBarGraph(LabeledBarGraph):
 
         current_reading = self.source.get_reading()
         data_max = self.source.get_maximum()
-        self.append_latest_value(self.graph_data, current_reading)
+        self.graph_data = self.append_latest_value(self.graph_data, current_reading)
 
         # Get the graph width (dimension 1)
         num_displayed_bars = self.bar_graph.get_size()[1]
