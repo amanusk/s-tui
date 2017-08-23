@@ -45,6 +45,8 @@ from HelperFunctions import __version__
 from HelperFunctions import get_processor_name
 from HelperFunctions import kill_child_processes
 from RaplPower import RaplPower
+from Graphs.StuiBarGraph import StuiBarGraph
+from Sources.Source import MockSource
 
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
@@ -69,8 +71,6 @@ graph_controller = None
 stress_program = None
 
 INTRO_MESSAGE = HELP_MESSAGE
-
-
 
 
 
@@ -222,45 +222,9 @@ class GraphView(urwid.WidgetPlaceholder):
                 self.cur_power_text.set_text(str(round(self.data.cur_power,2)) + 'W')
             self.perf_lost_text.set_text(str(self.data.max_perf_lost) + '%')
 
-        def update_displayed_graph_data(graph_data, data_max, graph):
-            """
-            Update_graph_data is a general function to color the graph in
-            interleaving colors and add the latest value on the last bar
-            """
-            l = []
-            # Get the graph width (dimension 1)
-            num_displayed_bars = graph.bar_graph.get_size()[1]
-            # Iterage over all the information in the graph
-            for n in range(self.data.MAX_SAMPLES-num_displayed_bars,self.data.MAX_SAMPLES):
-                value = graph_data[n]
-                # toggle between two bar types
-                if n & 1:
-                    l.append([0, value])
-                else:
-                    l.append([value, 0])
-            graph.bar_graph.set_data(l, data_max)
-            y_label_size = graph.bar_graph.get_size()[0]
-            graph.set_y_label(self.get_label_scale(0, data_max, y_label_size))
+        for g in self.visible_graphs.values():
+            g.update_displayed_graph_data()
 
-
-        # Updating CPU utilization graph
-        update_displayed_graph_data(self.data.cpu_util,
-                        self.data.MAX_UTIL, self.graph_util)
-
-        # Updating CPU temperature graph
-        self.set_temp_color()
-        update_displayed_graph_data(self.data.cpu_temp,
-                        self.data.MAX_TEMP, self.graph_temp)
-
-        # Updating CPU frequency graph
-        update_displayed_graph_data(self.data.cpu_freq,
-                        self.data.top_freq, self.graph_freq)
-
-        # Updating Power graph
-        update_displayed_graph_data(self.data.cpu_power,
-                        self.data.max_power, self.graph_power)
-
-        # Update static data in sidebar
         update_displayed_stats()
 
     def set_temp_color(self, smooth=None):
@@ -456,13 +420,18 @@ class GraphView(urwid.WidgetPlaceholder):
         if not stress_installed:
             install_stress_message = urwid.Text("\nstress not installed")
 
-        graph_checkboxes = [
-                urwid.CheckBox('Frequency', state=True, on_state_change=self.show_frequency),
-                urwid.CheckBox('Temperature', state=True, on_state_change=self.show_temperature),
-                urwid.CheckBox('Utilization', state=True, on_state_change=self.show_utilization)]
+        
+        graph_checkboxes = (urwid.CheckBox(x.get_title(), state=True, 
+                            on_state_change=lambda w, state:  self.change_checkbox_state(x, state)) 
+                            for x in self.available_graphs.values())
 
-        if self.data.is_power_measurement_available(): 
-            graph_checkboxes.append(urwid.CheckBox('Power', state=True, on_state_change=self.show_power)) 
+        # graph_checkboxes = [
+        #         urwid.CheckBox('Frequency', state=True, on_state_change=self.show_frequency),
+        #         urwid.CheckBox('Temperature', state=True, on_state_change=self.show_temperature),
+        #         urwid.CheckBox('Utilization', state=True, on_state_change=self.show_utilization)]
+
+        # if self.data.is_power_measurement_available(): 
+        #     graph_checkboxes.append(urwid.CheckBox('Power', state=True, on_state_change=self.show_power)) 
 
         buttons = [urwid.Text(u"Mode", align="center"),
                    ] +  self.mode_buttons + [
@@ -479,6 +448,13 @@ class GraphView(urwid.WidgetPlaceholder):
             ]
 
         return buttons
+
+    def change_checkbox_state(self, x, state):
+        if state:
+            self.visible_graphs[x.get_title()] = x
+        else:
+            del self.visible_graphs[x.get_title]
+        self.show_graphs()
 
     def show_power(self, w, state):
         if state:
@@ -512,14 +488,14 @@ class GraphView(urwid.WidgetPlaceholder):
     def show_graphs(self):
         """Show a pile of the graph selected for dislpay"""
 
-        graph_list = []
+        # graph_list = []
 
-        for g in self.visible_graphs:
-            if g is not None:
-                graph_list.append(g)
-                graph_list.append(('fixed',  1, self.hline))
+        # for g in self.visible_graphs:
+        #     if g is not None:
+        #         graph_list.append(g)
+        #         graph_list.append(('fixed',  1, self.hline))
 
-        self.graph_place_holder.original_widget = urwid.Pile(graph_list)
+        self.graph_place_holder.original_widget = urwid.Pile(self.visible_graphs.values())
 
     def cpu_stats(self):
            """Read and display processor name """
@@ -553,21 +529,41 @@ class GraphView(urwid.WidgetPlaceholder):
         return fixed_stats
 
     def main_window(self):
-        """Format the main windows, graphs on the side and sidebar"""
-        self.graph_power = self.bar_graph('power light', 'power dark', 'Power Usage [J/s]', [], [0, self.data.max_power/2, self.data.max_power])
-        self.graph_util = self.bar_graph('util light', 'util dark', 'Utilization[%]', [], [0, 50, 100])
-        self.graph_temp = self.bar_graph('temp dark', 'temp light', 'Temperature[C]', [], [0, 25, 50, 75, 100])
-        top_freq = self.data.top_freq
-        # Frequency scale is dynammic according to system max
-        try:
-            one_third = int(top_freq / 3)
-            two_third = int(2 * top_freq / 3)
-        except:
-            one_third = 0
-            two_third = 0
-            top_freq = 0
-        self.graph_freq = self.bar_graph('freq dark', 'freq light', 'Frequency[MHz]', [],
-                                         [0, one_third, two_third, top_freq])
+
+        # initiating the graphs
+        self.graphs = {}
+        
+        rapl_power_graph_name = 'Power'
+        rapl_power_source = RaplPower()
+        rapl_power_graph = StuiBarGraph(rapl_power_source, rapl_power_graph_name, 'W', 'power light', 'power dark')
+        self.graphs[rapl_power_graph_name] = rapl_power_graph
+
+        mock_graph_name = 'Mock'
+        mock_graph_source = MockSource()
+        mock_graph = StuiBarGraph(mock_graph_source, mock_graph_name, 'W', 'power light', 'power dark')
+        self.graphs[mock_graph_name] = mock_graph
+
+        # only interested in available graph
+        self.available_graphs = dict((key, val) for key, val in self.graphs.iteritems() if val.get_is_available())
+
+
+
+        return
+        # """Format the main windows, graphs on the side and sidebar"""
+        # self.graph_power = self.bar_graph('power light', 'power dark', 'Power Usage [J/s]', [], [0, self.data.max_power/2, self.data.max_power])
+        # self.graph_util = self.bar_graph('util light', 'util dark', 'Utilization[%]', [], [0, 50, 100])
+        # self.graph_temp = self.bar_graph('temp dark', 'temp light', 'Temperature[C]', [], [0, 25, 50, 75, 100])
+        # top_freq = self.data.top_freq
+        # # Frequency scale is dynammic according to system max
+        # try:
+        #     one_third = int(top_freq / 3)
+        #     two_third = int(2 * top_freq / 3)
+        # except:
+        #     one_third = 0
+        #     two_third = 0
+        #     top_freq = 0
+        # self.graph_freq = self.bar_graph('freq dark', 'freq light', 'Frequency[MHz]', [],
+        #                                  [0, one_third, two_third, top_freq])
         self.max_temp_text = urwid.Text(str(self.data.max_temp) + DEGREE_SIGN + 'c', align="right")
         self.cur_temp_text = urwid.Text(str(self.data.cur_temp) + DEGREE_SIGN + 'c', align="right")
         self.top_freq_text = urwid.Text(str(self.data.top_freq) + 'MHz', align="right")
@@ -576,19 +572,20 @@ class GraphView(urwid.WidgetPlaceholder):
             self.cur_power_text = urwid.Text(str(round(self.data.cur_power,2)) + 'W', align="right")
         self.perf_lost_text = urwid.Text(str(self.data.max_perf_lost) + '%', align="right")
 
-        self.data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
+        # self.data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
 
-        self.graph_util.bar_graph.set_bar_width(1)
-        self.graph_temp.bar_graph.set_bar_width(1)
-        self.graph_freq.bar_graph.set_bar_width(1)
-        self.graph_power.bar_graph.set_bar_width(1)
+        # self.graph_util.bar_graph.set_bar_width(1)
+        # self.graph_temp.bar_graph.set_bar_width(1)
+        # self.graph_freq.bar_graph.set_bar_width(1)
+        # self.graph_power.bar_graph.set_bar_width(1)
 
 
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
 
-        self.visible_graphs = [self.graph_freq, self.graph_util, self.graph_temp]
-        if self.data.is_power_measurement_available():
-            self.visible_graphs.append(self.graph_power)
+        self.visible_graphs = map(lambda x: x, self.available_graphs)
+        # self.visible_graphs = [self.graph_freq, self.graph_util, self.graph_temp]
+        # if self.data.is_power_measurement_available():
+        #     self.visible_graphs.append(self.graph_power)
 
         self.show_graphs()
 

@@ -1,7 +1,9 @@
 import os
 import time
 
-class RaplPower:
+from Sources.Source import Source
+
+class RaplPower(Source):
 
     intel_rapl_folder = '/sys/class/powercap/intel-rapl/'
 
@@ -53,8 +55,15 @@ class RaplPower:
         self.last_measurement_time = current_measurement_time
         return jaul_used_per_second
 
+    # Source super class implementation
     def get_is_available(self):
         return self.is_available
+
+    def get_reading(self):
+        return self.get_power_usage()
+
+    def get_maximum(self):
+        return self.read_max_power_file()
 
 if '__main__' == __name__:
     rapl = RaplPower()
