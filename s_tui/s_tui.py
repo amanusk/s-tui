@@ -166,8 +166,7 @@ class GraphView(urwid.WidgetPlaceholder):
     A class responsible for providing the application's interface and
     graph display.
     """
-    SCALE_DENSITY = 5
-
+    
     def __init__(self, controller):
 
         self.controller = controller
@@ -178,7 +177,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.mode_buttons = []
 
         self.data = controller.data
-        self.visible_graphs = []
+        self.visible_graphs = {}
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
 
         self.max_temp_text = None
@@ -254,19 +253,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.graph_temp.bar_graph.set_segment_attributes(self.temp_color[0], satt=self.temp_color[1])
 
-    def get_label_scale(self, min_val, max_val, size):
-        """Dynamically change the scale of the graph (y lable)"""
-        if size < self.SCALE_DENSITY:
-            label_cnt = 1
-        else:
-            label_cnt = (size / self.SCALE_DENSITY)
-        try:
-            label = [int(min_val + i * (int(max_val) - int(min_val)) / label_cnt)
-                     for i in range(label_cnt + 1)]
-            return label
-        except:
-            return ""
-
+    
     def on_reset_button(self, w):
         """Reset graph data and display empty graph"""
         self.data.reset()
@@ -421,7 +408,11 @@ class GraphView(urwid.WidgetPlaceholder):
             install_stress_message = urwid.Text("\nstress not installed")
 
         
-        graph_checkboxes = (urwid.CheckBox(x.get_title(), state=True, 
+        # graph_checkboxes = []
+        # for x in self.available_graphs.values():
+        #     print(x.get_graph_name())
+
+        graph_checkboxes = (urwid.CheckBox(x.get_graph_name(), state=True, 
                             on_state_change=lambda w, state:  self.change_checkbox_state(x, state)) 
                             for x in self.available_graphs.values())
 
@@ -451,39 +442,11 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def change_checkbox_state(self, x, state):
         if state:
-            self.visible_graphs[x.get_title()] = x
+            self.visible_graphs[x.get_graph_name()] = x
         else:
-            del self.visible_graphs[x.get_title]
+            del self.visible_graphs[x.get_graph_name()]
         self.show_graphs()
 
-    def show_power(self, w, state):
-        if state:
-            self.visible_graphs[3] = self.graph_power
-        else:
-            self.visible_graphs[3] = None
-        self.show_graphs()
-
-    def show_frequency(self, w, state):
-        if state:
-            self.visible_graphs[0] = self.graph_freq
-        else:
-            self.visible_graphs[0] = None
-        self.show_graphs()
-
-    def show_utilization(self, w, state):
-        if state:
-            self.visible_graphs[1] = self.graph_util
-        else:
-            self.visible_graphs[1] = None
-        self.show_graphs()
-
-    def show_temperature(self, w, state):
-        """Display temperature graph"""
-        if state:
-            self.visible_graphs[2] = self.graph_temp
-        else:
-            self.visible_graphs[2] = None
-        self.show_graphs()
 
     def show_graphs(self):
         """Show a pile of the graph selected for dislpay"""
@@ -548,10 +511,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
 
 
-        return
         # """Format the main windows, graphs on the side and sidebar"""
         # self.graph_power = self.bar_graph('power light', 'power dark', 'Power Usage [J/s]', [], [0, self.data.max_power/2, self.data.max_power])
         # self.graph_util = self.bar_graph('util light', 'util dark', 'Utilization[%]', [], [0, 50, 100])
+        
         # self.graph_temp = self.bar_graph('temp dark', 'temp light', 'Temperature[C]', [], [0, 25, 50, 75, 100])
         # top_freq = self.data.top_freq
         # # Frequency scale is dynammic according to system max
@@ -573,7 +536,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.perf_lost_text = urwid.Text(str(self.data.max_perf_lost) + '%', align="right")
 
         # self.data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
-
+        
         # self.graph_util.bar_graph.set_bar_width(1)
         # self.graph_temp.bar_graph.set_bar_width(1)
         # self.graph_freq.bar_graph.set_bar_width(1)
@@ -582,7 +545,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
 
-        self.visible_graphs = map(lambda x: x, self.available_graphs)
+        self.visible_graphs = self.available_graphs.copy()
         # self.visible_graphs = [self.graph_freq, self.graph_util, self.graph_temp]
         # if self.data.is_power_measurement_available():
         #     self.visible_graphs.append(self.graph_power)
