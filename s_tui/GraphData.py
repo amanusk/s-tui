@@ -190,6 +190,12 @@ class GraphData:
                 last_value = psutil.sensors_temperatures()['it8655'][0].current
             except:
                 last_value = 0
+        # Support for Ryzen 1700X
+        if last_value <= 0:
+            try:
+                last_value = psutil.sensors_temperatures()['it8686'][2].current
+            except:
+                last_value = 0
         # Support for specific systems
         if last_value <= 0:
             try:
