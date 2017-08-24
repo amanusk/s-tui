@@ -50,6 +50,7 @@ from Sources.RaplPower import RaplPower
 from Sources.Source import MockSource
 from Sources.UtilSource import UtilSource
 from Sources.FreqSource import FreqSource
+from Sources.TemperatureSource import TemperatureSource
 
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
@@ -514,6 +515,11 @@ class GraphView(urwid.WidgetPlaceholder):
         freq_source = FreqSource(is_admin)
         freq_graph = StuiBarGraph(freq_source, freq_graph_name, 'MHz', 'freq dark', 'freq light')
         self.graphs[freq_graph_name] = freq_graph
+
+        temp_graph_name = 'Temperature'
+        temp_source = TemperatureSource()
+        temp_graph = StuiBarGraph(temp_source, temp_graph_name, 'C', 'temp dark', 'temp light')
+        self.graphs[temp_graph_name] = temp_graph
 
         # only interested in available graph
         self.available_graphs = dict((key, val) for key, val in self.graphs.iteritems() if val.get_is_available())
