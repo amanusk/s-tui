@@ -1,4 +1,3 @@
-
 import psutil
 from Source import Source
 from HelperFunctions import get_avarage_cpu_freq

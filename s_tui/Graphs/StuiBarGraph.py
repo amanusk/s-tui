@@ -25,7 +25,7 @@ class StuiBarGraph(LabeledBarGraph):
         y_label = []#[0, self.source.get_maximum()/2, self.source.get_maximum()]
 
         w = ScalableBarGraph(['bg background', color_a, color_b])
-        super(StuiBarGraph, self).__init__([w, x_label, y_label, title])
+        super(StuiBarGraph, self).__init__([w, x_label, y_label, title+' ['+measurement_unit+']'])
         self.bar_graph.set_bar_width(bar_width)
         
 
