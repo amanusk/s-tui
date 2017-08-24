@@ -44,9 +44,10 @@ from HelperFunctions import DEFAULT_PALETTE
 from HelperFunctions import __version__
 from HelperFunctions import get_processor_name
 from HelperFunctions import kill_child_processes
-from RaplPower import RaplPower
 from Graphs.StuiBarGraph import StuiBarGraph
+from Sources.RaplPower import RaplPower
 from Sources.Source import MockSource
+from Sources.UtilSource import UtilSource
 
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
@@ -505,6 +506,11 @@ class GraphView(urwid.WidgetPlaceholder):
         mock_graph_source = MockSource()
         mock_graph = StuiBarGraph(mock_graph_source, mock_graph_name, 'W', 'power light', 'power dark')
         self.graphs[mock_graph_name] = mock_graph
+
+        util_graph_name = 'Utilization'
+        util_source = UtilSource()
+        util_graph = StuiBarGraph(util_source, util_graph_name, '%', 'util light', 'util dark')
+        self.graphs[util_graph_name] = util_graph
 
         # only interested in available graph
         self.available_graphs = dict((key, val) for key, val in self.graphs.iteritems() if val.get_is_available())
