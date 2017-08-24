@@ -414,7 +414,7 @@ class GraphView(urwid.WidgetPlaceholder):
         #     print(x.get_graph_name())
 
         graph_checkboxes = (urwid.CheckBox(x.get_graph_name(), state=True, 
-                            on_state_change=lambda w, state:  self.change_checkbox_state(x, state)) 
+                            on_state_change=lambda w, state, x=x:  self.change_checkbox_state(x, state)) 
                             for x in self.available_graphs.values())
 
         # graph_checkboxes = [
@@ -442,6 +442,7 @@ class GraphView(urwid.WidgetPlaceholder):
         return buttons
 
     def change_checkbox_state(self, x, state):
+
         if state:
             self.visible_graphs[x.get_graph_name()] = x
         else:
@@ -451,14 +452,6 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def show_graphs(self):
         """Show a pile of the graph selected for dislpay"""
-
-        # graph_list = []
-
-        # for g in self.visible_graphs:
-        #     if g is not None:
-        #         graph_list.append(g)
-        #         graph_list.append(('fixed',  1, self.hline))
-
         self.graph_place_holder.original_widget = urwid.Pile(self.visible_graphs.values())
 
     def cpu_stats(self):
