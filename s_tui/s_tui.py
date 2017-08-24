@@ -518,7 +518,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         temp_graph_name = 'Temperature'
         temp_source = TemperatureSource()
-        temp_graph = StuiBarGraph(temp_source, temp_graph_name, 'C', 'temp dark', 'temp light')
+        temp_graph = StuiBarGraph(temp_source, temp_graph_name, DEGREE_SIGN + 'C', 'temp dark', 'temp light')
         self.graphs[temp_graph_name] = temp_graph
 
         # only interested in available graph
