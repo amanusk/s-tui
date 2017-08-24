@@ -31,6 +31,7 @@ import time
 import psutil
 import urwid
 import signal
+import itertools
 
 from AboutMenu import AboutMenu
 from ComplexBarGraphs import LabeledBarGraph
@@ -452,7 +453,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def show_graphs(self):
         """Show a pile of the graph selected for dislpay"""
-        self.graph_place_holder.original_widget = urwid.Pile(self.visible_graphs.values())
+        hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
+        elements = itertools.chain.from_iterable(([graph, ('fixed', 1, hline)] 
+                                            for graph in self.visible_graphs.values()))
+        self.graph_place_holder.original_widget = urwid.Pile(elements)
 
     def cpu_stats(self):
            """Read and display processor name """
