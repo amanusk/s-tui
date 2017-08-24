@@ -1,9 +1,9 @@
 import os
 import time
 
-from Sources.Source import Source
+from Source import Source
 
-class RaplPower(Source):
+class RaplPowerSource(Source):
 
     intel_rapl_folder = '/sys/class/powercap/intel-rapl/'
 

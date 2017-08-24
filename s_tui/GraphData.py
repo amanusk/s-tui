@@ -31,7 +31,7 @@ from collections import OrderedDict
 from HelperFunctions import TURBO_MSR
 from HelperFunctions import read_msr
 from HelperFunctions import get_avarage_cpu_freq
-from RaplPower import RaplPower
+from Sources.RaplPower import RaplPower
 
 class GraphData:
     """
