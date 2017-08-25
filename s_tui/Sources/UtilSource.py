@@ -19,6 +19,16 @@ class UtilSource(Source):
     def get_is_available(self):
         return True
 
+    def get_summary(self):
+        raise NotImplementedError("Get is available is not implemented")
+
+    def get_source_name(self):
+        return 'Utilization'
+
+    def get_measurement_unit(self):
+        return '%'
+
+
 
 if '__main__' == __name__:
     util = UtilSource()

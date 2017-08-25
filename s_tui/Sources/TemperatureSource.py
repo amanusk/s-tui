@@ -6,9 +6,11 @@ from Source import Source
 class TemperatureSource(Source):
 
     THRESHOLD_TEMP = 80
-    
+    DEGREE_SIGN = u'\N{DEGREE SIGN}'
+
     def __init__(self):
         self.max_temp = 0
+        self.measurement_unit = self.DEGREE_SIGN + 'c'
 
     def get_reading(self):
         """
@@ -96,3 +98,13 @@ class TemperatureSource(Source):
 
     def get_is_available(self):
         return True
+
+    def get_summary(self):
+        raise NotImplementedError("Get is available is not implemented")
+
+    def get_source_name(self):
+        return 'Temperature'
+
+    def get_measurement_unit(self):
+        return self.measurement_unit
+

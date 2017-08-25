@@ -65,6 +65,16 @@ class RaplPowerSource(Source):
     def get_maximum(self):
         return self.read_max_power_file()
 
+    def get_summary(self):
+        raise NotImplementedError("Get is available is not implemented")
+
+    def get_source_name(self):
+        return 'Rapl Power'
+
+    def get_measurement_unit(self):
+        return 'W'
+
+
 if '__main__' == __name__:
     rapl = RaplPower()
     while True:

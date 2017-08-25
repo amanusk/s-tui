@@ -46,7 +46,7 @@ from HelperFunctions import __version__
 from HelperFunctions import get_processor_name
 from HelperFunctions import kill_child_processes
 from StuiBarGraph import StuiBarGraph
-from Sources.RaplPower import RaplPower
+from Sources.RaplPowerSource import RaplPowerSource
 from Sources.Source import MockSource
 from Sources.UtilSource import UtilSource
 from Sources.FreqSource import FreqSource
@@ -413,22 +413,11 @@ class GraphView(urwid.WidgetPlaceholder):
             install_stress_message = urwid.Text("\nstress not installed")
 
         
-        # graph_checkboxes = []
-        # for x in self.available_graphs.values():
-        #     print(x.get_graph_name())
-
         graph_checkboxes = (urwid.CheckBox(x.get_graph_name(), state=True, 
                             on_state_change=lambda w, state, x=x:  self.change_checkbox_state(x, state)) 
                             for x in self.available_graphs.values())
 
-        # graph_checkboxes = [
-        #         urwid.CheckBox('Frequency', state=True, on_state_change=self.show_frequency),
-        #         urwid.CheckBox('Temperature', state=True, on_state_change=self.show_temperature),
-        #         urwid.CheckBox('Utilization', state=True, on_state_change=self.show_utilization)]
-
-        # if self.data.is_power_measurement_available(): 
-        #     graph_checkboxes.append(urwid.CheckBox('Power', state=True, on_state_change=self.show_power)) 
-
+        
         buttons = [urwid.Text(u"Mode", align="center"),
                    ] +  self.mode_buttons + [
             urwid.Divider(),
@@ -497,30 +486,25 @@ class GraphView(urwid.WidgetPlaceholder):
         # initiating the graphs
         self.graphs = {}
         
-        rapl_power_graph_name = 'Power'
-        rapl_power_source = RaplPower()
-        rapl_power_graph = StuiBarGraph(rapl_power_source, rapl_power_graph_name, 'W', 'power light', 'power dark')
-        self.graphs[rapl_power_graph_name] = rapl_power_graph
+        rapl_power_source = RaplPowerSource()
+        rapl_power_graph = StuiBarGraph(rapl_power_source, 'power light', 'power dark')
+        self.graphs[rapl_power_source.get_source_name()] = rapl_power_graph
 
-        mock_graph_name = 'Mock'
         mock_graph_source = MockSource()
-        mock_graph = StuiBarGraph(mock_graph_source, mock_graph_name, 'W', 'power light', 'power dark')
-        self.graphs[mock_graph_name] = mock_graph
+        mock_graph = StuiBarGraph(mock_graph_source, 'power light', 'power dark')
+        self.graphs[mock_graph_source.get_source_name()] = mock_graph
 
-        util_graph_name = 'Utilization'
         util_source = UtilSource()
-        util_graph = StuiBarGraph(util_source, util_graph_name, '%', 'util light', 'util dark')
-        self.graphs[util_graph_name] = util_graph
+        util_graph = StuiBarGraph(util_source, 'util light', 'util dark')
+        self.graphs[util_source.get_source_name()] = util_graph
 
-        freq_graph_name = 'Frequency'
         freq_source = FreqSource(is_admin)
-        freq_graph = StuiBarGraph(freq_source, freq_graph_name, 'MHz', 'freq dark', 'freq light')
-        self.graphs[freq_graph_name] = freq_graph
+        freq_graph = StuiBarGraph(freq_source, 'freq dark', 'freq light')
+        self.graphs[freq_source.get_source_name()] = freq_graph
 
-        temp_graph_name = 'Temperature'
         temp_source = TemperatureSource()
-        temp_graph = StuiBarGraph(temp_source, temp_graph_name, DEGREE_SIGN + 'C', 'temp dark', 'temp light')
-        self.graphs[temp_graph_name] = temp_graph
+        temp_graph = StuiBarGraph(temp_source, 'temp dark', 'temp light')
+        self.graphs[temp_source.get_source_name()] = temp_graph
 
         # only interested in available graph
         self.available_graphs = dict((key, val) for key, val in self.graphs.iteritems() if val.get_is_available())

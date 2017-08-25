@@ -12,10 +12,10 @@ class StuiBarGraph(LabeledBarGraph):
     MAX_SAMPLES = 1000
     SCALE_DENSITY = 5
 
-    def __init__(self, source, title, measurement_unit, color_a, color_b, bar_width = 1):
+    def __init__(self, source, color_a, color_b, bar_width = 1):
         self.source = source
-        self.graph_name = title
-        self.measurement_unit = measurement_unit
+        self.graph_name = self.source.get_source_name()
+        self.measurement_unit = self.source.get_measurement_unit()
 
         self.num_samples = self.MAX_SAMPLES
         self.graph_data = [0] * self.num_samples
@@ -25,7 +25,7 @@ class StuiBarGraph(LabeledBarGraph):
         y_label = []
 
         w = ScalableBarGraph(['bg background', color_a, color_b])
-        super(StuiBarGraph, self).__init__([w, x_label, y_label, title+' ['+measurement_unit+']'])
+        super(StuiBarGraph, self).__init__([w, x_label, y_label, self.graph_name + ' [' + self.measurement_unit + ']'])
         self.bar_graph.set_bar_width(bar_width)
         
 
@@ -84,3 +84,6 @@ class StuiBarGraph(LabeledBarGraph):
     def reset(self):
         self.graph_data = [0] * self.num_samples        
 
+
+    def get_summary(self):
+        pass

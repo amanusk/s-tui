@@ -31,7 +31,7 @@ from collections import OrderedDict
 from HelperFunctions import TURBO_MSR
 from HelperFunctions import read_msr
 from HelperFunctions import get_avarage_cpu_freq
-from Sources.RaplPower import RaplPower
+from Sources.RaplPowerSource import RaplPowerSource
 
 class GraphData:
     """
@@ -57,7 +57,7 @@ class GraphData:
 
     def __init__(self, is_admin):
 
-        self.rapl_power_reader = RaplPower()
+        self.rapl_power_reader = RaplPowerSource()
 
         # Constants data
         self.is_admin = is_admin

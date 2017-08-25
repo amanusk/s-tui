@@ -71,3 +71,12 @@ class FreqSource(Source):
 
     def get_is_available(self):
         return True
+
+    def get_summary(self):
+        raise NotImplementedError("Get is available is not implemented")
+
+    def get_source_name(self):
+        return 'Frequency'
+
+    def get_measurement_unit(self):
+        return 'MHz'
