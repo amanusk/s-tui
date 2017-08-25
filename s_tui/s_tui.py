@@ -260,7 +260,8 @@ class GraphView(urwid.WidgetPlaceholder):
     
     def on_reset_button(self, w):
         """Reset graph data and display empty graph"""
-        self.data.reset()
+        for g in self.visible_graphs.values():
+            g.reset()
         self.update_displayed_information()
 
     def on_stress_menu_close(self):

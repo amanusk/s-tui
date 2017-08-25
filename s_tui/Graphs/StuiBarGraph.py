@@ -81,3 +81,6 @@ class StuiBarGraph(LabeledBarGraph):
         s = self.get_label_scale(0, data_max, y_label_size)
         self.set_y_label(s)
 
+    def reset(self):
+        self.graph_data = [0] * self.num_samples        
+
