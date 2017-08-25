@@ -18,12 +18,14 @@ class RaplPowerSource(Source):
             self.last_measurement_time = 0
             self.last_measurement_value = 0
             self.max_power = 0
+            self.last_wats = 0
             return
 
         self.is_available = True
         self.last_measurement_time = time.time()
         self.last_measurement_value = self.read_power_measurement_file()
         self.max_power = self.read_max_power_file() / self.MICRO_JAUL_IN_JAUL
+        self.last_wats = 0
 
     def read_measurement(self, file_path):
         file = open(file_path)
@@ -49,11 +51,12 @@ class RaplPowerSource(Source):
 
         jaul_used = (current_measurement_value - self.last_measurement_value) / self.MICRO_JAUL_IN_JAUL
         seconds_passed = current_measurement_time - self.last_measurement_time
-        jaul_used_per_second = jaul_used / seconds_passed
+        wats_used = jaul_used / seconds_passed
 
         self.last_measurement_value = current_measurement_value
         self.last_measurement_time = current_measurement_time
-        return jaul_used_per_second
+        self.last_wats = wats_used
+        return wats_used
 
     # Source super class implementation
     def get_is_available(self):
@@ -66,7 +69,7 @@ class RaplPowerSource(Source):
         return self.max_power
 
     def get_summary(self):
-        return {'Cur Power': '%d %s' % (self.last_measurement_value / self.MICRO_JAUL_IN_JAUL, self.get_measurement_unit())
+        return {'Cur Power': '%d %s' % (self.last_wats, self.get_measurement_unit())
                 , 'Max Power': '%d %s' % (self.max_power, self.get_measurement_unit())}
 
     def get_source_name(self):
