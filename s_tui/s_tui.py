@@ -45,7 +45,7 @@ from HelperFunctions import DEFAULT_PALETTE
 from HelperFunctions import __version__
 from HelperFunctions import get_processor_name
 from HelperFunctions import kill_child_processes
-from Graphs.StuiBarGraph import StuiBarGraph
+from StuiBarGraph import StuiBarGraph
 from Sources.RaplPower import RaplPower
 from Sources.Source import MockSource
 from Sources.UtilSource import UtilSource
