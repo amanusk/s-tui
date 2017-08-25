@@ -10,7 +10,8 @@ class TemperatureSource(Source):
 
     def __init__(self):
         self.max_temp = 0
-        self.measurement_unit = self.DEGREE_SIGN + 'c'
+        self.measurement_unit = 'C'
+        self.last_temp = 0;
 
     def get_reading(self):
         """
@@ -91,6 +92,7 @@ class TemperatureSource(Source):
         else:
             self.overheat = False
 
+        self.last_temp = last_value
         return last_value
 
     def get_maximum(self):
@@ -100,7 +102,8 @@ class TemperatureSource(Source):
         return True
 
     def get_summary(self):
-        raise NotImplementedError("Get is available is not implemented")
+        return {'Cur Temp': '%d %s' % (self.last_temp, self.get_measurement_unit())
+                , 'Max Temp': '%d %s' % (self.max_temp, self.get_measurement_unit())}
 
     def get_source_name(self):
         return 'Temperature'

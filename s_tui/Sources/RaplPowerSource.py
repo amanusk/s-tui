@@ -66,7 +66,8 @@ class RaplPowerSource(Source):
         return self.read_max_power_file()
 
     def get_summary(self):
-        raise NotImplementedError("Get is available is not implemented")
+        return {'Cur Power': '%d %s' % (self.last_measurement_value, self.get_measurement_unit())
+                , 'Max Power': '%d %s' % (self.max_power, self.get_measurement_unit())}
 
     def get_source_name(self):
         return 'Rapl Power'

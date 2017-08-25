@@ -5,12 +5,16 @@ from Source import Source
 
 class UtilSource(Source):
 
+    def __init__(self):
+        self.last_value = 0
+
     def get_reading(self):
         try:
             result = psutil.cpu_percent(interval=None)
         except:
             result = 0
             # logging.debug("Cpu Utilization unavailable")
+        self.last_value = result            
         return result
 
     def get_maximum(self):
@@ -20,7 +24,7 @@ class UtilSource(Source):
         return True
 
     def get_summary(self):
-        raise NotImplementedError("Get is available is not implemented")
+        return {'Utilization': '%d %s' % (self.last_value, self.get_measurement_unit())}
 
     def get_source_name(self):
         return 'Utilization'

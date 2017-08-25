@@ -46,6 +46,7 @@ from HelperFunctions import __version__
 from HelperFunctions import get_processor_name
 from HelperFunctions import kill_child_processes
 from StuiBarGraph import StuiBarGraph
+from SummaryTextList import SummaryTextList
 from Sources.RaplPowerSource import RaplPowerSource
 from Sources.Source import MockSource
 from Sources.UtilSource import UtilSource
@@ -203,32 +204,34 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def update_displayed_information(self):
         """
-        Update all the graphs that are being displayed
-        """
-        def update_displayed_stats():
-            """
-            Display the stats on the sidebar according the the information in
-            GraphData
-            """
-            if self.controller.mode.current_mode == 'Regular Operation':
-                self.data.max_perf_lost = 0
-            if self.data.overheat_detected:
-                self.max_temp_text.set_text(('overheat dark', str(self.data.max_temp) + DEGREE_SIGN + 'c'))
-            else:
-                self.max_temp_text.set_text(str(self.data.max_temp) + DEGREE_SIGN + 'c')
+        # Update all the graphs that are being displayed
+        # """
+        # def update_displayed_stats():
+        #     """
+        #     Display the stats on the sidebar according the the information in
+        #     GraphData
+        #     """
+        #     if self.controller.mode.current_mode == 'Regular Operation':
+        #         self.data.max_perf_lost = 0
+        #     if self.data.overheat_detected:
+        #         self.max_temp_text.set_text(('overheat dark', str(self.data.max_temp) + DEGREE_SIGN + 'c'))
+        #     else:
+        #         self.max_temp_text.set_text(str(self.data.max_temp) + DEGREE_SIGN + 'c')
 
-            self.cur_temp_text.set_text((self.temp_color[2], str(self.data.cur_temp) + DEGREE_SIGN + 'c'))
+        #     self.cur_temp_text.set_text((self.temp_color[2], str(self.data.cur_temp) + DEGREE_SIGN + 'c'))
 
-            self.top_freq_text.set_text(str(self.data.top_freq) + 'MHz')
-            self.cur_freq_text.set_text(str(self.data.cur_freq) + 'MHz')
-            if self.data.is_power_measurement_available(): 
-                self.cur_power_text.set_text(str(round(self.data.cur_power,2)) + 'W')
-            self.perf_lost_text.set_text(str(self.data.max_perf_lost) + '%')
+        #     self.top_freq_text.set_text(str(self.data.top_freq) + 'MHz')
+        #     self.cur_freq_text.set_text(str(self.data.cur_freq) + 'MHz')
+        #     if self.data.is_power_measurement_available(): 
+        #         self.cur_power_text.set_text(str(round(self.data.cur_power,2)) + 'W')
+        #     self.perf_lost_text.set_text(str(self.data.max_perf_lost) + '%')
 
         for g in self.visible_graphs.values():
             g.update_displayed_graph_data()
 
-        update_displayed_stats()
+        for s in self.available_summaries.values():
+            s.update()
+
 
     def set_temp_color(self, smooth=None):
         """Paint graph red in overheat is detected"""
@@ -461,95 +464,65 @@ class GraphView(urwid.WidgetPlaceholder):
            return cpu_stats
 
     def graph_stats(self):
-        """Display of stats on the side bar """
-        top_freq_string = "Top Freq"
-        if self.data.turbo_freq:
-            top_freq_string += " " + str(self.data.core_num) + " Cores"
-        else:
-            top_freq_string += " 1 Core"
-        fixed_stats = [urwid.Divider(), urwid.Text("Max Temp", align="left"),
-                       self.max_temp_text] + \
-                      [urwid.Divider(), urwid.Text("Cur Temp", align="left"),
-                       self.cur_temp_text] + \
-                      [urwid.Divider(), urwid.Text(top_freq_string, align="left"),
-                       self.top_freq_text] + \
-                      [urwid.Divider(), urwid.Text("Cur Freq", align="left"),
-                       self.cur_freq_text] + \
-                      [urwid.Divider(), urwid.Text("Performance Loss", align="left"),
-                       self.perf_lost_text]
-        if self.data.is_power_measurement_available(): 
-            fixed_stats += [urwid.Divider(), urwid.Text("Power", align="left"), self.cur_power_text]
+
+        fixed_stats = []
+        for key, val in self.available_summaries.iteritems():
+            fixed_stats += val.get_text_item_list()
+
         return fixed_stats
+
+
+        # """Display of stats on the side bar """
+        # top_freq_string = "Top Freq"
+        # if self.data.turbo_freq:
+        #     top_freq_string += " " + str(self.data.core_num) + " Cores"
+        # else:
+        #     top_freq_string += " 1 Core"
+        # fixed_stats = [urwid.Divider(), urwid.Text("Max Temp", align="left"),
+        #                self.max_temp_text] + \
+        #               [urwid.Divider(), urwid.Text("Cur Temp", align="left"),
+        #                self.cur_temp_text] + \
+        #               [urwid.Divider(), urwid.Text(top_freq_string, align="left"),
+        #                self.top_freq_text] + \
+        #               [urwid.Divider(), urwid.Text("Cur Freq", align="left"),
+        #                self.cur_freq_text] + \
+        #               [urwid.Divider(), urwid.Text("Performance Loss", align="left"),
+        #                self.perf_lost_text]
+        # if self.data.is_power_measurement_available(): 
+        #     fixed_stats += [urwid.Divider(), urwid.Text("Power", align="left"), self.cur_power_text]
+        # return fixed_stats
 
     def main_window(self):
 
         # initiating the graphs
         self.graphs = {}
-        
+        self.summaries = {}
+
         rapl_power_source = RaplPowerSource()
-        rapl_power_graph = StuiBarGraph(rapl_power_source, 'power light', 'power dark')
-        self.graphs[rapl_power_source.get_source_name()] = rapl_power_graph
+        self.graphs[rapl_power_source.get_source_name()] = StuiBarGraph(rapl_power_source, 'power light', 'power dark')
+        self.summaries[rapl_power_source.get_source_name()] = SummaryTextList(rapl_power_source)
 
         mock_graph_source = MockSource()
-        mock_graph = StuiBarGraph(mock_graph_source, 'power light', 'power dark')
-        self.graphs[mock_graph_source.get_source_name()] = mock_graph
+        self.graphs[mock_graph_source.get_source_name()] = StuiBarGraph(mock_graph_source, 'power light', 'power dark')
+        self.summaries[mock_graph_source.get_source_name()] = SummaryTextList(mock_graph_source)
 
         util_source = UtilSource()
-        util_graph = StuiBarGraph(util_source, 'util light', 'util dark')
-        self.graphs[util_source.get_source_name()] = util_graph
+        self.graphs[util_source.get_source_name()] = StuiBarGraph(util_source, 'util light', 'util dark')
+        self.summaries[util_source.get_source_name()] = SummaryTextList(util_source)
 
         freq_source = FreqSource(is_admin)
-        freq_graph = StuiBarGraph(freq_source, 'freq dark', 'freq light')
-        self.graphs[freq_source.get_source_name()] = freq_graph
+        self.graphs[freq_source.get_source_name()] = StuiBarGraph(freq_source, 'freq dark', 'freq light')
+        self.summaries[freq_source.get_source_name()] = SummaryTextList(freq_source)
 
         temp_source = TemperatureSource()
-        temp_graph = StuiBarGraph(temp_source, 'temp dark', 'temp light')
-        self.graphs[temp_source.get_source_name()] = temp_graph
+        self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp dark', 'temp light')
+        self.summaries[temp_source.get_source_name()] = SummaryTextList(temp_source)
 
         # only interested in available graph
         self.available_graphs = dict((key, val) for key, val in self.graphs.iteritems() if val.get_is_available())
-
-
-
-        # """Format the main windows, graphs on the side and sidebar"""
-        # self.graph_power = self.bar_graph('power light', 'power dark', 'Power Usage [J/s]', [], [0, self.data.max_power/2, self.data.max_power])
-        # self.graph_util = self.bar_graph('util light', 'util dark', 'Utilization[%]', [], [0, 50, 100])
+        self.available_summaries = dict((key, val) for key, val in self.summaries.iteritems() if val.get_is_available())
         
-        # self.graph_temp = self.bar_graph('temp dark', 'temp light', 'Temperature[C]', [], [0, 25, 50, 75, 100])
-        # top_freq = self.data.top_freq
-        # # Frequency scale is dynammic according to system max
-        # try:
-        #     one_third = int(top_freq / 3)
-        #     two_third = int(2 * top_freq / 3)
-        # except:
-        #     one_third = 0
-        #     two_third = 0
-        #     top_freq = 0
-        # self.graph_freq = self.bar_graph('freq dark', 'freq light', 'Frequency[MHz]', [],
-        #                                  [0, one_third, two_third, top_freq])
-        self.max_temp_text = urwid.Text(str(self.data.max_temp) + DEGREE_SIGN + 'c', align="right")
-        self.cur_temp_text = urwid.Text(str(self.data.cur_temp) + DEGREE_SIGN + 'c', align="right")
-        self.top_freq_text = urwid.Text(str(self.data.top_freq) + 'MHz', align="right")
-        self.cur_freq_text = urwid.Text(str(self.data.cur_freq) + 'MHz', align="right")
-        if self.data.is_power_measurement_available(): 
-            self.cur_power_text = urwid.Text(str(round(self.data.cur_power,2)) + 'W', align="right")
-        self.perf_lost_text = urwid.Text(str(self.data.max_perf_lost) + '%', align="right")
-
-        # self.data.graph_num_bars = self.graph_util.bar_graph.get_size()[1]
-        
-        # self.graph_util.bar_graph.set_bar_width(1)
-        # self.graph_temp.bar_graph.set_bar_width(1)
-        # self.graph_freq.bar_graph.set_bar_width(1)
-        # self.graph_power.bar_graph.set_bar_width(1)
-
-
-        vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
-
         self.visible_graphs = self.available_graphs.copy()
-        # self.visible_graphs = [self.graph_freq, self.graph_util, self.graph_temp]
-        # if self.data.is_power_measurement_available():
-        #     self.visible_graphs.append(self.graph_power)
-
         self.show_graphs()
 
         cpu_stats = self.cpu_stats()
@@ -558,6 +531,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         text_col = ViListBox(urwid.SimpleListWalker(cpu_stats + graph_controls + [urwid.Divider()] + graph_stats))
 
+        vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
         w = urwid.Columns([
                            ('weight', 2, self.graph_place_holder),
                            ('fixed',  1, vline),
@@ -571,6 +545,7 @@ class GraphView(urwid.WidgetPlaceholder):
         w = urwid.AttrWrap(w, 'line')
         self.main_window_w = self.main_shadow(w)
         return self.main_window_w
+
 
 
 class GraphController:

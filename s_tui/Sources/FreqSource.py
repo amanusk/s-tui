@@ -9,7 +9,7 @@ class FreqSource(Source):
 
         self.top_freq = 100
         self.turbo_freq = False
-
+        self.last_freq = 0
         # Top frequency in case using Intel Turbo Boost
         if self.is_admin:
             try:
@@ -64,6 +64,7 @@ class FreqSource(Source):
                 self.max_perf_lost = self.perf_lost
         elif not self.is_admin:
             self.max_perf_lost = "N/A (no root)"
+        self.last_freq = cur_freq
         return cur_freq
 
     def get_maximum(self):
@@ -73,7 +74,8 @@ class FreqSource(Source):
         return True
 
     def get_summary(self):
-        raise NotImplementedError("Get is available is not implemented")
+        return {'Cur Freq': '%d %s' % (self.last_freq, self.get_measurement_unit())
+                , 'Top Freq': '%d %s' % (self.top_freq, self.get_measurement_unit())}
 
     def get_source_name(self):
         return 'Frequency'

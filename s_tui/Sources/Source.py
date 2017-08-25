@@ -32,7 +32,7 @@ class MockSource(Source):
         return True
 
     def get_summary(self):
-        return {('MockValue', 5), ('Tahat', 34)}
+        return {'MockValue': 5, 'Tahat': 34}
 
     def get_source_name(self):
         return 'Mock Source'
