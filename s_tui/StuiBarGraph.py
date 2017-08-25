@@ -14,13 +14,18 @@ class StuiBarGraph(LabeledBarGraph):
     MAX_SAMPLES = 1000
     SCALE_DENSITY = 5
 
-    def __init__(self, source, color_a, color_b, bar_width = 1):
+    def __init__(self, source, color_a, color_b, smooth_a, smooth_b, bar_width = 1):
         self.source = source
         self.graph_name = self.source.get_source_name()
         self.measurement_unit = self.source.get_measurement_unit()
 
         self.num_samples = self.MAX_SAMPLES
         self.graph_data = [0] * self.num_samples
+
+        self.color_a = color_a
+        self.color_b = color_b
+        self.smooth_a = smooth_a
+        self.smooth_b = smooth_b
 
 
         x_label = []
@@ -29,7 +34,7 @@ class StuiBarGraph(LabeledBarGraph):
         w = ScalableBarGraph(['bg background', color_a, color_b])
         super(StuiBarGraph, self).__init__([w, x_label, y_label, self.graph_name + ' [' + self.measurement_unit + ']'])
         self.bar_graph.set_bar_width(bar_width)
-        
+
 
     def get_current_summary(self):
         pass
@@ -55,6 +60,13 @@ class StuiBarGraph(LabeledBarGraph):
             return label
         except:
             return ""
+
+    def set_smooth_colors(self, smooth):
+        satt = None
+        if smooth:
+            satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
+        self.bar_graph.set_segment_attributes(['bg background', self.color_a, self.color_b], satt=satt)
+
 
     def update_displayed_graph_data(self):
         if not self.get_is_available():

@@ -40,7 +40,6 @@ from GraphData import GraphData
 from HelpMenu import HelpMenu
 from HelpMenu import HELP_MESSAGE
 from StressMenu import StressMenu
-from HelperFunctions import PALETTE
 from HelperFunctions import DEFAULT_PALETTE
 from HelperFunctions import __version__
 from HelperFunctions import get_processor_name
@@ -164,7 +163,7 @@ class MainLoop(urwid.MainLoop):
             raise urwid.ExitMainLoop()
 
         if input == 'esc':
-            graph_controller.view.on_stress_menu_close()
+            graph_controller.view.on_menu_close()
 
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -174,7 +173,7 @@ class GraphView(urwid.WidgetPlaceholder):
     A class responsible for providing the application's interface and
     graph display.
     """
-    
+
     def __init__(self, controller):
 
         self.controller = controller
@@ -184,7 +183,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
         self.mode_buttons = []
 
-        self.data = controller.data
+        #self.data = controller.data
         self.visible_graphs = {}
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
 
@@ -197,10 +196,11 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.main_window_w = []
 
-        self.stress_menu = StressMenu(self.on_stress_menu_close)
-        self.help_menu = HelpMenu(self.on_help_menu_close)
-        self.about_menu = AboutMenu(self.on_about_menu_close)
-        self.stress_menu.sqrt_workers = str(self.data.core_num)
+        self.stress_menu = StressMenu(self.on_menu_close)
+        self.help_menu = HelpMenu(self.on_menu_close)
+        self.about_menu = AboutMenu(self.on_menu_close)
+        # TODO get from datakj
+        #self.stress_menu.sqrt_workers = str(self.data.core_num)
 
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
 
@@ -225,7 +225,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         #     self.top_freq_text.set_text(str(self.data.top_freq) + 'MHz')
         #     self.cur_freq_text.set_text(str(self.data.cur_freq) + 'MHz')
-        #     if self.data.is_power_measurement_available(): 
+        #     if self.data.is_power_measurement_available():
         #         self.cur_power_text.set_text(str(round(self.data.cur_power,2)) + 'W')
         #     self.perf_lost_text.set_text(str(self.data.max_perf_lost) + '%')
 
@@ -263,24 +263,17 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.graph_temp.bar_graph.set_segment_attributes(self.temp_color[0], satt=self.temp_color[1])
 
-    
+
     def on_reset_button(self, w):
         """Reset graph data and display empty graph"""
         for g in self.visible_graphs.values():
             g.reset()
         self.update_displayed_information()
 
-    def on_stress_menu_close(self):
+    def on_menu_close(self):
         """Return to main screen"""
         self.original_widget = self.main_window_w
 
-    def on_help_menu_close(self):
-        """Return to main screen"""
-        self.original_widget = self.main_window_w
-
-    def on_about_menu_close(self):
-        """Return to main screen"""
-        self.original_widget = self.main_window_w
 
     def on_stress_menu_open(self, w):
         """Open stress options"""
@@ -326,33 +319,15 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def on_unicode_checkbox(self, w, state):
         """Enable smooth edges if utf-8 is supported"""
-
+        logging.debug("unicode State is " + str(state))
         if state:
             self.hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
         else:
             self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
 
-        if state:
-            satt = {(1, 0): 'util light smooth', (2, 0): 'util dark smooth'}
-        else:
-            satt = None
-        self.graph_util.bar_graph.set_segment_attributes(['bg background', 'util light', 'util dark'], satt=satt)
+        for g_name,g in self.graphs.iteritems():
+            g.set_smooth_colors(state)
 
-        self.set_temp_color(smooth=state)
-
-        if state:
-            satt = {(1, 0): 'freq dark smooth', (2, 0): 'freq light smooth'}
-        else:
-            satt = None
-        self.graph_freq.bar_graph.set_segment_attributes(['bg background', 'freq dark', 'freq light'], satt=satt)
-
-        if state:
-            satt = {(1, 0): 'power dark smooth', (2, 0): 'power light smooth'}
-        else:
-            satt = None
-        self.graph_power.bar_graph.set_segment_attributes(['bg background', 'power dark', 'power light'], satt=satt)
-
-        self.update_displayed_information()
         self.show_graphs()
 
     def main_shadow(self, w):
@@ -407,8 +382,9 @@ class GraphView(urwid.WidgetPlaceholder):
 
         if urwid.get_encoding_mode() == "utf8":
             unicode_checkbox = urwid.CheckBox(
-                "Smooth Graph",
+                "Smooth Graph", state=True,
                 on_state_change=self.on_unicode_checkbox)
+            self.on_unicode_checkbox(unicode_checkbox, True)
         else:
             unicode_checkbox = urwid.Text(
                 "UTF-8 encoding not detected")
@@ -418,12 +394,11 @@ class GraphView(urwid.WidgetPlaceholder):
         if not stress_installed:
             install_stress_message = urwid.Text("\nstress not installed")
 
-        
-        graph_checkboxes = (urwid.CheckBox(x.get_graph_name(), state=True, 
-                            on_state_change=lambda w, state, x=x:  self.change_checkbox_state(x, state)) 
+
+        graph_checkboxes = (urwid.CheckBox(x.get_graph_name(), state=True,
+                            on_state_change=lambda w, state, x=x:  self.change_checkbox_state(x, state))
                             for x in self.available_graphs.values())
 
-        
         buttons = [urwid.Text(u"Mode", align="center"),
                    ] +  self.mode_buttons + [
             urwid.Divider(),
@@ -451,8 +426,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def show_graphs(self):
         """Show a pile of the graph selected for dislpay"""
-        hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
-        elements = itertools.chain.from_iterable(([graph, ('fixed', 1, hline)] 
+        elements = itertools.chain.from_iterable(([graph, ('fixed', 1, self.hline)]
                                             for graph in self.visible_graphs.values()))
         self.graph_place_holder.original_widget = urwid.Pile(elements)
 
@@ -474,51 +448,32 @@ class GraphView(urwid.WidgetPlaceholder):
 
         return fixed_stats
 
-
-        # """Display of stats on the side bar """
-        # top_freq_string = "Top Freq"
-        # if self.data.turbo_freq:
-        #     top_freq_string += " " + str(self.data.core_num) + " Cores"
-        # else:
-        #     top_freq_string += " 1 Core"
-        # fixed_stats = [urwid.Divider(), urwid.Text("Max Temp", align="left"),
-        #                self.max_temp_text] + \
-        #               [urwid.Divider(), urwid.Text("Cur Temp", align="left"),
-        #                self.cur_temp_text] + \
-        #               [urwid.Divider(), urwid.Text(top_freq_string, align="left"),
-        #                self.top_freq_text] + \
-        #               [urwid.Divider(), urwid.Text("Cur Freq", align="left"),
-        #                self.cur_freq_text] + \
-        #               [urwid.Divider(), urwid.Text("Performance Loss", align="left"),
-        #                self.perf_lost_text]
-        # if self.data.is_power_measurement_available(): 
-        #     fixed_stats += [urwid.Divider(), urwid.Text("Power", align="left"), self.cur_power_text]
-        # return fixed_stats
-
     def main_window(self):
 
         # initiating the graphs
         self.graphs = {}
         self.summaries = {}
 
+        # TODO: Update to find sensors automatically
+
         rapl_power_source = RaplPowerSource()
-        self.graphs[rapl_power_source.get_source_name()] = StuiBarGraph(rapl_power_source, 'power light', 'power dark')
+        self.graphs[rapl_power_source.get_source_name()] = StuiBarGraph(rapl_power_source, 'power light', 'power dark', 'power ligth smooth', 'power dark smooth')
         self.summaries[rapl_power_source.get_source_name()] = SummaryTextList(rapl_power_source)
 
         mock_graph_source = MockSource()
-        self.graphs[mock_graph_source.get_source_name()] = StuiBarGraph(mock_graph_source, 'power light', 'power dark')
+        self.graphs[mock_graph_source.get_source_name()] = StuiBarGraph(mock_graph_source, 'power light', 'power dark', 'power light smooth', 'power dark smooth')
         self.summaries[mock_graph_source.get_source_name()] = SummaryTextList(mock_graph_source)
 
         util_source = UtilSource()
-        self.graphs[util_source.get_source_name()] = StuiBarGraph(util_source, 'util light', 'util dark')
+        self.graphs[util_source.get_source_name()] = StuiBarGraph(util_source, 'til light', 'util dark', 'util light smooth', 'util dark smooth')
         self.summaries[util_source.get_source_name()] = SummaryTextList(util_source)
 
         freq_source = FreqSource(is_admin)
-        self.graphs[freq_source.get_source_name()] = StuiBarGraph(freq_source, 'freq dark', 'freq light')
+        self.graphs[freq_source.get_source_name()] = StuiBarGraph(freq_source, 'freq light', 'freq dark', 'freq light smooth', 'freq dark smooth')
         self.summaries[freq_source.get_source_name()] = SummaryTextList(freq_source)
 
         temp_source = TemperatureSource()
-        self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp dark', 'temp light')
+        self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth')
         self.summaries[temp_source.get_source_name()] = SummaryTextList(temp_source)
 
         # only interested in available graph
@@ -590,7 +545,6 @@ class GraphController:
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
         # Width of bar graph is needed to know how long of a list of data to keep
-        self.data.update_data()
         if self.terminal:
             self.data.output_to_terminal()
         if self.json:
@@ -645,8 +599,8 @@ class GraphController:
                 except:
                     logging.debug("Unable to start stress")
 
-            self.data.max_perf_lost = 0
-            self.data.samples_taken = 0
+            #self.data.max_perf_lost = 0
+            #self.data.samples_taken = 0
 
         elif mode.get_current_mode() == 'FIRESTARTER':
             logging.debug('Started FIRESTARTER mode')
@@ -736,4 +690,4 @@ def get_args():
 
 
 if '__main__' == __name__:
-    main() 
+        main()
