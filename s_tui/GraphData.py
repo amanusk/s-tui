@@ -30,7 +30,7 @@ from collections import OrderedDict
 
 from HelperFunctions import TURBO_MSR
 from HelperFunctions import read_msr
-from HelperFunctions import get_avarage_cpu_freq
+#from HelperFunctions import get_avarage_cpu_freq
 from Sources.RaplPowerSource import RaplPowerSource
 
 class GraphData:
@@ -148,11 +148,11 @@ class GraphData:
             self.cur_freq = int(psutil.cpu_freq().current)
         except:
             self.cur_freq = 0
-            try:
-                self.cur_freq = get_avarage_cpu_freq()
-            except:
-                self.cur_freq = 0
-                logging.debug("Frequency unavailable")
+            #try:
+            #    self.cur_freq = get_avarage_cpu_freq()
+            #except:
+            #    self.cur_freq = 0
+            #    logging.debug("Frequency unavailable")
 
 
 

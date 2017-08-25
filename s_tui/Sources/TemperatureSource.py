@@ -3,6 +3,10 @@ import psutil
 import os
 from Source import Source
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 class TemperatureSource(Source):
 
     THRESHOLD_TEMP = 80

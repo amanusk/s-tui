@@ -1,6 +1,13 @@
 import psutil
+import os
+import re
+import subprocess
 from Source import Source
-from HelperFunctions import get_avarage_cpu_freq
+from HelperFunctions import read_msr
+from HelperFunctions import TURBO_MSR
+
+import logging
+logger = logging.getLogger(__name__)
 
 class FreqSource(Source):
 
@@ -14,7 +21,7 @@ class FreqSource(Source):
         if self.is_admin:
             try:
                 num_cpus = psutil.cpu_count()
-                logging.info("num cpus " + str(num_cpus))
+                logging.debug("num cpus " + str(num_cpus))
                 available_freq = read_msr(TURBO_MSR, 0)
                 logging.debug(available_freq)
                 max_turbo_msr = num_cpus
@@ -31,19 +38,31 @@ class FreqSource(Source):
                 self.top_freq = psutil.cpu_freq().max
                 self.turbo_freq = False
             except:
+                logging.debug("Max freq from psutil not available")
                 try:
                     cmd = "lscpu | grep 'CPU max MHz'"
                     ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
                     output = ps.communicate()[0]
                     self.top_freq = float(re.findall("\d+\.\d+", output)[0])
                 except:
-                    # logging.debug("CPU top freqency N/A")
+                    logging.debug("Max frequency from lscpu not available")
+                    logging.debug("CPU top freqency N/A")
                     self.top_freq = 100
+
 
 
 
     def get_reading(self):
         """Update CPU frequency data"""
+        def get_avarage_cpu_freq():
+            with open("/proc/cpuinfo") as cpuinfo:
+                cores_freq = []
+                for line in cpuinfo:
+                    if "cpu MHz" in line:
+                        core_freq = re.findall("\d+\.\d+", line)
+                        cores_freq += core_freq
+            return round(reduce(lambda x, y: float(x) + float(y), cores_freq) / len(cores_freq), 1)
+
         try:
             cur_freq = int(psutil.cpu_freq().current)
         except:
@@ -52,18 +71,21 @@ class FreqSource(Source):
                 cur_freq = get_avarage_cpu_freq()
             except:
                 cur_freq = 0
-                # logging.debug("Frequency unavailable")
+                logging.debug("Frequency unavailable")
 
-        if self.is_admin and self.samples_taken > self.WAIT_SAMPLES:
-            self.perf_lost = int(self.top_freq) - int(self.cur_freq)
-            if self.top_freq != 0:
-                self.perf_lost = (round(float(self.perf_lost) / float(self.top_freq) * 100, 1))
-            else:
-                self.perf_lost = 0
-            if self.perf_lost > self.max_perf_lost:
-                self.max_perf_lost = self.perf_lost
-        elif not self.is_admin:
-            self.max_perf_lost = "N/A (no root)"
+        # Here is where we need to generate the max frequency lost
+
+        #if self.is_admin and self.samples_taken > self.WAIT_SAMPLES:
+        #    self.perf_lost = int(self.top_freq) - int(self.cur_freq)
+        #    if self.top_freq != 0:
+        #        self.perf_lost = (round(float(self.perf_lost) / float(self.top_freq) * 100, 1))
+        #    else:
+        #        self.perf_lost = 0
+        #    if self.perf_lost > self.max_perf_lost:
+        #        self.max_perf_lost = self.perf_lost
+        #elif not self.is_admin:
+        #    self.max_perf_lost = "N/A (no root)"
+
         self.last_freq = cur_freq
         return cur_freq
 

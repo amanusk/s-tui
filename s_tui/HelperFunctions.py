@@ -30,17 +30,6 @@ __version__ = "0.5.0"
 TURBO_MSR = 429
 
 
-def get_avarage_cpu_freq():
-    with open("/proc/cpuinfo") as cpuinfo:
-        cores_freq = []
-        for line in cpuinfo:
-            if "cpu MHz" in line:
-                core_freq = re.findall("\d+\.\d+", line)
-                cores_freq += core_freq
-        return round(reduce(lambda x, y: float(x) + float(y), cores_freq) / len(cores_freq), 1)
-
-
-
 def get_processor_name():
     if platform.system() == "Windows":
         return platform.processor()

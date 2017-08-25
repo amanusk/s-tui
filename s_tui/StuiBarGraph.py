@@ -1,5 +1,7 @@
 from ComplexBarGraphs import LabeledBarGraph
 from ComplexBarGraphs import ScalableBarGraph
+import logging
+logger = logging.getLogger(__name__)
 
 class StuiBarGraph(LabeledBarGraph):
 
@@ -61,6 +63,7 @@ class StuiBarGraph(LabeledBarGraph):
         l = []
 
         current_reading = self.source.get_reading()
+        logging.info("Reading " + str(current_reading))
         data_max = self.source.get_maximum()
         self.graph_data = self.append_latest_value(self.graph_data, current_reading)
 

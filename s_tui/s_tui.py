@@ -78,7 +78,6 @@ stress_program = None
 INTRO_MESSAGE = HELP_MESSAGE
 
 
-
 class ViListBox(urwid.ListBox):
     # Catch key presses in box and pass them as arrow keys
     def keypress(self, size, key):
@@ -86,6 +85,10 @@ class ViListBox(urwid.ListBox):
             key = 'down'
         elif key == 'k':
             key = 'up'
+        elif key == 'G':
+            key = 'page down'
+        elif key == 'g':
+            key = 'page up'
         return super(ViListBox, self).keypress(size, key)
 
 
@@ -521,7 +524,7 @@ class GraphView(urwid.WidgetPlaceholder):
         # only interested in available graph
         self.available_graphs = dict((key, val) for key, val in self.graphs.iteritems() if val.get_is_available())
         self.available_summaries = dict((key, val) for key, val in self.summaries.iteritems() if val.get_is_available())
-        
+
         self.visible_graphs = self.available_graphs.copy()
         self.show_graphs()
 

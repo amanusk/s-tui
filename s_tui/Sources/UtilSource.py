@@ -2,6 +2,9 @@ import time
 import psutil
 from Source import Source
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class UtilSource(Source):
 
@@ -9,12 +12,15 @@ class UtilSource(Source):
         self.last_value = 0
 
     def get_reading(self):
+        result = 0
         try:
-            result = psutil.cpu_percent(interval=None)
+            result = float(psutil.cpu_percent(interval=0.1))
         except:
             result = 0
-            # logging.debug("Cpu Utilization unavailable")
-        self.last_value = result            
+            logging.debug("Cpu Utilization unavailable")
+
+        self.last_value = float(result)
+        logging.info("Utilization recorded " + str(self.last_value))
         return result
 
     def get_maximum(self):
