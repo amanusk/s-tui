@@ -63,10 +63,10 @@ class RaplPowerSource(Source):
         return self.get_power_usage()
 
     def get_maximum(self):
-        return self.read_max_power_file()
+        return self.max_power
 
     def get_summary(self):
-        return {'Cur Power': '%d %s' % (self.last_measurement_value, self.get_measurement_unit())
+        return {'Cur Power': '%d %s' % (self.last_measurement_value / self.MICRO_JAUL_IN_JAUL, self.get_measurement_unit())
                 , 'Max Power': '%d %s' % (self.max_power, self.get_measurement_unit())}
 
     def get_source_name(self):
