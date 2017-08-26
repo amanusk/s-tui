@@ -1,6 +1,6 @@
 import os
 from setuptools import setup
-import src.HelperFunctions as AUX
+import s_tui.HelperFunctions as AUX
 import sys
 if sys.version_info < (2,7):
         sys.exit('Sorry, Python < 2.7 is not supported')
