@@ -17,6 +17,9 @@ class Source:
     def get_source_name(self):
         raise NotImplementedError("Get source name is not implemented")
 
+    def get_edge_triggered(self):
+        raise NotImplementedError("Get source name is not implemented")
+
     def get_measurement_unit(self):
         raise NotImplementedError("Get measurement unit is not implemented")        
 

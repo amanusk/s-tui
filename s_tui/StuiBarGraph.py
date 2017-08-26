@@ -14,7 +14,7 @@ class StuiBarGraph(LabeledBarGraph):
     MAX_SAMPLES = 1000
     SCALE_DENSITY = 5
 
-    def __init__(self, source, color_a, color_b, smooth_a, smooth_b, bar_width = 1):
+    def __init__(self, source, color_a, color_b, smooth_a, smooth_b, alert_colors=None, bar_width = 1):
         self.source = source
         self.graph_name = self.source.get_source_name()
         self.measurement_unit = self.source.get_measurement_unit()
@@ -26,6 +26,11 @@ class StuiBarGraph(LabeledBarGraph):
         self.color_b = color_b
         self.smooth_a = smooth_a
         self.smooth_b = smooth_b
+
+        self.alert_colors = alert_colors
+        self.regular_colors = [color_a, color_b, smooth_a, smooth_b]
+
+        self.satt = None
 
 
         x_label = []
@@ -62,15 +67,41 @@ class StuiBarGraph(LabeledBarGraph):
             return ""
 
     def set_smooth_colors(self, smooth):
-        satt = None
         if smooth:
-            satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
-        self.bar_graph.set_segment_attributes(['bg background', self.color_a, self.color_b], satt=satt)
+            self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
+        else:
+            self.satt = None
+        self.bar_graph.set_segment_attributes(['bg background', self.color_a, self.color_b], satt=self.satt)
 
+    def set_regular_colors(self):
+        self.color_a = self.regular_colors[0]
+        self.color_b = self.regular_colors[1]
+        self.smooth_a = self.regular_colors[2]
+        self.smooth_b = self.regular_colors[3]
+        if self.satt:
+            self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
+        self.bar_graph.set_segment_attributes(['bg background', self.color_a, self.color_b], satt=self.satt)
+
+    def set_alert_colors(self):
+        self.color_a = self.alert_colors[0]
+        self.color_b = self.alert_colors[1]
+        self.smooth_a = self.alert_colors[2]
+        self.smooth_b = self.alert_colors[3]
+        if self.satt:
+            self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
+        self.bar_graph.set_segment_attributes(['bg background', self.color_a, self.color_b], satt=self.satt)
 
     def update_displayed_graph_data(self):
         if not self.get_is_available():
             return
+        try:
+            if self.source.get_edge_triggered():
+                self.set_alert_colors()
+            else:
+                self.set_regular_colors()
+        except NotImplementedError:
+            pass
+
 
         l = []
 

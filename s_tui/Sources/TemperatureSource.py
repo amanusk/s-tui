@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class TemperatureSource(Source):
 
-    THRESHOLD_TEMP = 80
+    THRESHOLD_TEMP = 65
     DEGREE_SIGN = u'\N{DEGREE SIGN}'
 
     def __init__(self):
@@ -87,14 +87,14 @@ class TemperatureSource(Source):
             self.max_temp = 0
 
         # Update current temp
-        if last_value is None:
-            last_value = 0
-            self.overheat = False
-        if last_value >= self.THRESHOLD_TEMP:
-            self.overheat = True
-            self.overheat_detected = True
-        else:
-            self.overheat = False
+        #if last_value is None:
+        #    last_value = 0
+        #    self.overheat = False
+        #if last_value >= self.THRESHOLD_TEMP:
+        #    self.overheat = True
+        #    self.overheat_detected = True
+        #else:
+        #    self.overheat = False
 
         self.last_temp = last_value
         return last_value
@@ -104,6 +104,9 @@ class TemperatureSource(Source):
 
     def get_is_available(self):
         return True
+
+    def get_edge_triggered(self):
+        return self.last_temp > self.THRESHOLD_TEMP
 
     def get_summary(self):
         return {'Cur Temp': '%d %s' % (self.last_temp, self.get_measurement_unit())

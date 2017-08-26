@@ -36,7 +36,6 @@ import itertools
 from AboutMenu import AboutMenu
 from ComplexBarGraphs import LabeledBarGraph
 from ComplexBarGraphs import ScalableBarGraph
-from GraphData import GraphData
 from HelpMenu import HelpMenu
 from HelpMenu import HELP_MESSAGE
 from StressMenu import StressMenu
@@ -179,9 +178,6 @@ class GraphView(urwid.WidgetPlaceholder):
     def __init__(self, controller):
 
         self.controller = controller
-        self.temp_color = (['bg background', 'temp dark', 'temp light'],
-                           {(1, 0): 'temp dark smooth', (2, 1): 'temp light smooth'},
-                           'line')
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
         self.mode_buttons = []
 
@@ -201,43 +197,13 @@ class GraphView(urwid.WidgetPlaceholder):
 
 
     def update_displayed_information(self):
-        """
-        # Update all the graphs that are being displayed
-        # """
+        """ Update all the graphs that are being displayed """
 
         for g in self.visible_graphs.values():
             g.update_displayed_graph_data()
 
         for s in self.available_summaries.values():
             s.update()
-
-
-    #def set_temp_color(self, smooth=None):
-    #    """Paint graph red in overheat is detected"""
-    #    if self.data.overheat:
-    #        logging.info("Overheat detected ")
-    #        new_color = (['bg background', 'high temp dark', 'high temp light'],
-    #                     {(1, 0): 'high temp dark smooth', (2, 0): 'high temp light smooth'},
-    #                     'high temp txt')
-    #    else:
-    #        new_color = (['bg background', 'temp dark', 'temp light'],
-    #                     {(1, 0): 'temp dark smooth', (2, 0): 'temp light smooth'},
-    #                     'line')
-
-    #    if new_color[2] == self.temp_color[2] and smooth is None:
-    #        return
-
-    #    if smooth is None:
-    #        if self.temp_color[1] is None:
-    #            self.temp_color = (new_color[0], None, new_color[2])
-    #        else:
-    #            self.temp_color = new_color
-    #    elif smooth:
-    #        self.temp_color = new_color
-    #    else:
-    #        self.temp_color = (new_color[0], None, new_color[2])
-
-    #    self.graph_temp.bar_graph.set_segment_attributes(self.temp_color[0], satt=self.temp_color[1])
 
 
     def on_reset_button(self, w):
@@ -306,10 +272,6 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.show_graphs()
 
-    def main_shadow(self, w):
-        """Wrap a shadow and background around widget w."""
-        bg = urwid.AttrWrap(urwid.SolidFill(u"\u2592"), 'screen edge')
-        return w
 
     def bar_graph(self, color_a, color_b, title, x_label, y_label):
         w = ScalableBarGraph(['bg background', color_a, color_b])
@@ -449,7 +411,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.summaries[freq_source.get_source_name()] = SummaryTextList(freq_source)
 
         temp_source = TemperatureSource()
-        self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth')
+        alert_colors = ['high temp light', 'high temp dark', 'high temp light smooth', 'high temp dark smooth']
+        self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth', alert_colors=alert_colors)
         self.summaries[temp_source.get_source_name()] = SummaryTextList(temp_source)
 
         # only interested in available graph
@@ -477,7 +440,7 @@ class GraphView(urwid.WidgetPlaceholder):
         w = urwid.AttrWrap(w, 'body')
         w = urwid.LineBox(w)
         w = urwid.AttrWrap(w, 'line')
-        self.main_window_w = self.main_shadow(w)
+        self.main_window_w = w
         return self.main_window_w
 
 
@@ -520,10 +483,10 @@ class GraphController:
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
         # Width of bar graph is needed to know how long of a list of data to keep
-        if self.terminal:
-            self.data.output_to_terminal()
-        if self.json:
-            self.data.output_json()
+        #if self.terminal:
+        #    self.data.output_to_terminal()
+        #if self.json:
+        #    self.data.output_json()
         #if self.save_csv:
         #    output_to_csv(self.view.summariess, DEFAULT_CSV_FILE)
         self.view.update_displayed_information()
