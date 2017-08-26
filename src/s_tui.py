@@ -44,6 +44,7 @@ from HelperFunctions import DEFAULT_PALETTE
 from HelperFunctions import __version__
 from HelperFunctions import get_processor_name
 from HelperFunctions import kill_child_processes
+from HelperFunctions import output_to_csv 
 from StuiBarGraph import StuiBarGraph
 from SummaryTextList import SummaryTextList
 from Sources.RaplPowerSource import RaplPowerSource
@@ -51,6 +52,7 @@ from Sources.Source import MockSource
 from Sources.UtilSource import UtilSource
 from Sources.FreqSource import FreqSource
 from Sources.TemperatureSource import TemperatureSource
+from GlobalData import GlobalData
 
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
@@ -183,24 +185,17 @@ class GraphView(urwid.WidgetPlaceholder):
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
         self.mode_buttons = []
 
-        #self.data = controller.data
         self.visible_graphs = {}
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
-
-        self.max_temp_text = None
-        self.cur_temp_text = None
-        self.top_freq_text = None
-        self.cur_freq_text = None
-        self.cur_power_text = None
-        self.perf_lost_text = None
 
         self.main_window_w = []
 
         self.stress_menu = StressMenu(self.on_menu_close)
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
-        # TODO get from datakj
-        #self.stress_menu.sqrt_workers = str(self.data.core_num)
+        self.global_data = GlobalData(is_admin)
+
+        self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
 
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
 
@@ -209,25 +204,6 @@ class GraphView(urwid.WidgetPlaceholder):
         """
         # Update all the graphs that are being displayed
         # """
-        # def update_displayed_stats():
-        #     """
-        #     Display the stats on the sidebar according the the information in
-        #     GraphData
-        #     """
-        #     if self.controller.mode.current_mode == 'Regular Operation':
-        #         self.data.max_perf_lost = 0
-        #     if self.data.overheat_detected:
-        #         self.max_temp_text.set_text(('overheat dark', str(self.data.max_temp) + DEGREE_SIGN + 'c'))
-        #     else:
-        #         self.max_temp_text.set_text(str(self.data.max_temp) + DEGREE_SIGN + 'c')
-
-        #     self.cur_temp_text.set_text((self.temp_color[2], str(self.data.cur_temp) + DEGREE_SIGN + 'c'))
-
-        #     self.top_freq_text.set_text(str(self.data.top_freq) + 'MHz')
-        #     self.cur_freq_text.set_text(str(self.data.cur_freq) + 'MHz')
-        #     if self.data.is_power_measurement_available():
-        #         self.cur_power_text.set_text(str(round(self.data.cur_power,2)) + 'W')
-        #     self.perf_lost_text.set_text(str(self.data.max_perf_lost) + '%')
 
         for g in self.visible_graphs.values():
             g.update_displayed_graph_data()
@@ -236,32 +212,32 @@ class GraphView(urwid.WidgetPlaceholder):
             s.update()
 
 
-    def set_temp_color(self, smooth=None):
-        """Paint graph red in overheat is detected"""
-        if self.data.overheat:
-            logging.info("Overheat detected ")
-            new_color = (['bg background', 'high temp dark', 'high temp light'],
-                         {(1, 0): 'high temp dark smooth', (2, 0): 'high temp light smooth'},
-                         'high temp txt')
-        else:
-            new_color = (['bg background', 'temp dark', 'temp light'],
-                         {(1, 0): 'temp dark smooth', (2, 0): 'temp light smooth'},
-                         'line')
+    #def set_temp_color(self, smooth=None):
+    #    """Paint graph red in overheat is detected"""
+    #    if self.data.overheat:
+    #        logging.info("Overheat detected ")
+    #        new_color = (['bg background', 'high temp dark', 'high temp light'],
+    #                     {(1, 0): 'high temp dark smooth', (2, 0): 'high temp light smooth'},
+    #                     'high temp txt')
+    #    else:
+    #        new_color = (['bg background', 'temp dark', 'temp light'],
+    #                     {(1, 0): 'temp dark smooth', (2, 0): 'temp light smooth'},
+    #                     'line')
 
-        if new_color[2] == self.temp_color[2] and smooth is None:
-            return
+    #    if new_color[2] == self.temp_color[2] and smooth is None:
+    #        return
 
-        if smooth is None:
-            if self.temp_color[1] is None:
-                self.temp_color = (new_color[0], None, new_color[2])
-            else:
-                self.temp_color = new_color
-        elif smooth:
-            self.temp_color = new_color
-        else:
-            self.temp_color = (new_color[0], None, new_color[2])
+    #    if smooth is None:
+    #        if self.temp_color[1] is None:
+    #            self.temp_color = (new_color[0], None, new_color[2])
+    #        else:
+    #            self.temp_color = new_color
+    #    elif smooth:
+    #        self.temp_color = new_color
+    #    else:
+    #        self.temp_color = (new_color[0], None, new_color[2])
 
-        self.graph_temp.bar_graph.set_segment_attributes(self.temp_color[0], satt=self.temp_color[1])
+    #    self.graph_temp.bar_graph.set_segment_attributes(self.temp_color[0], satt=self.temp_color[1])
 
 
     def on_reset_button(self, w):
@@ -517,7 +493,6 @@ class GraphController:
         self.terminal = args.terminal
         self.json = args.json
         self.mode = GraphMode()
-        self.data = GraphData(is_admin=is_admin)
         self.view = GraphView(self)
         # use the first mode as the default
         mode = self.get_modes()[0]
@@ -549,8 +524,8 @@ class GraphController:
             self.data.output_to_terminal()
         if self.json:
             self.data.output_json()
-        if self.save_csv:
-            self.data.output_to_csv(DEFAULT_CSV_FILE)
+        #if self.save_csv:
+        #    output_to_csv(self.view.summariess, DEFAULT_CSV_FILE)
         self.view.update_displayed_information()
         self.animate_alarm = self.loop.set_alarm_in(
             UPDATE_INTERVAL, self.animate_graph)

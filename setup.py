@@ -1,6 +1,6 @@
 import os
 from setuptools import setup
-import s_tui.HelperFunctions as AUX
+import src.HelperFunctions as AUX
 import sys
 if sys.version_info < (2,7):
         sys.exit('Sorry, Python < 2.7 is not supported')
@@ -22,7 +22,7 @@ setup(
     keywords=['stress', 'monitoring', 'TUI'], # arbitrary keywords
 
     entry_points = {
-        'console_scripts' : ['s-tui=s_tui.s_tui:main']
+        'console_scripts' : ['s-tui=src.s_tui:main']
     },
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',

@@ -17,6 +17,10 @@ class FreqSource(Source):
         self.top_freq = 100
         self.turbo_freq = False
         self.last_freq = 0
+        self.samples_taken = 0
+        self.WAIT_SAMPLES = 5
+        self.perf_lost = 0
+        self.max_perf_lost = 0
         # Top frequency in case using Intel Turbo Boost
         if self.is_admin:
             try:
@@ -73,18 +77,20 @@ class FreqSource(Source):
                 cur_freq = 0
                 logging.debug("Frequency unavailable")
 
+        self.samples_taken += 1
+
         # Here is where we need to generate the max frequency lost
 
-        #if self.is_admin and self.samples_taken > self.WAIT_SAMPLES:
-        #    self.perf_lost = int(self.top_freq) - int(self.cur_freq)
-        #    if self.top_freq != 0:
-        #        self.perf_lost = (round(float(self.perf_lost) / float(self.top_freq) * 100, 1))
-        #    else:
-        #        self.perf_lost = 0
-        #    if self.perf_lost > self.max_perf_lost:
-        #        self.max_perf_lost = self.perf_lost
-        #elif not self.is_admin:
-        #    self.max_perf_lost = "N/A (no root)"
+        if self.is_admin and self.samples_taken > self.WAIT_SAMPLES:
+            self.perf_lost = int(self.top_freq) - int(cur_freq)
+            if self.top_freq != 0:
+                self.perf_lost = (round(float(self.perf_lost) / float(self.top_freq) * 100, 1))
+            else:
+                self.perf_lost = 0
+            if self.perf_lost > self.max_perf_lost:
+                self.max_perf_lost = self.perf_lost
+        elif not self.is_admin:
+            self.max_perf_lost = 0
 
         self.last_freq = cur_freq
         return cur_freq
@@ -96,8 +102,14 @@ class FreqSource(Source):
         return True
 
     def get_summary(self):
-        return {'Cur Freq': '%d %s' % (self.last_freq, self.get_measurement_unit())
-                , 'Top Freq': '%d %s' % (self.top_freq, self.get_measurement_unit())}
+        if self.is_admin:
+            return {'Cur Freq': '%d %s' % (self.last_freq, self.get_measurement_unit())
+                    , 'Perf Lost': '%d %s' % (self.max_perf_lost, '%')
+                    , 'Top Freq': '%d %s' % (self.top_freq, self.get_measurement_unit())}
+        else:
+            return {'Cur Freq': '%d %s' % (self.last_freq, self.get_measurement_unit())
+                    , 'Perf Lost': '%d %s' % (self.max_perf_lost, '(N/A)')
+                    , 'Top Freq': '%d %s' % (self.top_freq, self.get_measurement_unit())}
 
     def get_source_name(self):
         return 'Frequency'

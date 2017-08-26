@@ -25,6 +25,7 @@ import signal
 import platform
 import subprocess
 import re
+import csv
 
 __version__ = "0.5.0"
 TURBO_MSR = 429
@@ -76,6 +77,21 @@ def kill_child_processes(parent_proc, sig=signal.SIGTERM):
     except:
         logging.debug('No such process')
 
+def output_to_csv(source, csv_writeable_file):
+    """Print statistics to csv file"""
+    file_exists = os.path.isfile(csv_writeable_file)
+
+    with open(csv_writeable_file, 'a') as csvfile:
+        fieldnames = [key for key,val in source.iteritems() if val.get_is_available()]
+        logging.debug('Available fieldnames:' + str(fieldnames))
+
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        stats = [val.get_summary() for key,val in source.iteritems() if val.get_is_available()]
+
+        if not file_exists:
+            writer.writeheader()  # file doesn't exist yet, write a header
+        writer.writerow(stats)
 
 DEFAULT_PALETTE = [
     ('body',                    'default',        'default',   'standout'),

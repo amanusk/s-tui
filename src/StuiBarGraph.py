@@ -97,7 +97,7 @@ class StuiBarGraph(LabeledBarGraph):
         self.set_y_label(s)
 
     def reset(self):
-        self.graph_data = [0] * self.num_samples        
+        self.graph_data = [0] * self.num_samples
 
 
     def get_summary(self):
