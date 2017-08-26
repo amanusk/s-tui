@@ -12,3 +12,4 @@ build/*
 *.csv
 env/*
 FIRESTARTER/*
+s_tui/GraphData.py

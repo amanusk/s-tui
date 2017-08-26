@@ -1,6 +1,6 @@
 import urwid
 import itertools
-from Sources import Source
+from Sources.Source import Source
 
 class SummaryTextList:
     def __init__(self, source):

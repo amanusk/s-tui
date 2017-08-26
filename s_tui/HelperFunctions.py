@@ -26,8 +26,11 @@ import platform
 import subprocess
 import re
 import csv
+import sys
+import json
+from collections import OrderedDict
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 TURBO_MSR = 429
 
 
@@ -92,6 +95,34 @@ def output_to_csv(source, csv_writeable_file):
         if not file_exists:
             writer.writeheader()  # file doesn't exist yet, write a header
         writer.writerow(stats)
+
+
+def output_to_terminal(sources):
+    """Print statistics to the terminal"""
+    results = OrderedDict()
+    for s in sources:
+        if s.get_is_available():
+            s.get_reading()
+    for s in sources:
+        if s.get_is_available():
+            results.update(s.get_summary())
+    for key,value in  results.iteritems():
+        sys.stdout.write(str(key) + ": " + str(value) + ", ")
+    sys.stdout.write("\n")
+    exit()
+
+def output_to_json(sources):
+    """Print statistics to the terminal"""
+    results = OrderedDict()
+    for s in sources:
+        if s.get_is_available():
+            s.get_reading()
+    for s in sources:
+        if s.get_is_available():
+            results.update(s.get_summary())
+    print json.dumps(results, indent=4)
+    exit()
+
 
 DEFAULT_PALETTE = [
     ('body',                    'default',        'default',   'standout'),

@@ -6,4 +6,4 @@ install:
   - "python setup.py install"
 
 script:
-  - "s-tui -j"
+  - "s-tui -t"

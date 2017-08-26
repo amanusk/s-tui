@@ -94,6 +94,8 @@ class StuiBarGraph(LabeledBarGraph):
     def update_displayed_graph_data(self):
         if not self.get_is_available():
             return
+
+        # NOTE setting edge trigger causes overhead
         try:
             if self.source.get_edge_triggered():
                 self.set_alert_colors()

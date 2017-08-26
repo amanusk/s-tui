@@ -44,6 +44,8 @@ from HelperFunctions import __version__
 from HelperFunctions import get_processor_name
 from HelperFunctions import kill_child_processes
 from HelperFunctions import output_to_csv 
+from HelperFunctions import output_to_terminal
+from HelperFunctions import output_to_json
 from StuiBarGraph import StuiBarGraph
 from SummaryTextList import SummaryTextList
 from Sources.RaplPowerSource import RaplPowerSource
@@ -477,14 +479,11 @@ class GraphController:
     def main(self):
         self.loop = MainLoop(self.view, DEFAULT_PALETTE)
         self.animate_graph()
-        if not (self.terminal or self.json):
-            self.loop.run()
+        self.loop.run()
 
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
         # Width of bar graph is needed to know how long of a list of data to keep
-        #if self.terminal:
-        #    self.data.output_to_terminal()
         #if self.json:
         #    self.data.output_json()
         #if self.save_csv:
@@ -592,15 +591,20 @@ def main():
         is_admin = os.getuid() == 0
     except AttributeError:
         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
-    if not is_admin and not args.terminal:
-        print ("You are running without root permissions. Run as root to see max Turbo frequency")
+    if not is_admin:
         logging.info("Started without root permissions")
 
     if args.csv:
         logging.info("Printing output to csv " + DEFAULT_CSV_FILE)
 
-    if args.terminal:
+    if args.terminal or args.json:
         logging.info("Printing single line to terminal")
+        sources = [FreqSource(is_admin), TemperatureSource(), UtilSource(), RaplPowerSource()]
+        if args.terminal:
+            output_to_terminal(sources)
+        elif args.json:
+            output_to_json(sources)
+
 
 
     global graph_controller
