@@ -14,7 +14,7 @@ class UtilSource(Source):
     def get_reading(self):
         result = 0
         try:
-            result = float(psutil.cpu_percent(interval=0.1))
+            result = float(psutil.cpu_percent(interval=0.0))
         except:
             result = 0
             logging.debug("Cpu Utilization unavailable")
