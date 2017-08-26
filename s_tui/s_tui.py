@@ -48,11 +48,11 @@ from HelperFunctions import output_to_terminal
 from HelperFunctions import output_to_json
 from StuiBarGraph import StuiBarGraph
 from SummaryTextList import SummaryTextList
-from Sources.RaplPowerSource import RaplPowerSource as RaplPowerSource
 from Sources.Source import MockSource as MockSource
 from Sources.UtilSource import UtilSource as UtilSource
 from Sources.FreqSource import FreqSource as FreqSource
 from Sources.TemperatureSource import TemperatureSource as TemperatureSource
+from Sources.RaplPowerSource import RaplPowerSource as RaplPowerSource
 from GlobalData import GlobalData
 
 UPDATE_INTERVAL = 1
