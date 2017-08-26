@@ -43,16 +43,16 @@ from HelperFunctions import DEFAULT_PALETTE
 from HelperFunctions import __version__
 from HelperFunctions import get_processor_name
 from HelperFunctions import kill_child_processes
-from HelperFunctions import output_to_csv 
+from HelperFunctions import output_to_csv
 from HelperFunctions import output_to_terminal
 from HelperFunctions import output_to_json
 from StuiBarGraph import StuiBarGraph
 from SummaryTextList import SummaryTextList
-from Sources.RaplPowerSource import RaplPowerSource
-from Sources.Source import MockSource
-from Sources.UtilSource import UtilSource
-from Sources.FreqSource import FreqSource
-from Sources.TemperatureSource import TemperatureSource
+from Sources.RaplPowerSource import RaplPowerSource as RaplPowerSource
+from Sources.Source import MockSource as MockSource
+from Sources.UtilSource import UtilSource as UtilSource
+from Sources.FreqSource import FreqSource as FreqSource
+from Sources.TemperatureSource import TemperatureSource as TemperatureSource
 from GlobalData import GlobalData
 
 UPDATE_INTERVAL = 1
