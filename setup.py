@@ -13,7 +13,7 @@ or:\n\
 
 setup(
     name = "s-tui",
-    packages=['s_tui', 'Sources'],
+    packages=['s_tui', 's_tui.Sources'],
     version=AUX.__version__,
     author="Alex Manuskin",
     description="Terminal UI stress test and monitoring tool",

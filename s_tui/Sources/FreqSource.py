@@ -3,8 +3,8 @@ import os
 import re
 import subprocess
 from Source import Source
-from HelperFunctions import read_msr
-from HelperFunctions import TURBO_MSR
+from ..HelperFunctions import read_msr
+from ..HelperFunctions import TURBO_MSR
 
 import logging
 logger = logging.getLogger(__name__)
