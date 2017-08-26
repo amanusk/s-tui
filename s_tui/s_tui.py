@@ -457,7 +457,7 @@ class GraphView(urwid.WidgetPlaceholder):
         # TODO: Update to find sensors automatically
 
         rapl_power_source = RaplPowerSource()
-        self.graphs[rapl_power_source.get_source_name()] = StuiBarGraph(rapl_power_source, 'power light', 'power dark', 'power ligth smooth', 'power dark smooth')
+        self.graphs[rapl_power_source.get_source_name()] = StuiBarGraph(rapl_power_source, 'power dark', 'power light', 'power dark smooth', 'power light smooth')
         self.summaries[rapl_power_source.get_source_name()] = SummaryTextList(rapl_power_source)
 
         mock_graph_source = MockSource()
@@ -465,7 +465,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.summaries[mock_graph_source.get_source_name()] = SummaryTextList(mock_graph_source)
 
         util_source = UtilSource()
-        self.graphs[util_source.get_source_name()] = StuiBarGraph(util_source, 'til light', 'util dark', 'util light smooth', 'util dark smooth')
+        self.graphs[util_source.get_source_name()] = StuiBarGraph(util_source, 'util light', 'util dark', 'util light smooth', 'util dark smooth')
         self.summaries[util_source.get_source_name()] = SummaryTextList(util_source)
 
         freq_source = FreqSource(is_admin)

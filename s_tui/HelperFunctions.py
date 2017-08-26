@@ -97,10 +97,10 @@ DEFAULT_PALETTE = [
     ('high temp light',         'default',       'light red'),
     ('high temp light smooth',  'light red',     'default'),
 
-    ('power dark',               'default',      'black'),
+    ('power dark',               'default',      'black', 'standout'),
     ('power dark smooth',        'black',        'default'),
-    ('power light',              'default',      'light gray'),
-    ('power light smooth',       'light gray',   'default'),
+    ('power light',              'default',      'light gray', 'standout'),
+    ('power light smooth',       'light gray',        'default'),
 
     ('temp dark',               'default',        'dark cyan',    'standout'),
     ('temp dark smooth',        'dark cyan',      'default'),
