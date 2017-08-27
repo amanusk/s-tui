@@ -31,7 +31,6 @@ import json
 from collections import OrderedDict
 
 __version__ = "0.6.0"
-TURBO_MSR = 429
 
 
 def get_processor_name():
@@ -46,30 +45,6 @@ def get_processor_name():
             if "model name" in line:
                 return re.sub( ".*model name.*:", "", line,1)
     return ""
-
-
-def read_msr(msr, cpu=0):
-    if not os.path.exists("/dev/cpu/0/msr"):
-        try:
-            os.system("/sbin/modprobe msr")
-            logging.debug("Ran modprobe sucessfully")
-        except:
-            pass
-            return None
-    msr_file = '/dev/cpu/%d/msr' % (cpu,)
-    try:
-        with open(msr_file, 'r') as f:
-            f.seek(msr)
-            read_res = f.read(8)
-        s_decoded = [ord(c) for c in read_res]
-        return s_decoded
-    except IOError as e:
-        e.message = e.message + "Unable to read file " + msr_file
-        raise e
-    except OSError as e:
-        e.message = e.message + "File " + msr_file + " does not exist"
-        raise e
-
 
 def kill_child_processes(parent_proc, sig=signal.SIGTERM):
     try:
@@ -95,7 +70,6 @@ def output_to_csv(source, csv_writeable_file):
         if not file_exists:
             writer.writeheader()  # file doesn't exist yet, write a header
         writer.writerow(stats)
-
 
 def output_to_terminal(sources):
     """Print statistics to the terminal"""

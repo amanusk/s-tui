@@ -3,13 +3,36 @@ import os
 import re
 import subprocess
 from Source import Source
-import sys
-sys.path.insert(0,'..')
-from HelperFunctions import read_msr
-from HelperFunctions import TURBO_MSR
-
 import logging
 logger = logging.getLogger(__name__)
+
+TURBO_MSR = 429
+
+def read_msr(msr, cpu=0):
+    """
+    reads the msr number given from the file /dev/cpu/0/msr
+    Reuturns the value
+    """
+    if not os.path.exists("/dev/cpu/0/msr"):
+        try:
+            os.system("/sbin/modprobe msr")
+            logging.debug("Ran modprobe sucessfully")
+        except:
+            pass
+            return None
+    msr_file = '/dev/cpu/%d/msr' % (cpu,)
+    try:
+        with open(msr_file, 'r') as f:
+            f.seek(msr)
+            read_res = f.read(8)
+        s_decoded = [ord(c) for c in read_res]
+        return s_decoded
+    except IOError as e:
+        e.message = e.message + "Unable to read file " + msr_file
+        raise e
+    except OSError as e:
+        e.message = e.message + "File " + msr_file + " does not exist"
+        raise e
 
 class FreqSource(Source):
 
