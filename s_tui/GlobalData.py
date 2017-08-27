@@ -2,8 +2,6 @@ import psutil
 import os
 import re
 import subprocess
-from HelperFunctions import read_msr
-from HelperFunctions import TURBO_MSR
 
 import logging
 logger = logging.getLogger(__name__)
