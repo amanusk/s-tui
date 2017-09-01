@@ -81,8 +81,7 @@ class FreqSource(Source):
                     logging.debug("CPU top freqency N/A")
                     self.is_avaiable = False
 
-
-
+        self.update()
 
 
     def update(self):

@@ -28,6 +28,8 @@ class RaplPowerSource(Source):
         self.max_power = 0
         self.last_wats = 0
 
+        self.update()
+
     def read_measurement(self, file_path):
         try:
             with open(file_path) as f:

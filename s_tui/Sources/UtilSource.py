@@ -10,6 +10,7 @@ class UtilSource(Source):
 
     def __init__(self):
         self.last_freq = 0
+        self.update()
 
     def update(self):
         result = 0

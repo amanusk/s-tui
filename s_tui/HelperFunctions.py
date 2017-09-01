@@ -80,7 +80,7 @@ def output_to_terminal(sources):
     results = OrderedDict()
     for s in sources:
         if s.get_is_available():
-            s.get_reading()
+            s.update()
     for s in sources:
         if s.get_is_available():
             results.update(s.get_summary())
@@ -94,7 +94,7 @@ def output_to_json(sources):
     results = OrderedDict()
     for s in sources:
         if s.get_is_available():
-            s.get_reading()
+            s.update()
     for s in sources:
         if s.get_is_available():
             results.update(s.get_summary())
@@ -124,8 +124,8 @@ DEFAULT_PALETTE = [
 
     ('power dark',               'default',      'black', 'standout'),
     ('power dark smooth',        'black',        'default'),
-    ('power light',              'default',      'light gray', 'standout'),
-    ('power light smooth',       'light gray',        'default'),
+    ('power light',              'default',      'dark gray', 'standout'),
+    ('power light smooth',       'dark gray',    'default'),
 
     ('temp dark',               'default',        'dark cyan',    'standout'),
     ('temp dark smooth',        'dark cyan',      'default'),

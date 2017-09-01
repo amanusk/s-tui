@@ -185,9 +185,10 @@ class GraphView(urwid.WidgetPlaceholder):
     graph display.
     """
 
-    def __init__(self, controller):
+    def __init__(self, controller, args):
 
         self.controller = controller
+        self.custom_temp = args.custom_temp
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
         self.mode_buttons = []
 
@@ -416,7 +417,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graphs[util_source.get_source_name()] = StuiBarGraph(util_source, 'util light', 'util dark', 'util light smooth', 'util dark smooth')
         self.summaries[util_source.get_source_name()] = SummaryTextList(util_source)
 
-        temp_source = TemperatureSource()
+        temp_source = TemperatureSource(self.custom_temp)
         alert_colors = ['high temp light', 'high temp dark', 'high temp light smooth', 'high temp dark smooth']
         self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth', alert_colors=alert_colors)
         self.summaries[temp_source.get_source_name()] = SummaryTextList(temp_source, 'high temp txt')
@@ -454,7 +455,6 @@ class GraphView(urwid.WidgetPlaceholder):
         return self.main_window_w
 
 
-
 class GraphController:
     """
     A class responsible for setting up the model and view and running
@@ -466,7 +466,7 @@ class GraphController:
         self.terminal = args.terminal
         self.json = args.json
         self.mode = GraphMode()
-        self.view = GraphView(self)
+        self.view = GraphView(self, args)
         # use the first mode as the default
         mode = self.get_modes()[0]
         self.mode.set_mode(mode)
@@ -619,6 +619,20 @@ def main():
 
 
 def get_args():
+    custom_temp_help= """
+Custom temperature sensors.
+The format is: <sensors>,<number>
+As it appears in 'sensors'
+e.g
+> sensors
+it8792-isa-0a60,
+temp1: +47.0C
+temp2: +35.0C
+temp3: +37.0C
+
+use: -ct it8792,0 for temp 1
+    """
+
     parser = argparse.ArgumentParser(
         description=INTRO_MESSAGE,
         formatter_class=argparse.RawTextHelpFormatter)
@@ -633,6 +647,9 @@ def get_args():
                         default=False, help="Display a single line of stats in JSON format")
     parser.add_argument('-v', '--version',
                         default=False, action='store_true', help="Display version")
+    parser.add_argument('-ct', '--custom_temp',
+                        default=None,
+                        help= custom_temp_help)
     args = parser.parse_args()
     return args
 
