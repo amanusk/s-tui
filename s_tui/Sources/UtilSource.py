@@ -9,9 +9,9 @@ logger = logging.getLogger(__name__)
 class UtilSource(Source):
 
     def __init__(self):
-        self.last_value = 0
+        self.last_freq = 0
 
-    def get_reading(self):
+    def update(self):
         result = 0
         try:
             result = float(psutil.cpu_percent(interval=0.0))
@@ -19,9 +19,11 @@ class UtilSource(Source):
             result = 0
             logging.debug("Cpu Utilization unavailable")
 
-        self.last_value = float(result)
-        logging.info("Utilization recorded " + str(self.last_value))
-        return result
+        self.last_freq = float(result)
+        logging.info("Utilization recorded " + str(self.last_freq))
+
+    def get_reading(self):
+        return self.last_freq
 
     def get_maximum(self):
         return 100
@@ -30,7 +32,7 @@ class UtilSource(Source):
         return True
 
     def get_summary(self):
-        return {'Utilization': '%d %s' % (self.last_value, self.get_measurement_unit())}
+        return {'Utilization': '%.1f %s' % (self.last_freq, self.get_measurement_unit())}
 
     def get_source_name(self):
         return 'Utilization'

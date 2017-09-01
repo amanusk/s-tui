@@ -38,8 +38,9 @@ class FreqSource(Source):
 
     def __init__(self, is_admin):
         self.is_admin = is_admin
+        self.is_avaiable = True
 
-        self.top_freq = 100
+        self.top_freq = 0
         self.turbo_freq = False
         self.last_freq = 0
         self.samples_taken = 0
@@ -57,15 +58,17 @@ class FreqSource(Source):
                 # The MSR only holds 8 values. Number of cores could be higher
                 if num_cpus > 8:
                     max_turbo_msr = 8
-                self.top_freq = float(available_freq[max_turbo_msr - 1] * 100)
-                self.turbo_freq = True
-            except (IOError, OSError) as e:
+                freq = float(available_freq[max_turbo_msr - 1] * 100)
+                if freq > 0:
+                    self.top_freq = freq
+                    self.turbo_freq = True
+            except Exception as e:
                 logging.debug(e.message)
 
-        if self.top_freq == 100:
+        if self.turbo_freq == False:
             try:
                 self.top_freq = psutil.cpu_freq().max
-                self.turbo_freq = False
+
             except:
                 logging.debug("Max freq from psutil not available")
                 try:
@@ -76,12 +79,13 @@ class FreqSource(Source):
                 except:
                     logging.debug("Max frequency from lscpu not available")
                     logging.debug("CPU top freqency N/A")
-                    self.top_freq = 100
+                    self.is_avaiable = False
 
 
 
 
-    def get_reading(self):
+
+    def update(self):
         """Update CPU frequency data"""
         def get_avarage_cpu_freq():
             with open("/proc/cpuinfo") as cpuinfo:
@@ -90,10 +94,10 @@ class FreqSource(Source):
                     if "cpu MHz" in line:
                         core_freq = re.findall("\d+\.\d+", line)
                         cores_freq += core_freq
-            return round(reduce(lambda x, y: float(x) + float(y), cores_freq) / len(cores_freq), 1)
+            return round(sum(float(x) for x in cores_freq) / len(cores_freq), 1)
 
         try:
-            cur_freq = int(psutil.cpu_freq().current)
+            cur_freq = int(psutil.cpu_freq().current) + adsf
         except:
             cur_freq = 0
             try:
@@ -118,22 +122,24 @@ class FreqSource(Source):
             self.max_perf_lost = 0
 
         self.last_freq = cur_freq
-        return cur_freq
+
+    def get_reading(self):
+        return self.last_freq
 
     def get_maximum(self):
         return self.top_freq
 
     def get_is_available(self):
-        return True
+        return self.is_avaiable
 
     def get_summary(self):
         if self.is_admin:
-            return {'Cur Freq': '%d %s' % (self.last_freq, self.get_measurement_unit())
+            return {'Cur Freq': '%.1f %s' % (self.last_freq, self.get_measurement_unit())
                     , 'Perf Lost': '%d %s' % (self.max_perf_lost, '%')
                     , 'Top Freq': '%d %s' % (self.top_freq, self.get_measurement_unit())}
         else:
-            return {'Cur Freq': '%d %s' % (self.last_freq, self.get_measurement_unit())
-                    , 'Perf Lost': '%d %s' % (self.max_perf_lost, '(N/A)')
+            return {'Cur Freq': '%.1f %s' % (self.last_freq, self.get_measurement_unit())
+                    , 'Perf Lost': '%d %s' % (self.max_perf_lost, '(N/A run sudo)')
                     , 'Top Freq': '%d %s' % (self.top_freq, self.get_measurement_unit())}
 
     def get_source_name(self):

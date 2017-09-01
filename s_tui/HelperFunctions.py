@@ -28,6 +28,7 @@ import re
 import csv
 import sys
 import json
+import time
 from collections import OrderedDict
 
 __version__ = "0.6.0"
@@ -55,21 +56,24 @@ def kill_child_processes(parent_proc, sig=signal.SIGTERM):
     except:
         logging.debug('No such process')
 
-def output_to_csv(source, csv_writeable_file):
+def output_to_csv(sources, csv_writeable_file):
     """Print statistics to csv file"""
     file_exists = os.path.isfile(csv_writeable_file)
 
     with open(csv_writeable_file, 'a') as csvfile:
-        fieldnames = [key for key,val in source.iteritems() if val.get_is_available()]
-        logging.debug('Available fieldnames:' + str(fieldnames))
+        csv_dict = OrderedDict()
+        csv_dict.update({'Time': time.strftime("%Y-%m-%d_%H:%M:%S")})
+        summaries = [val for key,val in sources.iteritems()]
+        for summarie in summaries:
+            csv_dict.update(summarie.source.get_summary())
 
+
+        fieldnames = [key for key,val in csv_dict.iteritems()]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        stats = [val.get_summary() for key,val in source.iteritems() if val.get_is_available()]
 
         if not file_exists:
             writer.writeheader()  # file doesn't exist yet, write a header
-        writer.writerow(stats)
+        writer.writerow(csv_dict)
 
 def output_to_terminal(sources):
     """Print statistics to the terminal"""

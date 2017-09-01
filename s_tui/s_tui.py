@@ -33,6 +33,8 @@ import urwid
 import signal
 import itertools
 
+from collections import OrderedDict
+from distutils.spawn import find_executable
 from AboutMenu import AboutMenu
 from ComplexBarGraphs import LabeledBarGraph
 from ComplexBarGraphs import ScalableBarGraph
@@ -69,7 +71,7 @@ VERSION_MESSAGE = \
 " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
 Released under GNU GPLv2"
 
-fire_starter = "./FIRESTARTER/FIRESTARTER"
+fire_starter = None
 
 # globals
 is_admin = None
@@ -126,7 +128,13 @@ class GraphMode:
             if stress_installed:
                 self.modes.append('Stress Operation')
 
-            if os.path.isfile(fire_starter):
+            global fire_starter
+            if os.path.isfile('./FIRESTARTER/FIRESTARTER'):
+                fire_starter = os.path.join(os.getcwd,'./FIRESTARTER/FIRESTARTER')
+            elif find_executable('FIRESTARTER') is not None:
+                fire_starter = 'FIRESTARTER'
+
+            if fire_starter is not None:
                 self.modes.append('FIRESTARTER')
 
         self.current_mode = self.modes[0]
@@ -200,6 +208,9 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def update_displayed_information(self):
         """ Update all the graphs that are being displayed """
+
+        for key,val in self.graphs.iteritems():
+            val.source.update()
 
         for g in self.visible_graphs.values():
             g.update_displayed_graph_data()
@@ -391,31 +402,28 @@ class GraphView(urwid.WidgetPlaceholder):
     def main_window(self):
 
         # initiating the graphs
-        self.graphs = {}
-        self.summaries = {}
+        self.graphs = OrderedDict()
+        self.summaries = OrderedDict()
 
         # TODO: Update to find sensors automatically
 
-        rapl_power_source = RaplPowerSource()
-        self.graphs[rapl_power_source.get_source_name()] = StuiBarGraph(rapl_power_source, 'power dark', 'power light', 'power dark smooth', 'power light smooth')
-        self.summaries[rapl_power_source.get_source_name()] = SummaryTextList(rapl_power_source)
-
-        mock_graph_source = MockSource()
-        self.graphs[mock_graph_source.get_source_name()] = StuiBarGraph(mock_graph_source, 'power light', 'power dark', 'power light smooth', 'power dark smooth')
-        self.summaries[mock_graph_source.get_source_name()] = SummaryTextList(mock_graph_source)
-
-        util_source = UtilSource()
-        self.graphs[util_source.get_source_name()] = StuiBarGraph(util_source, 'util light', 'util dark', 'util light smooth', 'util dark smooth')
-        self.summaries[util_source.get_source_name()] = SummaryTextList(util_source)
 
         freq_source = FreqSource(is_admin)
         self.graphs[freq_source.get_source_name()] = StuiBarGraph(freq_source, 'freq light', 'freq dark', 'freq light smooth', 'freq dark smooth')
         self.summaries[freq_source.get_source_name()] = SummaryTextList(freq_source)
 
+        util_source = UtilSource()
+        self.graphs[util_source.get_source_name()] = StuiBarGraph(util_source, 'util light', 'util dark', 'util light smooth', 'util dark smooth')
+        self.summaries[util_source.get_source_name()] = SummaryTextList(util_source)
+
         temp_source = TemperatureSource()
         alert_colors = ['high temp light', 'high temp dark', 'high temp light smooth', 'high temp dark smooth']
         self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth', alert_colors=alert_colors)
-        self.summaries[temp_source.get_source_name()] = SummaryTextList(temp_source)
+        self.summaries[temp_source.get_source_name()] = SummaryTextList(temp_source, 'high temp txt')
+
+        rapl_power_source = RaplPowerSource()
+        self.graphs[rapl_power_source.get_source_name()] = StuiBarGraph(rapl_power_source, 'power dark', 'power light', 'power dark smooth', 'power light smooth')
+        self.summaries[rapl_power_source.get_source_name()] = SummaryTextList(rapl_power_source)
 
         # only interested in available graph
         self.available_graphs = dict((key, val) for key, val in self.graphs.iteritems() if val.get_is_available())
@@ -432,7 +440,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
         w = urwid.Columns([
-                           ('weight', 2, self.graph_place_holder),
+                          ('weight', 2, self.graph_place_holder),
                            ('fixed',  1, vline),
                            ('fixed',  20, text_col),
                            ],
@@ -483,11 +491,8 @@ class GraphController:
 
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
-        # Width of bar graph is needed to know how long of a list of data to keep
-        #if self.json:
-        #    self.data.output_json()
-        #if self.save_csv:
-        #    output_to_csv(self.view.summariess, DEFAULT_CSV_FILE)
+        if self.save_csv:
+            output_to_csv(self.view.summaries, DEFAULT_CSV_FILE)
         self.view.update_displayed_information()
         self.animate_alarm = self.loop.set_alarm_in(
             UPDATE_INTERVAL, self.animate_graph)
@@ -546,7 +551,8 @@ class GraphController:
             except:
                 logging.debug('Could not kill process')
 
-            stress_cmd = [os.path.join(os.getcwd(), fire_starter)]
+            stress_cmd = fire_starter
+            logging.debug("Firestarter " + str(fire_starter))
             with open(os.devnull, 'w') as DEVNULL:
                 try:
                     stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL, stderr=DEVNULL, shell=False)

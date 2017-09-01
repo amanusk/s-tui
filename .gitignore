@@ -13,3 +13,5 @@ build/*
 env/*
 FIRESTARTER/*
 s_tui/GraphData.py
+TODO.md
+Notes

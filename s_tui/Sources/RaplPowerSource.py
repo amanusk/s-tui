@@ -7,7 +7,7 @@ class RaplPowerSource(Source):
 
     intel_rapl_folder = '/sys/class/powercap/intel-rapl/'
 
-    MICRO_JAUL_IN_JAUL = 1000000.0
+    MICRO_JOULE_IN_JOULE = 1000000.0
 
     def __init__(self, package_number = 0):
         self.package_number = package_number
@@ -24,14 +24,17 @@ class RaplPowerSource(Source):
         self.is_available = True
         self.last_measurement_time = time.time()
         self.last_measurement_value = self.read_power_measurement_file()
-        self.max_power = self.read_max_power_file() / self.MICRO_JAUL_IN_JAUL
+        #self.max_power = self.read_max_power_file() / self.MICRO_JOULE_IN_JOULE
+        self.max_power = 0
         self.last_wats = 0
 
     def read_measurement(self, file_path):
-        file = open(file_path)
-        value = file.read()
-        file.close()
-        return float(value)
+        try:
+            with open(file_path) as f:
+                value = f.read()
+                return float(value)
+        except:
+            return 0
 
     def read_max_power_file(self):
         if not self.is_available:
@@ -49,28 +52,36 @@ class RaplPowerSource(Source):
         current_measurement_value = self.read_power_measurement_file()
         current_measurement_time = time.time()
 
-        jaul_used = (current_measurement_value - self.last_measurement_value) / self.MICRO_JAUL_IN_JAUL
+        joule_used = (current_measurement_value - self.last_measurement_value) / self.MICRO_JOULE_IN_JOULE
         seconds_passed = current_measurement_time - self.last_measurement_time
-        wats_used = jaul_used / seconds_passed
+        wats_used = joule_used / seconds_passed
 
         self.last_measurement_value = current_measurement_value
         self.last_measurement_time = current_measurement_time
         self.last_wats = wats_used
+        try:
+            if int(wats_used) > int(self.max_power):
+                self.max_power = wats_used
+        except:
+            self.max_power = 0
         return wats_used
 
     # Source super class implementation
     def get_is_available(self):
         return self.is_available
 
+    def update(self):
+        self.get_power_usage()
+
     def get_reading(self):
-        return self.get_power_usage()
+        return self.last_wats
 
     def get_maximum(self):
         return self.max_power
 
     def get_summary(self):
-        return {'Cur Power': '%d %s' % (self.last_wats, self.get_measurement_unit())
-                , 'Max Power': '%d %s' % (self.max_power, self.get_measurement_unit())}
+        return {'Cur Power': '%.1f %s' % (self.last_wats, self.get_measurement_unit())
+                , 'Max Power': '%.1f %s' % (self.max_power, self.get_measurement_unit())}
 
     def get_source_name(self):
         return 'Rapl Power'

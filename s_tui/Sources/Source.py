@@ -5,6 +5,9 @@ class Source:
     def get_reading(self):
         raise NotImplementedError("Get reading is not implemented")
 
+    def update(self):
+        raise NotImplementedError("Get reading is not implemented")
+
     def get_maximum(self):
         raise NotImplementedError("Get maximum is not implemented")
 
@@ -18,7 +21,10 @@ class Source:
         raise NotImplementedError("Get source name is not implemented")
 
     def get_edge_triggered(self):
-        raise NotImplementedError("Get source name is not implemented")
+        raise NotImplementedError("Get Edge triggered not implemented")
+
+    def get_max_triggered(self):
+        raise NotImplementedError("Get Edge triggered not implemented")
 
     def get_measurement_unit(self):
         raise NotImplementedError("Get measurement unit is not implemented")        

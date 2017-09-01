@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class TemperatureSource(Source):
 
-    THRESHOLD_TEMP = 65
+    THRESHOLD_TEMP = 80
     DEGREE_SIGN = u'\N{DEGREE SIGN}'
 
     def __init__(self):
@@ -17,7 +17,7 @@ class TemperatureSource(Source):
         self.measurement_unit = 'C'
         self.last_temp = 0;
 
-    def get_reading(self):
+    def update(self):
         """
         Read the latest Temperature reading.
         Reading for temperature might be different between systems
@@ -97,7 +97,9 @@ class TemperatureSource(Source):
         #    self.overheat = False
 
         self.last_temp = last_value
-        return last_value
+
+    def get_reading(self):
+        return self.last_temp
 
     def get_maximum(self):
         return self.max_temp
@@ -108,9 +110,12 @@ class TemperatureSource(Source):
     def get_edge_triggered(self):
         return self.last_temp > self.THRESHOLD_TEMP
 
+    def get_max_triggered(self):
+        return self.max_temp > self.THRESHOLD_TEMP
+
     def get_summary(self):
-        return {'Cur Temp': '%d %s' % (self.last_temp, self.get_measurement_unit())
-                , 'Max Temp': '%d %s' % (self.max_temp, self.get_measurement_unit())}
+        return {'Cur Temp': '%.1f %s' % (self.last_temp, self.get_measurement_unit())
+                , 'Max Temp': '%.1f %s' % (self.max_temp, self.get_measurement_unit())}
 
     def get_source_name(self):
         return 'Temperature'
