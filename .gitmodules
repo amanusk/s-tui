@@ -1,0 +1,4 @@
+[submodule "FIRESTARTER"]
+	path = FIRESTARTER
+    url = https://github.com/tud-zih-energy/FIRESTARTER.git
+    ignore = dirty

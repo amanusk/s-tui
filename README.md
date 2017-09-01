@@ -4,7 +4,7 @@
 [![PyPI version](https://badge.fury.io/py/s-tui.svg)](https://badge.fury.io/py/s-tui)
 
 
-s-tui is a terminal UI for monitoring your computer. s-tui allows to monitor CPU temperature, frequency and utilization in a graphical way from the terminal. 
+s-tui is a terminal UI for monitoring your computer. s-tui allows to monitor CPU temperature, frequency, power and utilization in a graphical way from the terminal. 
 
 ## Screenshot
 ![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui.gif?raw=true)
@@ -23,10 +23,11 @@ s-tui is a terminal UI for monitoring your computer. s-tui allows to monitor CPU
 	 * [Arch-Linux](#arch-linux)
   * [Build](#build)
   * [Compatibility](#compatibility)
+  * [FAQ](#faq)
 
 
 ## What it does
-* Monitoring your CPU temperature/utilization/frequency
+* Monitoring your CPU temperature/utilization/frequency/power
 * Shows performance dips caused by thermal throttling 
 * Requires minimal resources
 * Requires no X-server
@@ -69,16 +70,30 @@ Usage in graphical mode:
 * Reset buttons resets the graph and the max statistics
 
 optional arguments:
-  -h, --help      show this help message and exit
-  -d, --debug     Output debug log to _s-tui.log
-  -c, --csv       Save stats to csv file
-  -t, --terminal  Display a single line of stats without tui
-  -j, --json      Display a single line of stats in JSON format
-  -v, --version   Display version
+  -h, --help            show this help message and exit
+  -d, --debug           Output debug log to _s-tui.log
+  -c, --csv             Save stats to csv file
+  -t, --terminal        Display a single line of stats without tui
+  -j, --json            Display a single line of stats in JSON format
+  -v, --version         Display version
+  -ct CUSTOM_TEMP, --custom_temp CUSTOM_TEMP
+                        
+                        Custom temperature sensors.
+                        The format is: <sensors>,<number>
+                        As it appears in 'sensors'
+                        e.g
+                        > sensors
+                        it8792-isa-0a60,
+                        temp1: +47.0C
+                        temp2: +35.0C
+                        temp3: +37.0C
+                        
+                        use: -ct it8792,0 for temp 1
+
 ```
 
 ## Dependencies
-s-tui is a great tool for monitoring. If you would like to stress your computer, install stress. Stress options will then show up in s-tui
+s-tui is a great tool for monitoring. If you would like to stress your computer, install stress. Stress options will then show up in s-tui (optional)
 ```
 sudo apt-get install stress
 ```
@@ -96,7 +111,7 @@ An AUR package is available called 's-tui-git'
 Thanks to @DonOregano
 
 ## Build
-If you would like to make changes to s-tui, you can test your work by running s\_tui.py.
+Running s-tui from source  
 Clone
 ```
 git clone https://github.com/amanusk/s-tui.git
@@ -107,7 +122,7 @@ These need to be installed to run s-tui.py
 (sudo) pip install urwid
 (sudo) pip install psutil
 ```
-Install stress
+Install stress (optional)
 ```
 sudo apt-get install stress
 ```
@@ -116,15 +131,35 @@ Run the .py file
 ```
 (sudo) ./s_tui/s_tui.py
 ```
+### OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)
+FIRESTARTER is a great tool to stress your system to the extreme.  If you would like, you can integrate FIRESTARTER submodule into s-tui.
+To build FIRESTARTER  
+```
+git submodule init
+git submodule update
+cd ./FIRESTARTER
+./code-generator.py
+make
+```
+Once you have completed these steps, you can either:
+* Install FIRESTARTER to make it accessable to s-tui, e.g make a soft-link to FIRESTARTER in /usr/local/bin.
+* Run s-tui from the main project directory with `./s_tui/s_tui.py`  
+An option to run FIRESTARTER will then be available in s-tui
 
 ## Compatibility
-s-tui uses psutil to probe your hardware information. If your hardware is not supported, you might not see all the information.
+s-tui uses psutil to probe some of your hardware information. If your hardware is not supported, you might not see all the information.
 
-* On Intel machines:
-Running s-tui as root gives access to the maximum Turbo Boost frequency available to your CPU when stressing all cores. (Currently tested on Intel only).  
+* On Intel machines:  
+Running s-tui as root gives access to the maximum Turbo Boost frequency available to your CPU when stressing all cores. .  
 Running without root will display the Turbo Boost available on a single core. 
 
-* s-tui tested to run on Raspberry-Pi 3
+* Power read is supported on Intel Core CPUs of the second generation and newer (Sandy Bridge)  
+* s-tui tested to run on Raspberry-Pi 3,2,1
 
-* If the temperature does not show up, your sensor might not be supported. Try opening an issue on github and we can look into it.
-
+## FAQ
+__Q__: What features require sudo permissions?  
+__A__: Top Turbo frequency varies depending on how many cores are utilized. Sudo permissions are required in order to accurately read the top frequency when all the cores are utilized.  
+__Q__: I don't have a temperature graph  
+__A__: Systems have different sensors to read CPU temperature. If you do not see a temperature read, your system might not be supported (yet). You can try manually setting the sensor with the cli interface (see --help), or open an issue and we will try to add support for your system.   
+__Q__: I have a temperature graph, but it is wrong.  
+__A__: A default sensor is selected for temperature reads. On some systems this sensor might indicate the wrong temperature. You can try to manually select a sensor using the cli interface (see --help)  

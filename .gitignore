@@ -10,3 +10,8 @@ dist/*
 build/*
 .idea/*
 *.csv
+env/*
+FIRESTARTER/*
+s_tui/GraphData.py
+TODO.md
+Notes
