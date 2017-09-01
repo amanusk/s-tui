@@ -47,7 +47,13 @@ class TemperatureSource(Source):
                     last_value = psutil.sensors_temperatures()['coretemp'][0].current
                 except:
                     last_value = 0
-            # Support for Ryzen 7 + asus
+            # Support for Ryzen 1700X
+            if last_value <= 0:
+                try:
+                    last_value = psutil.sensors_temperatures()['it8686'][2].current
+                except:
+                    last_value = 0
+              # Support for Ryzen 7 + asus
             if last_value <= 0:
                 try:
                     last_value = psutil.sensors_temperatures()['it8655'][0].current
