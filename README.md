@@ -149,16 +149,17 @@ An option to run FIRESTARTER will then be available in s-tui
 ## Compatibility
 s-tui uses psutil to probe some of your hardware information. If your hardware is not supported, you might not see all the information.
 
-* On Intel machines:
+* On Intel machines:  
 Running s-tui as root gives access to the maximum Turbo Boost frequency available to your CPU when stressing all cores. .  
 Running without root will display the Turbo Boost available on a single core. 
 
+* Power read is supported on Intel Core CPUs of the second generation and newer (Sandy Bridge)  
 * s-tui tested to run on Raspberry-Pi 3,2,1
 
 ## FAQ
-**Q**: What features require sudo permissions?
-**A**: Top Turbo frequency varies depending on how many cores are utilized. Sudo permissions are required in order to accurately read the top frequency when all the cores are utilized.
-**Q**: I don't have a temperature graph
-**A**: Systems have different sensors to read CPU temperature. If you do not see a temperature read, your system might not be supported (yet). You can try manually setting the sensor with the cli interface (see --help), or open an issue and we will try to add support for your system. 
-**Q**: I have a temperature graph, but it is wrong.
-**A**: A default sensor is selected for temperature reads. On some systems this sensor might indicate the wrong temperature. You can try to manually select a sensor using the cli interface (see --help)
+__Q__: What features require sudo permissions?  
+__A__: Top Turbo frequency varies depending on how many cores are utilized. Sudo permissions are required in order to accurately read the top frequency when all the cores are utilized.  
+__Q__: I don't have a temperature graph  
+__A__: Systems have different sensors to read CPU temperature. If you do not see a temperature read, your system might not be supported (yet). You can try manually setting the sensor with the cli interface (see --help), or open an issue and we will try to add support for your system.   
+__Q__: I have a temperature graph, but it is wrong.  
+__A__: A default sensor is selected for temperature reads. On some systems this sensor might indicate the wrong temperature. You can try to manually select a sensor using the cli interface (see --help)  
