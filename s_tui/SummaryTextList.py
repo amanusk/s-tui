@@ -1,9 +1,10 @@
 import urwid
 import itertools
+from collections import OrderedDict
 
 class SummaryTextList:
     def __init__(self, source, alert_color=None):
-        self.summary_text_items = dict((key, urwid.Text(str(val), align='right')) for key, val in source.get_summary().iteritems())
+        self.summary_text_items = OrderedDict((key, urwid.Text(str(val), align='right')) for key, val in source.get_summary().iteritems())
         self.source = source
         self.alert_color = alert_color
 

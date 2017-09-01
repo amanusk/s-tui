@@ -3,6 +3,7 @@ import os
 import re
 import subprocess
 from Source import Source
+from collections import OrderedDict
 import logging
 logger = logging.getLogger(__name__)
 
@@ -133,13 +134,17 @@ class FreqSource(Source):
 
     def get_summary(self):
         if self.is_admin:
-            return {'Cur Freq': '%.1f %s' % (self.last_freq, self.get_measurement_unit())
-                    , 'Perf Lost': '%d %s' % (self.max_perf_lost, '%')
-                    , 'Top Freq': '%d %s' % (self.top_freq, self.get_measurement_unit())}
+            return OrderedDict([
+                    ( 'Top Freq', '%d %s' % (self.top_freq, self.get_measurement_unit()))
+                    , ('Cur Freq', '%.1f %s' % (self.last_freq, self.get_measurement_unit()))
+                    , ('Perf Lost', '%d %s' % (self.max_perf_lost, '%'))
+            ])
         else:
-            return {'Cur Freq': '%.1f %s' % (self.last_freq, self.get_measurement_unit())
-                    , 'Perf Lost': '%d %s' % (self.max_perf_lost, '(N/A run sudo)')
-                    , 'Top Freq': '%d %s' % (self.top_freq, self.get_measurement_unit())}
+            return OrderedDict([
+                    ( 'Top Freq', '%d %s' % (self.top_freq, self.get_measurement_unit()))
+                    , ('Cur Freq', '%.1f %s' % (self.last_freq, self.get_measurement_unit()))
+                    , ('Perf Lost', '%d %s' % (self.max_perf_lost, '(N/A) run sudo'))
+            ])
 
     def get_source_name(self):
         return 'Frequency'

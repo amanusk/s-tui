@@ -130,7 +130,7 @@ class GraphMode:
 
             global fire_starter
             if os.path.isfile('./FIRESTARTER/FIRESTARTER'):
-                fire_starter = os.path.join(os.getcwd,'./FIRESTARTER/FIRESTARTER')
+                fire_starter = os.path.join(os.getcwd(), 'FIRESTARTER', 'FIRESTARTER')
             elif find_executable('FIRESTARTER') is not None:
                 fire_starter = 'FIRESTARTER'
 
