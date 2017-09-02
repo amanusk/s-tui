@@ -291,6 +291,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.show_graphs()
 
+    def main_shadow(self, w):
+        """Wrap a shadow and background around widget w."""
+        bg = urwid.AttrWrap(urwid.SolidFill(u"\u2592"), 'screen edge')
+        return w
 
     def bar_graph(self, color_a, color_b, title, x_label, y_label):
         w = ScalableBarGraph(['bg background', color_a, color_b])
@@ -457,7 +461,7 @@ class GraphView(urwid.WidgetPlaceholder):
         w = urwid.AttrWrap(w, 'body')
         w = urwid.LineBox(w)
         w = urwid.AttrWrap(w, 'line')
-        self.main_window_w = w
+        self.main_window_w = self.main_shadow(w)
         return self.main_window_w
 
 
