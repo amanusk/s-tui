@@ -74,16 +74,25 @@ class FreqSource(Source):
             except:
                 logging.debug("Max freq from psutil not available")
                 try:
-                    cmd = "lscpu | grep 'CPU max MHz'"
+                    cmd = "lscpu | grep 'CPU MHz'"
                     ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
                     output = ps.communicate()[0]
                     self.top_freq = float(re.findall("\d+\.\d+", output)[0])
+                    if self.top_freq <= 0:
+                        cmd = "lscpu | grep 'CPU * MHz'"
+                        ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+                        output = ps.communicate()[0]
+                        self.top_freq = float(re.findall("\d+\.\d+", output)[0])
                 except:
                     logging.debug("Max frequency from lscpu not available")
                     logging.debug("CPU top freqency N/A")
-                    self.is_avaiable = False
 
         self.update()
+        # If top freq not available, take the current as top
+        if self.last_freq >= 0 and self.top_freq <=0:
+            self.top_freq = self.last_freq
+        if self.last_freq <= 0:
+            self.is_avaiable = False
 
 
     def update(self):
