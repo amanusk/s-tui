@@ -70,7 +70,8 @@ class RaplPowerSource(Source):
 
     # Source super class implementation
     def get_is_available(self):
-        return self.is_available
+        #return self.is_available
+        return False
 
     def update(self):
         self.get_power_usage()
@@ -90,7 +91,7 @@ class RaplPowerSource(Source):
                 , 'Max Power': '%.1f %s' % (self.max_power, self.get_measurement_unit())}
 
     def get_source_name(self):
-        return 'Rapl Power'
+        return 'Power'
 
     def get_measurement_unit(self):
         return 'W'

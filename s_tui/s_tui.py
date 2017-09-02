@@ -351,9 +351,11 @@ class GraphView(urwid.WidgetPlaceholder):
             install_stress_message = urwid.Text("\nstress not installed")
 
 
-        graph_checkboxes = (urwid.CheckBox(x.get_graph_name(), state=True,
+        graph_checkboxes = [urwid.CheckBox(x.get_graph_name(), state=True,
                             on_state_change=lambda w, state, x=x:  self.change_checkbox_state(x, state))
-                            for x in self.available_graphs.values())
+                            for x in self.available_graphs.values()]
+        unavalable_graphs = [urwid.Text(('high temp txt',x.get_graph_name() + " N/A") ) for x in self.graphs.values() if x.source.get_is_available() == False]
+        graph_checkboxes += unavalable_graphs
 
         buttons = [urwid.Text(u"Mode", align="center"),
                    ] +  self.mode_buttons + [
