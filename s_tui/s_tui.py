@@ -510,6 +510,8 @@ class GraphController:
                 kill_child_processes(mode.get_stress_process())
             except:
                 logging.debug('Could not kill process')
+            # This is not pretty, but this is how we know stress started
+            self.view.graphs['Frequency'].source.set_stress_started()
             stress_cmd = [stress_program]
             if int(self.view.stress_menu.sqrt_workers) > 0:
                 stress_cmd.append('-c')
@@ -558,6 +560,7 @@ class GraphController:
                 logging.debug('Could not kill process')
 
             stress_cmd = fire_starter
+            self.view.graphs['Frequency'].source.set_stress_started()
             logging.debug("Firestarter " + str(fire_starter))
             with open(os.devnull, 'w') as DEVNULL:
                 try:
@@ -571,6 +574,7 @@ class GraphController:
             logging.debug('Regular operation mode')
             try:
                 kill_child_processes(mode.get_stress_process())
+                self.view.graphs['Frequency'].source.set_stress_stopped()
             except:
                 try:
                     logging.debug('Could not kill process' + str(mode.get_stress_process()))

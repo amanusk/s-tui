@@ -48,6 +48,7 @@ class FreqSource(Source):
         self.WAIT_SAMPLES = 5
         self.perf_lost = 0
         self.max_perf_lost = 0
+        self.stress_started = False
         # Top frequency in case using Intel Turbo Boost
         if self.is_admin:
             try:
@@ -106,7 +107,8 @@ class FreqSource(Source):
                 cur_freq = 0
                 logging.debug("Frequency unavailable")
 
-        self.samples_taken += 1
+        if self.stress_started:
+            self.samples_taken += 1
 
         # Here is where we need to generate the max frequency lost
 
@@ -131,6 +133,16 @@ class FreqSource(Source):
 
     def get_is_available(self):
         return self.is_avaiable
+
+    def reset(self):
+        self.max_perf_lost = 0
+
+    def set_stress_started(self):
+        self.stress_started = True
+
+    def set_stress_stopped(self):
+        self.stress_started = False
+        self.samples_taken = 0
 
     def get_summary(self):
         if self.is_admin:
