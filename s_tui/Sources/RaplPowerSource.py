@@ -18,7 +18,7 @@ class RaplPowerSource(Source):
             self.last_measurement_time = 0
             self.last_measurement_value = 0
             self.max_power = 0
-            self.last_wats = 0
+            self.last_watts = 0
             return
 
         self.is_available = True
@@ -26,7 +26,7 @@ class RaplPowerSource(Source):
         self.last_measurement_value = self.read_power_measurement_file()
         #self.max_power = self.read_max_power_file() / self.MICRO_JOULE_IN_JOULE
         self.max_power = 0
-        self.last_wats = 0
+        self.last_watts = 0
 
         self.update()
 
@@ -56,17 +56,17 @@ class RaplPowerSource(Source):
 
         joule_used = (current_measurement_value - self.last_measurement_value) / self.MICRO_JOULE_IN_JOULE
         seconds_passed = current_measurement_time - self.last_measurement_time
-        wats_used = joule_used / seconds_passed
+        watts_used = joule_used / seconds_passed
 
         self.last_measurement_value = current_measurement_value
         self.last_measurement_time = current_measurement_time
-        self.last_wats = wats_used
+        self.last_watts = watts_used
         try:
-            if int(wats_used) > int(self.max_power):
-                self.max_power = wats_used
+            if int(watts_used) > int(self.max_power):
+                self.max_power = watts_used
         except:
             self.max_power = 0
-        return wats_used
+        return watts_used
 
     # Source super class implementation
     def get_is_available(self):
@@ -76,13 +76,17 @@ class RaplPowerSource(Source):
         self.get_power_usage()
 
     def get_reading(self):
-        return self.last_wats
+        return self.last_watts
 
     def get_maximum(self):
         return self.max_power
 
+    def reset(self):
+        self.max_power = 1
+        self.last_watts = 1
+
     def get_summary(self):
-        return {'Cur Power': '%.1f %s' % (self.last_wats, self.get_measurement_unit())
+        return {'Cur Power': '%.1f %s' % (self.last_watts, self.get_measurement_unit())
                 , 'Max Power': '%.1f %s' % (self.max_power, self.get_measurement_unit())}
 
     def get_source_name(self):

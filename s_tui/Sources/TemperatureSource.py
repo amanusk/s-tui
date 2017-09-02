@@ -132,6 +132,10 @@ class TemperatureSource(Source):
     def get_source_name(self):
         return 'Temperature'
 
+    def reset(self):
+        self.max_temp = 1
+        self.cur_temp = 1
+
     def get_measurement_unit(self):
         return self.measurement_unit
 

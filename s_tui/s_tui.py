@@ -224,6 +224,11 @@ class GraphView(urwid.WidgetPlaceholder):
         """Reset graph data and display empty graph"""
         for g in self.visible_graphs.values():
             g.reset()
+        for g in self.graphs.values():
+            try:
+                g.source.reset()
+            except NotImplementedError:
+                pass
         self.update_displayed_information()
 
     def on_menu_close(self):

@@ -14,6 +14,9 @@ class Source:
     def get_is_available(self):
         raise NotImplementedError("Get is available is not implemented")
 
+    def reset(self):
+        raise NotImplementedError("Reset max information")
+
     def get_summary(self):
         raise NotImplementedError("Get summary is not implemented")
 
@@ -27,7 +30,7 @@ class Source:
         raise NotImplementedError("Get Edge triggered not implemented")
 
     def get_measurement_unit(self):
-        raise NotImplementedError("Get measurement unit is not implemented")        
+        raise NotImplementedError("Get measurement unit is not implemented")
 
 
 class MockSource(Source):
