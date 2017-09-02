@@ -117,8 +117,7 @@ class TemperatureSource(Source):
         return self.max_temp
 
     def get_is_available(self):
-        #return self.is_available
-        return False
+        return self.is_available
 
     def get_edge_triggered(self):
         return self.last_temp > self.THRESHOLD_TEMP

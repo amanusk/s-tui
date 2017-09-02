@@ -70,8 +70,7 @@ class RaplPowerSource(Source):
 
     # Source super class implementation
     def get_is_available(self):
-        #return self.is_available
-        return False
+        return self.is_available
 
     def update(self):
         self.get_power_usage()
