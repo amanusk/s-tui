@@ -20,6 +20,10 @@ class TemperatureSource(Source):
         self.is_available = True
 
         self.update() # Inital update
+        # If not relevant sensor found, do not register temperature
+        if int(self.max_temp) <= 0:
+            self.is_available = False
+            logging.debug("Temperature sensor unavailable")
 
     def update(self):
         """
@@ -95,10 +99,6 @@ class TemperatureSource(Source):
                 except:
                     last_value = 0
 
-        # If not relevant sensor found, do not register temperature
-        if last_value <= 0:
-            self.is_available = False
-            logging.debug("Temperature sensor unavailable")
 
         # self.cpu_temp = self.append_latest_value(self.cpu_temp, last_value)
         # Update max temp
@@ -107,6 +107,7 @@ class TemperatureSource(Source):
                 self.max_temp = last_value
         except:
             self.max_temp = 0
+
 
         self.last_temp = last_value
 
