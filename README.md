@@ -107,7 +107,7 @@ sudo apt-get update
 sudo apt-get install python-s-tui
 ```
 ### Arch-Linux
-An AUR package is available called 's-tui-git'
+An AUR package is available called 's-tui'  
 Thanks to @DonOregano
 
 ## Build
