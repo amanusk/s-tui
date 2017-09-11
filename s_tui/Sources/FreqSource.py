@@ -93,15 +93,16 @@ class FreqSource(Source):
             except:
                 logging.debug("Max freq from psutil not available")
                 try:
-                    cmd = "lscpu | grep 'CPU MHz'"
+                    cmd = "lscpu | grep 'CPU max MHz'"
                     ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
                     output = ps.communicate()[0]
-                    self.top_freq = float(re.findall("\d+\.\d+", output)[0])
+                    self.top_freq = float(re.findall(b'\d+\.\d+', output)[0])
+                    logging.debug("Top freq " + str(self.top_freq))
                     if self.top_freq <= 0:
                         cmd = "lscpu | grep 'CPU * MHz'"
                         ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
                         output = ps.communicate()[0]
-                        self.top_freq = float(re.findall("\d+\.\d+", output)[0])
+                        self.top_freq = float(re.findall(b'\d+\.\d+', output)[0])
                 except:
                     logging.debug("Max frequency from lscpu not available")
                     logging.debug("CPU top freqency N/A")
@@ -121,7 +122,7 @@ class FreqSource(Source):
                 cores_freq = []
                 for line in cpuinfo:
                     if "cpu MHz" in line:
-                        core_freq = re.findall("\d+\.\d+", line)
+                        core_freq = re.findall('\d+\.\d+', line)
                         cores_freq += core_freq
             return round(sum(float(x) for x in cores_freq) / len(cores_freq), 1)
 

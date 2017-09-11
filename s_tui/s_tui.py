@@ -397,10 +397,10 @@ class GraphView(urwid.WidgetPlaceholder):
     def cpu_stats(self):
            """Read and display processor name """
            cpu_name = urwid.Text("CPU Name N/A", align="center")
-           #try:
-           cpu_name = urwid.Text(get_processor_name().strip(), align="center")
-           #except:
-           logging.info("CPU name not available")
+           try:
+               cpu_name = urwid.Text(get_processor_name().strip(), align="center")
+           except:
+               logging.info("CPU name not available")
            cpu_stats = [cpu_name, urwid.Divider()]
            return cpu_stats
 
