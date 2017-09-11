@@ -84,7 +84,7 @@ def output_to_terminal(sources):
     for s in sources:
         if s.get_is_available():
             results.update(s.get_summary())
-    for key,value in  results.iteritems():
+    for key,value in  results.items():
         sys.stdout.write(str(key) + ": " + str(value) + ", ")
     sys.stdout.write("\n")
     exit()

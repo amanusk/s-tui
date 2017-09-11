@@ -116,7 +116,7 @@ Clone
 ```
 git clone https://github.com/amanusk/s-tui.git
 ```
-s-tui uses psutil and urwid libraries.
+Install librarries   
 These need to be installed to run s-tui.py
 ```
 (sudo) pip install urwid
@@ -129,7 +129,7 @@ sudo apt-get install stress
 
 Run the .py file
 ```
-(sudo) ./s_tui/s_tui.py
+(sudo)python -m s_tui.s_tui
 ```
 ### OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)
 FIRESTARTER is a great tool to stress your system to the extreme.  If you would like, you can integrate FIRESTARTER submodule into s-tui.
@@ -150,7 +150,7 @@ An option to run FIRESTARTER will then be available in s-tui
 s-tui uses psutil to probe some of your hardware information. If your hardware is not supported, you might not see all the information.
 
 * On Intel machines:  
-Running s-tui as root gives access to the maximum Turbo Boost frequency available to your CPU when stressing all cores. .  
+Running s-tui as root gives access to the maximum Turbo Boost frequency available to your CPU when stressing all cores.
 Running without root will display the Turbo Boost available on a single core. 
 
 * Power read is supported on Intel Core CPUs of the second generation and newer (Sandy Bridge)  
