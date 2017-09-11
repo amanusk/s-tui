@@ -77,7 +77,7 @@ class StuiBarGraph(LabeledBarGraph):
         if size < self.SCALE_DENSITY:
             label_cnt = 1
         else:
-            label_cnt = (size / self.SCALE_DENSITY)
+            label_cnt = int(size / self.SCALE_DENSITY)
         try:
             label = [int(min_val + i * (int(max_val) - int(min_val)) / label_cnt)
                      for i in range(label_cnt + 1)]
@@ -136,16 +136,16 @@ class StuiBarGraph(LabeledBarGraph):
         # print num_displayed_bars
         # Iterage over all the information in the graph
         for n in range(self.MAX_SAMPLES-num_displayed_bars,self.MAX_SAMPLES):
-            value = self.graph_data[n]
+            value = int(self.graph_data[n])
             # toggle between two bar types
             if n & 1:
                 l.append([0, value])
             else:
                 l.append([value, 0])
 
-        self.bar_graph.set_data(l, data_max)
+        self.bar_graph.set_data(l, float(data_max))
         y_label_size = self.bar_graph.get_size()[0]
-        s = self.get_label_scale(0, data_max, y_label_size)
+        s = self.get_label_scale(0, float(data_max), float(y_label_size))
         self.set_y_label(s)
 
     def reset(self):

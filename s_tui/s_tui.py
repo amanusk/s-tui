@@ -298,12 +298,6 @@ class GraphView(urwid.WidgetPlaceholder):
         bg = urwid.AttrWrap(urwid.SolidFill(u"\u2592"), 'screen edge')
         return w
 
-    def bar_graph(self, color_a, color_b, title, x_label, y_label):
-        w = ScalableBarGraph(['bg background', color_a, color_b])
-        bg = LabeledBarGraph([w, x_label, y_label, title])
-
-        return bg
-
     def button(self, t, fn, data=None):
         w = urwid.Button(t, fn, data)
         w = urwid.AttrWrap(w, 'button normal', 'button select')

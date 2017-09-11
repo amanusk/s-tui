@@ -33,13 +33,40 @@ class ScalableBarGraph(urwid.BarGraph):
 
     def render(self, size, focus=False):
         canvas = super(ScalableBarGraph, self).render(size, focus)
-        new_size = (canvas.rows(), canvas.cols())
+        new_size = (int(canvas.rows()), int(canvas.cols()))
         old_size = self._size
         # check if to raise *on_resize* event
         if new_size != old_size:
             self.on_resize(new_size)
         self._size = new_size
         return canvas
+
+    def calculate_bar_widths(self, size, bardata):
+        """
+        Return a list of bar widths, one for each bar in data.
+
+        If self.bar_width is None this implementation will stretch
+        the bars across the available space specified by maxcol.
+        """
+        (maxcol, maxrow) = size
+
+        if self.bar_width is not None:
+            return [self.bar_width] * min(
+                len(bardata), int(maxcol / self.bar_width))
+
+        if len(bardata) >= maxcol:
+            return [1] * maxcol
+
+        widths = []
+        grow = maxcol
+        remain = len(bardata)
+        for row in bardata:
+            w = int(float(grow) / remain + 0.5)
+            widths.append(w)
+            grow -= w
+            remain -= 1
+        return widths
+
 
     def get_size(self):
         return self._size
