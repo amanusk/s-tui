@@ -29,7 +29,9 @@ import csv
 import sys
 import json
 import time
+
 from collections import OrderedDict
+from sys import exit
 
 __version__ = "0.6.1"
 

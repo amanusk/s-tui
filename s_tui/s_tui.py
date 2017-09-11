@@ -34,7 +34,7 @@ import urwid
 import signal
 import itertools
 
-
+from sys import exit
 from collections import OrderedDict
 from distutils.spawn import find_executable
 from s_tui.AboutMenu import AboutMenu
