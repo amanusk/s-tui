@@ -21,6 +21,8 @@ the current size of the bar graph is also obtainable
 get_size() - returns the tuple (row, col)
 """
 
+from __future__ import absolute_import
+
 import urwid
 #from graphics import BarGraph
 

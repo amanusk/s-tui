@@ -4,15 +4,15 @@ from collections import OrderedDict
 
 class SummaryTextList:
     def __init__(self, source, alert_color=None):
-        self.summary_text_items = OrderedDict((key, urwid.Text(str(val), align='right')) for key, val in source.get_summary().iteritems())
+        self.summary_text_items = OrderedDict((key, urwid.Text(str(val), align='right')) for key, val in source.get_summary().items())
         self.source = source
         self.alert_color = alert_color
 
     def get_text_item_list(self):
-        return itertools.chain.from_iterable([urwid.Text(str(key), align='left'), val]  for (key, val) in self.summary_text_items.iteritems())
+        return itertools.chain.from_iterable([urwid.Text(str(key), align='left'), val]  for (key, val) in self.summary_text_items.items())
 
     def update(self):
-        for key, val in self.source.get_summary().iteritems():
+        for key, val in self.source.get_summary().items():
             if key in self.summary_text_items:
                 try:
                     # NOTE: Not the best way to keep the max values persistent colors
