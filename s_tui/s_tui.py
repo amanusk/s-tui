@@ -20,6 +20,7 @@
 
 """An urwid program to stress and monitor you computer"""
 
+from __future__ import absolute_import
 from __future__ import print_function
 
 import argparse
@@ -33,29 +34,30 @@ import urwid
 import signal
 import itertools
 
+from sys import exit
 from collections import OrderedDict
 from distutils.spawn import find_executable
-from AboutMenu import AboutMenu
-from ComplexBarGraphs import LabeledBarGraph
-from ComplexBarGraphs import ScalableBarGraph
-from HelpMenu import HelpMenu
-from HelpMenu import HELP_MESSAGE
-from StressMenu import StressMenu
-from HelperFunctions import DEFAULT_PALETTE
-from HelperFunctions import __version__
-from HelperFunctions import get_processor_name
-from HelperFunctions import kill_child_processes
-from HelperFunctions import output_to_csv
-from HelperFunctions import output_to_terminal
-from HelperFunctions import output_to_json
-from StuiBarGraph import StuiBarGraph
-from SummaryTextList import SummaryTextList
-from Sources.Source import MockSource as MockSource
-from Sources.UtilSource import UtilSource as UtilSource
-from Sources.FreqSource import FreqSource as FreqSource
-from Sources.TemperatureSource import TemperatureSource as TemperatureSource
-from Sources.RaplPowerSource import RaplPowerSource as RaplPowerSource
-from GlobalData import GlobalData
+from s_tui.AboutMenu import AboutMenu
+from s_tui.ComplexBarGraphs import LabeledBarGraph
+from s_tui.ComplexBarGraphs import ScalableBarGraph
+from s_tui.HelpMenu import HelpMenu
+from s_tui.HelpMenu import HELP_MESSAGE
+from s_tui.StressMenu import StressMenu
+from s_tui.HelperFunctions import DEFAULT_PALETTE
+from s_tui.HelperFunctions import __version__
+from s_tui.HelperFunctions import get_processor_name
+from s_tui.HelperFunctions import kill_child_processes
+from s_tui.HelperFunctions import output_to_csv
+from s_tui.HelperFunctions import output_to_terminal
+from s_tui.HelperFunctions import output_to_json
+from s_tui.StuiBarGraph import StuiBarGraph
+from s_tui.SummaryTextList import SummaryTextList
+from s_tui.Sources.Source import MockSource as MockSource
+from s_tui.Sources.UtilSource import UtilSource as UtilSource
+from s_tui.Sources.FreqSource import FreqSource as FreqSource
+from s_tui.Sources.TemperatureSource import TemperatureSource as TemperatureSource
+from s_tui.Sources.RaplPowerSource import RaplPowerSource as RaplPowerSource
+from s_tui.GlobalData import GlobalData
 
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
@@ -210,7 +212,7 @@ class GraphView(urwid.WidgetPlaceholder):
     def update_displayed_information(self):
         """ Update all the graphs that are being displayed """
 
-        for key,val in self.graphs.iteritems():
+        for key,val in self.graphs.items():
             val.source.update()
 
         for g in self.visible_graphs.values():
@@ -286,7 +288,7 @@ class GraphView(urwid.WidgetPlaceholder):
         else:
             self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
 
-        for g_name,g in self.graphs.iteritems():
+        for g_name,g in self.graphs.items():
             g.set_smooth_colors(state)
 
         self.show_graphs()
@@ -405,7 +407,7 @@ class GraphView(urwid.WidgetPlaceholder):
     def graph_stats(self):
 
         fixed_stats = []
-        for key, val in self.available_summaries.iteritems():
+        for key, val in self.available_summaries.items():
             fixed_stats += val.get_text_item_list()
 
         return fixed_stats
@@ -437,8 +439,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.summaries[rapl_power_source.get_source_name()] = SummaryTextList(rapl_power_source)
 
         # only interested in available graph
-        self.available_graphs = dict((key, val) for key, val in self.graphs.iteritems() if val.get_is_available())
-        self.available_summaries = dict((key, val) for key, val in self.summaries.iteritems() if val.get_is_available())
+        self.available_graphs = OrderedDict((key, val) for key, val in self.graphs.items() if val.get_is_available())
+        self.available_summaries = OrderedDict((key, val) for key, val in self.summaries.items() if val.get_is_available())
 
         self.visible_graphs = self.available_graphs.copy()
         self.show_graphs()

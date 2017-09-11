@@ -1,8 +1,27 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2017 Alex Manuskin, Maor Veitsman
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+from __future__ import absolute_import
+
 import psutil
 import os
 import re
 import subprocess
-from Source import Source
+from s_tui.Sources.Source import Source
 from collections import OrderedDict
 import logging
 logger = logging.getLogger(__name__)
@@ -74,15 +93,16 @@ class FreqSource(Source):
             except:
                 logging.debug("Max freq from psutil not available")
                 try:
-                    cmd = "lscpu | grep 'CPU MHz'"
+                    cmd = "lscpu | grep 'CPU max MHz'"
                     ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
                     output = ps.communicate()[0]
-                    self.top_freq = float(re.findall("\d+\.\d+", output)[0])
+                    self.top_freq = float(re.findall(b'\d+\.\d+', output)[0])
+                    logging.debug("Top freq " + str(self.top_freq))
                     if self.top_freq <= 0:
                         cmd = "lscpu | grep 'CPU * MHz'"
                         ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
                         output = ps.communicate()[0]
-                        self.top_freq = float(re.findall("\d+\.\d+", output)[0])
+                        self.top_freq = float(re.findall(b'\d+\.\d+', output)[0])
                 except:
                     logging.debug("Max frequency from lscpu not available")
                     logging.debug("CPU top freqency N/A")
@@ -102,7 +122,7 @@ class FreqSource(Source):
                 cores_freq = []
                 for line in cpuinfo:
                     if "cpu MHz" in line:
-                        core_freq = re.findall("\d+\.\d+", line)
+                        core_freq = re.findall('\d+\.\d+', line)
                         cores_freq += core_freq
             return round(sum(float(x) for x in cores_freq) / len(cores_freq), 1)
 

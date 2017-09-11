@@ -29,9 +29,11 @@ import csv
 import sys
 import json
 import time
-from collections import OrderedDict
 
-__version__ = "0.6.0"
+from collections import OrderedDict
+from sys import exit
+
+__version__ = "0.6.1"
 
 
 def get_processor_name():
@@ -42,9 +44,9 @@ def get_processor_name():
     elif platform.system() == "Linux":
         command = "cat /proc/cpuinfo"
         all_info = subprocess.check_output(command, shell=True).strip()
-        for line in all_info.split("\n"):
-            if "model name" in line:
-                return re.sub( ".*model name.*:", "", line,1)
+        for line in all_info.split(b'\n'):
+            if b'model name' in line:
+                return re.sub( b'.*model name.*:', b'', line,1)
     return ""
 
 def kill_child_processes(parent_proc, sig=signal.SIGTERM):
@@ -63,12 +65,12 @@ def output_to_csv(sources, csv_writeable_file):
     with open(csv_writeable_file, 'a') as csvfile:
         csv_dict = OrderedDict()
         csv_dict.update({'Time': time.strftime("%Y-%m-%d_%H:%M:%S")})
-        summaries = [val for key,val in sources.iteritems()]
+        summaries = [val for key,val in sources.items()]
         for summarie in summaries:
             csv_dict.update(summarie.source.get_summary())
 
 
-        fieldnames = [key for key,val in csv_dict.iteritems()]
+        fieldnames = [key for key,val in csv_dict.items()]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         if not file_exists:
@@ -84,7 +86,7 @@ def output_to_terminal(sources):
     for s in sources:
         if s.get_is_available():
             results.update(s.get_summary())
-    for key,value in  results.iteritems():
+    for key,value in  results.items():
         sys.stdout.write(str(key) + ": " + str(value) + ", ")
     sys.stdout.write("\n")
     exit()
@@ -98,7 +100,7 @@ def output_to_json(sources):
     for s in sources:
         if s.get_is_available():
             results.update(s.get_summary())
-    print json.dumps(results, indent=4)
+    print(json.dumps(results, indent=4))
     exit()
 
 
@@ -122,10 +124,10 @@ DEFAULT_PALETTE = [
     ('high temp light',         'default',       'light red'),
     ('high temp light smooth',  'light red',     'default'),
 
-    ('power dark',               'default',      'black', 'standout'),
-    ('power dark smooth',        'black',        'default'),
-    ('power light',              'default',      'dark gray', 'standout'),
-    ('power light smooth',       'dark gray',    'default'),
+    ('power dark',               'default',      'light gray', 'standout'),
+    ('power dark smooth',        'light gray',   'default'),
+    ('power light',              'default',      'white', 'standout'),
+    ('power light smooth',       'white',    'default'),
 
     ('temp dark',               'default',        'dark cyan',    'standout'),
     ('temp dark smooth',        'dark cyan',      'default'),
