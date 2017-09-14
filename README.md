@@ -143,7 +143,7 @@ make
 ```
 Once you have completed these steps, you can either:
 * Install FIRESTARTER to make it accessable to s-tui, e.g make a soft-link to FIRESTARTER in /usr/local/bin.
-* Run s-tui from the main project directory with `./s_tui/s_tui.py`  
+* Run s-tui from the main project directory with `python -m s_tui.s_tui`  
 An option to run FIRESTARTER will then be available in s-tui
 
 ## Compatibility
@@ -156,7 +156,9 @@ Running without root will display the Turbo Boost available on a single core.
 * Power read is supported on Intel Core CPUs of the second generation and newer (Sandy Bridge)  
 * s-tui tested to run on Raspberry-Pi 3,2,1
 
-## FAQ
+## Q&A
+__Q__: How is this different from htop?  
+__A__: s-tui is not a processes monitor like htop. The purpose is to monitor your CPU statistics and have an option to test the system under heavy load.  (Think AIDA64 stress test, not task manager). 
 __Q__: What features require sudo permissions?  
 __A__: Top Turbo frequency varies depending on how many cores are utilized. Sudo permissions are required in order to accurately read the top frequency when all the cores are utilized.  
 __Q__: I don't have a temperature graph  
