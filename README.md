@@ -158,10 +158,16 @@ Running without root will display the Turbo Boost available on a single core.
 
 ## Q&A
 __Q__: How is this different from htop?  
-__A__: s-tui is not a processes monitor like htop. The purpose is to monitor your CPU statistics and have an option to test the system under heavy load.  (Think AIDA64 stress test, not task manager). 
+__A__: s-tui is not a processes monitor like htop. The purpose is to monitor your CPU statistics and have an option to test the system under heavy load.  (Think AIDA64 stress test, not task manager).  
+
+
 __Q__: What features require sudo permissions?  
 __A__: Top Turbo frequency varies depending on how many cores are utilized. Sudo permissions are required in order to accurately read the top frequency when all the cores are utilized.  
+
+
 __Q__: I don't have a temperature graph  
 __A__: Systems have different sensors to read CPU temperature. If you do not see a temperature read, your system might not be supported (yet). You can try manually setting the sensor with the cli interface (see --help), or open an issue and we will try to add support for your system.   
+
+
 __Q__: I have a temperature graph, but it is wrong.  
 __A__: A default sensor is selected for temperature reads. On some systems this sensor might indicate the wrong temperature. You can try to manually select a sensor using the cli interface (see --help)  
