@@ -42,7 +42,7 @@ setup(
         'Topic :: System :: Monitoring',
     ],
     install_requires=[
-        'urwid',
-        'psutil',
+        'urwid>=1.3.1',
+        'psutil>=5.2.0',
     ],
 )
