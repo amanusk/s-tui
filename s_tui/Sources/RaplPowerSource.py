@@ -88,7 +88,7 @@ class RaplPowerSource(Source):
         self.last_watts = watts_used
         try:
             if watts_used > self.max_power:
-                self.max_power = watts_used
+                self.max_power = math.ceil(watts_used)
                 logging.info("Max power updated " + str(self.max_power))
         except:
             self.max_power = 1
