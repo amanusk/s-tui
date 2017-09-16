@@ -79,10 +79,15 @@ class StuiBarGraph(LabeledBarGraph):
         else:
             label_cnt = int(size / self.SCALE_DENSITY)
         try:
-            label = [int(min_val + i * (int(max_val) - int(min_val)) / label_cnt)
-                     for i in range(label_cnt + 1)]
+            if max_val >= 100:
+                label = [int((min_val + i * (max_val - min_val) / label_cnt))
+                         for i in range(label_cnt + 1)]
+            else:
+                label = [round((min_val + i * (max_val - min_val) / label_cnt),1)
+                         for i in range(label_cnt + 1)]
             return label
-        except:
+        except ZeroDivisionError:
+            logging.debug("Side lable creation divided by 0")
             return ""
 
     def set_smooth_colors(self, smooth):
@@ -136,7 +141,7 @@ class StuiBarGraph(LabeledBarGraph):
         # print num_displayed_bars
         # Iterage over all the information in the graph
         for n in range(self.MAX_SAMPLES-num_displayed_bars,self.MAX_SAMPLES):
-            value = int(self.graph_data[n])
+            value = round(self.graph_data[n],1)
             # toggle between two bar types
             if n & 1:
                 l.append([0, value])

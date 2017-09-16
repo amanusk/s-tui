@@ -19,6 +19,7 @@ from __future__ import absolute_import
 
 import os
 import time
+import math
 
 from s_tui.Sources.Source import Source
 
@@ -47,7 +48,7 @@ class RaplPowerSource(Source):
         self.last_measurement_time = time.time()
         self.last_measurement_value = self.read_power_measurement_file()
         #self.max_power = self.read_max_power_file() / self.MICRO_JOULE_IN_JOULE
-        self.max_power = 0
+        self.max_power = 1
         self.last_watts = 0
 
         self.update()
@@ -86,10 +87,11 @@ class RaplPowerSource(Source):
         self.last_measurement_time = current_measurement_time
         self.last_watts = watts_used
         try:
-            if int(watts_used) > int(self.max_power):
+            if watts_used > self.max_power:
                 self.max_power = watts_used
+                logging.info("Max power updated " + str(self.max_power))
         except:
-            self.max_power = 0
+            self.max_power = 1
         return watts_used
 
     # Source super class implementation
@@ -107,7 +109,7 @@ class RaplPowerSource(Source):
 
     def reset(self):
         self.max_power = 1
-        self.last_watts = 1
+        self.last_watts = 0
 
     def get_summary(self):
         return {'Cur Power': '%.1f %s' % (self.last_watts, self.get_measurement_unit())

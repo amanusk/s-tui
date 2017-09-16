@@ -309,7 +309,7 @@ class GraphView(urwid.WidgetPlaceholder):
         w = urwid.AttrWrap(w, 'button normal', 'button select')
         return w
 
-    def exit_program(self, w):
+    def exit_program(self):
         """ Kill all stress operations upon exit"""
         try:
             kill_child_processes(self.controller.mode.get_stress_process())
@@ -493,7 +493,12 @@ class GraphController:
     def main(self):
         self.loop = MainLoop(self.view, DEFAULT_PALETTE)
         self.animate_graph()
-        self.loop.run()
+        try:
+            self.loop.run()
+        except ZeroDivisionError:
+            logging.debug("Some stat caused divide by zero exception. Exiting")
+            self.view.exit_program()
+
 
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
