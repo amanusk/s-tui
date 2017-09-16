@@ -22,6 +22,9 @@ import time
 
 from s_tui.Sources.Source import Source
 
+import logging
+logger = logging.getLogger(__name__)
+
 class RaplPowerSource(Source):
 
     intel_rapl_folder = '/sys/class/powercap/intel-rapl/'
@@ -73,9 +76,11 @@ class RaplPowerSource(Source):
         current_measurement_value = self.read_power_measurement_file()
         current_measurement_time = time.time()
 
-        joule_used = (current_measurement_value - self.last_measurement_value) / self.MICRO_JOULE_IN_JOULE
+        joule_used = (current_measurement_value - self.last_measurement_value) / float(self.MICRO_JOULE_IN_JOULE)
+        logging.info("current " + str(current_measurement_value) + " last " + str(self.last_measurement_value))
         seconds_passed = current_measurement_time - self.last_measurement_time
         watts_used = joule_used / seconds_passed
+        logging.info("Joule_Used " + str(joule_used) + " seconds_passed " + str(seconds_passed))
 
         self.last_measurement_value = current_measurement_value
         self.last_measurement_time = current_measurement_time
