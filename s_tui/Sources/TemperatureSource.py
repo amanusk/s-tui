@@ -64,6 +64,7 @@ class TemperatureSource(Source):
             except:
                 self.is_available = False
                 logging.debug("Illegal sensor")
+                self.last_temp = 1
         else: # Choose out a list of known sensors
             if last_value <= 0:
                 try:
@@ -158,4 +159,8 @@ class TemperatureSource(Source):
 
     def get_measurement_unit(self):
         return self.measurement_unit
+
+    def set_source(source):
+        self.custom_temp = source
+        return
 
