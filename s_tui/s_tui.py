@@ -50,6 +50,7 @@ from s_tui.HelperFunctions import kill_child_processes
 from s_tui.HelperFunctions import output_to_csv
 from s_tui.HelperFunctions import output_to_terminal
 from s_tui.HelperFunctions import output_to_json
+from s_tui.TempSensorsMenu import TempSensorsMenu
 from s_tui.StuiBarGraph import StuiBarGraph
 from s_tui.SummaryTextList import SummaryTextList
 from s_tui.Sources.Source import MockSource as MockSource
@@ -202,6 +203,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.stress_menu = StressMenu(self.on_menu_close)
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
+        self.temp_sensors_menu = TempSensorsMenu(self.on_sensors_menu_close)
         self.global_data = GlobalData(is_admin)
 
         self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
@@ -237,6 +239,26 @@ class GraphView(urwid.WidgetPlaceholder):
         """Return to main screen"""
         self.original_widget = self.main_window_w
 
+    def on_sensors_menu_close(self):
+        """Return to main screen and update sensor"""
+        if self.temp_sensors_menu.current_mode:
+            logging.info("State is not None")
+            temp_source = TemperatureSource(self.temp_sensors_menu.current_mode)
+            alert_colors = ['high temp light', 'high temp dark', 'high temp light smooth', 'high temp dark smooth']
+            self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth', alert_colors=alert_colors)
+            self.summaries[temp_source.get_source_name()] = SummaryTextList(temp_source, 'high temp txt')
+            self.available_graphs = OrderedDict((key, val) for key, val in self.graphs.items() if val.get_is_available())
+            self.available_summaries = OrderedDict((key, val) for key, val in self.summaries.items() if val.get_is_available())
+            self.visible_graphs = self.available_graphs.copy()
+            self.show_graphs()
+            #self.on_reset_button(None)
+            logging.info("Temp sensor updated to " + self.temp_sensors_menu.current_mode)
+
+        else:
+            logging.info("Temp sensor is None")
+
+        self.original_widget = self.main_window_w
+
 
     def on_stress_menu_open(self, w):
         """Open stress options"""
@@ -264,6 +286,15 @@ class GraphView(urwid.WidgetPlaceholder):
                                              self.about_menu.get_size()[1],
                                              ('fixed top', 2),
                                              self.about_menu.get_size()[0])
+
+    def on_temp_sensors_menu_open(self, w):
+        """Open About menu"""
+        self.original_widget = urwid.Overlay(self.temp_sensors_menu.main_window,
+                                             self.original_widget,
+                                             ('fixed left', 3),
+                                             self.temp_sensors_menu.get_size()[1],
+                                             ('fixed top', 2),
+                                             self.temp_sensors_menu.get_size()[0])
 
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
@@ -332,6 +363,7 @@ class GraphView(urwid.WidgetPlaceholder):
             control_options.append(self.button('Stress Options', self.on_stress_menu_open))
         control_options.append(self.button('Help', self.on_help_menu_open))
         control_options.append(self.button('About', self.on_about_menu_open))
+        control_options.append(self.button('Sensors', self.on_temp_sensors_menu_open))
 
         # Create the menu
         animate_controls = urwid.GridFlow(control_options, 18, 2, 0, 'center')

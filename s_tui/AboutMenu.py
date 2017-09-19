@@ -20,7 +20,11 @@
 """
 
 from __future__ import print_function
+from __future__ import absolute_import
+
 import urwid
+
+from s_tui.HelperFunctions import __version__
 
 ABOUT_MESSAGE = " \n\
 About:\n\
@@ -36,7 +40,9 @@ Created by:\n\
     - Gil Tsuker\n\
 \n\
 April 2017\n\
-"
+\n\
+s-tui " + __version__ +\
+        " Released under GNU GPLv2 "
 
 MESSAGE_LEN = 20
 
