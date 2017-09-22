@@ -50,6 +50,9 @@ from s_tui.HelperFunctions import kill_child_processes
 from s_tui.HelperFunctions import output_to_csv
 from s_tui.HelperFunctions import output_to_terminal
 from s_tui.HelperFunctions import output_to_json
+from s_tui.HelperFunctions import ViListBox
+from s_tui.HelperFunctions import radio_button
+from s_tui.HelperFunctions import button
 from s_tui.TempSensorsMenu import TempSensorsMenu
 from s_tui.StuiBarGraph import StuiBarGraph
 from s_tui.SummaryTextList import SummaryTextList
@@ -85,18 +88,6 @@ stress_program = None
 INTRO_MESSAGE = HELP_MESSAGE
 
 
-class ViListBox(urwid.ListBox):
-    # Catch key presses in box and pass them as arrow keys
-    def keypress(self, size, key):
-        if key == 'j':
-            key = 'down'
-        elif key == 'k':
-            key = 'up'
-        elif key == 'G':
-            key = 'page down'
-        elif key == 'g':
-            key = 'page up'
-        return super(ViListBox, self).keypress(size, key)
 
 
 class GraphMode:
@@ -192,6 +183,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.controller = controller
         self.custom_temp = args.custom_temp
+        self.args = args
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
         self.mode_buttons = []
 
@@ -241,19 +233,11 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def on_sensors_menu_close(self):
         """Return to main screen and update sensor"""
-        if self.temp_sensors_menu.current_mode:
+        if self.temp_sensors_menu.current_active_mode:
             logging.info("State is not None")
-            temp_source = TemperatureSource(self.temp_sensors_menu.current_mode)
-            alert_colors = ['high temp light', 'high temp dark', 'high temp light smooth', 'high temp dark smooth']
-            self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth', alert_colors=alert_colors)
-            self.summaries[temp_source.get_source_name()] = SummaryTextList(temp_source, 'high temp txt')
-            self.available_graphs = OrderedDict((key, val) for key, val in self.graphs.items() if val.get_is_available())
-            self.available_summaries = OrderedDict((key, val) for key, val in self.summaries.items() if val.get_is_available())
-            self.visible_graphs = self.available_graphs.copy()
-            self.show_graphs()
-            #self.on_reset_button(None)
-            logging.info("Temp sensor updated to " + self.temp_sensors_menu.current_mode)
-
+            self.args.custom_temp = self.temp_sensors_menu.current_active_mode
+            self.__init__(self.controller, self.args)
+            logging.info("Temp sensor updated to " + self.args.custom_temp)
         else:
             logging.info("Temp sensor is None")
 
@@ -329,16 +313,7 @@ class GraphView(urwid.WidgetPlaceholder):
         bg = urwid.AttrWrap(urwid.SolidFill(u"\u2592"), 'screen edge')
         return w
 
-    def button(self, t, fn, data=None):
-        w = urwid.Button(t, fn, data)
-        w = urwid.AttrWrap(w, 'button normal', 'button select')
-        return w
 
-    def radio_button(self, g, l, fn):
-        """ Inheriting radio button of urwid """
-        w = urwid.RadioButton(g, l, False, on_state_change=fn)
-        w = urwid.AttrWrap(w, 'button normal', 'button select')
-        return w
 
     def exit_program(self):
         """ Kill all stress operations upon exit"""
@@ -354,16 +329,16 @@ class GraphView(urwid.WidgetPlaceholder):
         # setup mode radio buttons
         group = []
         for m in modes:
-            rb = self.radio_button(group, m, self.on_mode_button)
+            rb = radio_button(group, m, self.on_mode_button)
             self.mode_buttons.append(rb)
 
         # Create list of buttons
-        control_options = [self.button("Reset", self.on_reset_button)]
+        control_options = [button("Reset", self.on_reset_button)]
         if stress_installed:
-            control_options.append(self.button('Stress Options', self.on_stress_menu_open))
-        control_options.append(self.button('Help', self.on_help_menu_open))
-        control_options.append(self.button('About', self.on_about_menu_open))
-        control_options.append(self.button('Sensors', self.on_temp_sensors_menu_open))
+            control_options.append(button('Stress Options', self.on_stress_menu_open))
+        control_options.append(button('Temp Sensors', self.on_temp_sensors_menu_open))
+        control_options.append(button('Help', self.on_help_menu_open))
+        control_options.append(button('About', self.on_about_menu_open))
 
         # Create the menu
         animate_controls = urwid.GridFlow(control_options, 18, 2, 0, 'center')
@@ -400,7 +375,7 @@ class GraphView(urwid.WidgetPlaceholder):
             urwid.Divider(),
             urwid.LineBox(urwid.Pile(graph_checkboxes)),
             urwid.Divider(),
-            self.button("Quit", self.exit_program),
+            button("Quit", self.exit_program),
             ]
 
         return buttons

@@ -23,7 +23,8 @@ from __future__ import print_function
 from __future__ import absolute_import
 import urwid
 import psutil
-
+from s_tui.HelperFunctions import ViListBox
+from s_tui.HelperFunctions import radio_button
 
 MESSAGE_LEN = 20
 
@@ -32,12 +33,6 @@ logger = logging.getLogger(__name__)
 
 class TempSensorsMenu:
     MAX_TITLE_LEN = 50
-
-    def radio_button(self, g, l, fn):
-        """ Inheriting radio button of urwid """
-        w = urwid.RadioButton(g, l, False, on_state_change=fn)
-        w = urwid.AttrWrap(w, 'button normal', 'button select')
-        return w
 
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
@@ -58,41 +53,60 @@ class TempSensorsMenu:
 
     def __init__(self, return_fn):
 
+        # What is shown in menu
         self.current_mode = None
+        # Sensor Applied
+        self.current_active_mode = None
 
         self.no_malloc = False
 
-        self.available_sensors = []
+        title = urwid.Text(('bold', u"  Available Temperature Sensors  \n"), 'center')
 
+        self.available_sensors = []
         sensors_dict = psutil.sensors_temperatures()
         for key,value in sensors_dict.items():
             sensor_name = key
             for itr in range(len(value)):
-                self.available_sensors.append(sensor_name + "," +str(itr))
+                sensor_label = ""
+                try:
+                    sensor_label = value[itr].label
+                    logging.debug("Sensor Label")
+                    logging.debug(sensor_label)
+                except IndexError:
+                    pass
 
+                self.available_sensors.append(sensor_name +\
+                                              "," +str(itr) +\
+                                              "," + sensor_label)
         group = []
         self.sensor_buttons = []
         for sensor in self.available_sensors:
-            rb = self.radio_button(group, sensor, self.on_mode_button)
+            rb = radio_button(group, sensor, self.on_mode_button)
             self.sensor_buttons.append(rb)
 
-        rb = self.radio_button(group, "INVALID", self.on_mode_button)
+        rb = radio_button(group, "INVALID", self.on_mode_button)
         self.sensor_buttons.append(rb)
 
         self.return_fn = return_fn
 
-        cancel_button = urwid.Button('Exit', on_press=self.on_cancel)
+        cancel_button = urwid.Button('Cancel', on_press=self.on_cancel)
         cancel_button._label.align = 'center'
+        apply_button = urwid.Button('Apply', on_press=self.on_apply)
+        apply_button._label.align = 'center'
 
-        if_buttons = urwid.Columns([cancel_button])
+        if_buttons = urwid.Columns([apply_button,cancel_button])
 
-        self.titles = self.sensor_buttons + [if_buttons]
+        self.titles = [title] + self.sensor_buttons + [if_buttons]
 
-        self.main_window = urwid.LineBox(urwid.ListBox(self.titles))
+        self.main_window = urwid.LineBox(ViListBox(self.titles))
 
     def get_size(self):
         return MESSAGE_LEN + 3, self.MAX_TITLE_LEN
 
     def on_cancel(self, w):
+        self.return_fn()
+
+    def on_apply(self, w):
+        self.current_active_mode = self.current_mode
         self.return_fn()
 
