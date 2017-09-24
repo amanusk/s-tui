@@ -23,11 +23,10 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import urwid
-
+from s_tui.UiElements import ViListBox
 from s_tui.HelperFunctions import __version__
 
 ABOUT_MESSAGE = " \n\
-About:\n\
 s-tui is a monitoring tool for your CPU temperature, frequency and utilization. s-tui makes it possilble to monitor your computer over SSH without a need for a GUI\n\
 \n\
 Code for s-tui is available on github\n\
@@ -63,10 +62,13 @@ class AboutMenu:
 
         if_buttons = urwid.Columns([cancel_button])
 
-        self.titles = [self.time_out_ctrl,
+        title = urwid.Text(('bold text', u"  About Menu  \n"), 'center')
+
+        self.titles = [title,
+                       self.time_out_ctrl,
                        if_buttons]
 
-        self.main_window = urwid.LineBox(urwid.ListBox(self.titles))
+        self.main_window = urwid.LineBox(ViListBox(self.titles))
 
     def get_size(self):
         return MESSAGE_LEN + 3, self.MAX_TITLE_LEN

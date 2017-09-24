@@ -23,16 +23,15 @@ from __future__ import print_function
 from __future__ import absolute_import
 import urwid
 import psutil
-from s_tui.HelperFunctions import ViListBox
-from s_tui.HelperFunctions import radio_button
+from s_tui.UiElements import ViListBox
+from s_tui.UiElements import radio_button
 
-MESSAGE_LEN = 20
 
 import logging
 logger = logging.getLogger(__name__)
 
 class TempSensorsMenu:
-    MAX_TITLE_LEN = 50
+    MAX_TITLE_LEN = 40
 
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
@@ -60,7 +59,7 @@ class TempSensorsMenu:
 
         self.no_malloc = False
 
-        title = urwid.Text(('bold', u"  Available Temperature Sensors  \n"), 'center')
+        title = urwid.Text(('bold text', u"  Available Temperature Sensors  \n"), 'center')
 
         self.available_sensors = []
         sensors_dict = psutil.sensors_temperatures()
@@ -84,8 +83,8 @@ class TempSensorsMenu:
             rb = radio_button(group, sensor, self.on_mode_button)
             self.sensor_buttons.append(rb)
 
-        rb = radio_button(group, "INVALID", self.on_mode_button)
-        self.sensor_buttons.append(rb)
+        #rb = radio_button(group, "INVALID", self.on_mode_button)
+        #self.sensor_buttons.append(rb)
 
         self.return_fn = return_fn
 
@@ -101,7 +100,7 @@ class TempSensorsMenu:
         self.main_window = urwid.LineBox(ViListBox(self.titles))
 
     def get_size(self):
-        return MESSAGE_LEN + 3, self.MAX_TITLE_LEN
+        return len(self.sensor_buttons) + 6, self.MAX_TITLE_LEN
 
     def on_cancel(self, w):
         self.return_fn()

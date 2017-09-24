@@ -36,29 +36,6 @@ from sys import exit
 
 __version__ = "0.6.3"
 
-class ViListBox(urwid.ListBox):
-    # Catch key presses in box and pass them as arrow keys
-    def keypress(self, size, key):
-        if key == 'j':
-            key = 'down'
-        elif key == 'k':
-            key = 'up'
-        elif key == 'G':
-            key = 'page down'
-        elif key == 'g':
-            key = 'page up'
-        return super(ViListBox, self).keypress(size, key)
-
-def radio_button(g, l, fn):
-    """ Inheriting radio button of urwid """
-    w = urwid.RadioButton(g, l, False, on_state_change=fn)
-    w = urwid.AttrWrap(w, 'button normal', 'button select')
-    return w
-
-def button(t, fn, data=None):
-    w = urwid.Button(t, fn, data)
-    w = urwid.AttrWrap(w, 'button normal', 'button select')
-    return w
 
 def get_processor_name():
     if platform.system() == "Windows":
@@ -137,6 +114,8 @@ DEFAULT_PALETTE = [
     ('menu button',             'light gray',     'black'),
     ('bg background',           'default',         'default'),
     ('overheat dark',           'white',          'light red',     'standout'),
+    ('bold text',               'default,bold',          'default',     'bold'),
+    ('under text',               'default,underline',          'default',     'underline'),
 
     ('util light',              'default',        'light green'),
     ('util light smooth',       'light green',     'default'),
