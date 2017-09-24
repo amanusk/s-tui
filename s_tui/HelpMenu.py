@@ -20,14 +20,17 @@
 """
 
 from __future__ import print_function
+from __future__ import absolute_import
 import urwid
+from s_tui.UiElements import ViListBox
 
 HELP_MESSAGE = """
-********s-tui manual********
 Usage in graphical mode:\n\
 * Toggle between stressed and regular operation using the radio buttons.\n\
 * If you wish to alternate stress defaults, you can do it in 'stress options\n\
 * If your system supports it, you can use the utf8 button to get a smoother graph\n\
+* Select a different temperature sensors for the `Temp Sensors` menu\n\
+* Change the refresh rate in seconds with the `Refresh` field\n\
 * Reset buttons resets the graph and the max statistics\n\
 \n\
 """
@@ -36,7 +39,7 @@ MESSAGE_LEN = 20
 
 
 class HelpMenu:
-    MAX_TITLE_LEN = 50
+    MAX_TITLE_LEN = 90
 
     def __init__(self, return_fn):
 
@@ -51,10 +54,13 @@ class HelpMenu:
 
         if_buttons = urwid.Columns([cancel_button])
 
-        self.titles = [self.time_out_ctrl,
+        title = urwid.Text(('bold text', u"  Help Menu  \n"), 'center')
+
+        self.titles = [title,
+                       self.time_out_ctrl,
                        if_buttons]
 
-        self.main_window = urwid.LineBox(urwid.ListBox(self.titles))
+        self.main_window = urwid.LineBox(ViListBox(self.titles))
 
     def get_size(self):
         return MESSAGE_LEN + 3, self.MAX_TITLE_LEN

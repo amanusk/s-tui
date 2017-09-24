@@ -50,9 +50,9 @@ from s_tui.HelperFunctions import kill_child_processes
 from s_tui.HelperFunctions import output_to_csv
 from s_tui.HelperFunctions import output_to_terminal
 from s_tui.HelperFunctions import output_to_json
-from s_tui.HelperFunctions import ViListBox
-from s_tui.HelperFunctions import radio_button
-from s_tui.HelperFunctions import button
+from s_tui.UiElements import ViListBox
+from s_tui.UiElements import radio_button
+from s_tui.UiElements import button
 from s_tui.TempSensorsMenu import TempSensorsMenu
 from s_tui.StuiBarGraph import StuiBarGraph
 from s_tui.SummaryTextList import SummaryTextList
@@ -71,6 +71,7 @@ DEFAULT_LOG_FILE = "_s-tui.log"
 # TODO: Add timestamp
 
 DEFAULT_CSV_FILE = "stui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
+
 
 VERSION_MESSAGE = \
 "s-tui " + __version__ +\
@@ -178,7 +179,6 @@ class GraphView(urwid.WidgetPlaceholder):
     A class responsible for providing the application's interface and
     graph display.
     """
-
     def __init__(self, controller, args):
 
         self.controller = controller
@@ -186,6 +186,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.args = args
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
         self.mode_buttons = []
+        self.refresh_rate_ctrl = urwid.Edit(('bold text', u'Refresh[s]:'), self.controller.refresh_rate)
+
 
         self.visible_graphs = {}
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
@@ -199,9 +201,23 @@ class GraphView(urwid.WidgetPlaceholder):
         self.global_data = GlobalData(is_admin)
 
         self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
+        self.left_margin = 0
+        self.top_margin = 0
+        self.v_relative = 50
+        self.h_relative = 50
 
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
+        urwid.connect_signal(self.refresh_rate_ctrl, 'change', self.update_refresh_rate)
 
+
+    def update_refresh_rate(self, edit, new_refresh_rate):
+        try:
+            if float(new_refresh_rate) <= 0.001:
+                pass
+            else:
+                self.controller.refresh_rate = float(new_refresh_rate)
+        except:
+            self.controller.refresh_rate = 1.0
 
     def update_displayed_information(self):
         """ Update all the graphs that are being displayed """
@@ -248,36 +264,36 @@ class GraphView(urwid.WidgetPlaceholder):
         """Open stress options"""
         self.original_widget = urwid.Overlay(self.stress_menu.main_window,
                                              self.original_widget,
-                                             ('fixed left', 3),
+                                             ('relative', self.left_margin),
                                              self.stress_menu.get_size()[1],
-                                             ('fixed top', 2),
+                                             ('relative', self.top_margin),
                                              self.stress_menu.get_size()[0])
 
     def on_help_menu_open(self, w):
         """Open Help menu"""
         self.original_widget = urwid.Overlay(self.help_menu.main_window,
                                              self.original_widget,
-                                             ('fixed left', 3),
+                                             ('relative', self.left_margin),
                                              self.help_menu.get_size()[1],
-                                             ('fixed top', 2),
-                                             self.help_menu.get_size()[0])
+                                             ('relative', self.top_margin),
+                                             self.stress_menu.get_size()[0])
 
     def on_about_menu_open(self, w):
         """Open About menu"""
         self.original_widget = urwid.Overlay(self.about_menu.main_window,
                                              self.original_widget,
-                                             ('fixed left', 3),
+                                             ('relative', self.left_margin),
                                              self.about_menu.get_size()[1],
-                                             ('fixed top', 2),
+                                             ('relative', self.top_margin),
                                              self.about_menu.get_size()[0])
 
     def on_temp_sensors_menu_open(self, w):
         """Open About menu"""
         self.original_widget = urwid.Overlay(self.temp_sensors_menu.main_window,
                                              self.original_widget,
-                                             ('fixed left', 3),
+                                             ('relative', self.left_margin),
                                              self.temp_sensors_menu.get_size()[1],
-                                             ('fixed top', 2),
+                                             ('relative', self.top_margin),
                                              self.temp_sensors_menu.get_size()[0])
 
     def on_mode_button(self, button, state):
@@ -307,12 +323,6 @@ class GraphView(urwid.WidgetPlaceholder):
             g.set_smooth_colors(state)
 
         self.show_graphs()
-
-    def main_shadow(self, w):
-        """Wrap a shadow and background around widget w."""
-        bg = urwid.AttrWrap(urwid.SolidFill(u"\u2592"), 'screen edge')
-        return w
-
 
 
     def exit_program(self):
@@ -361,19 +371,19 @@ class GraphView(urwid.WidgetPlaceholder):
         graph_checkboxes = [urwid.CheckBox(x.get_graph_name(), state=True,
                             on_state_change=lambda w, state, x=x:  self.change_checkbox_state(x, state))
                             for x in self.available_graphs.values()]
-        unavalable_graphs = [urwid.Text((x.get_graph_name() + " N/A") ) for x in self.graphs.values() if x.source.get_is_available() == False]
+        unavalable_graphs = [urwid.Text(( "[N/A] " + x.get_graph_name()) ) for x in self.graphs.values() if x.source.get_is_available() == False]
         graph_checkboxes += unavalable_graphs
 
-        buttons = [urwid.Text(u"Mode", align="center"),
+        buttons = [urwid.Text(('bold text', u"Modes"), align="center"),
                    ] +  self.mode_buttons + [
             urwid.Divider(),
-            urwid.Text("Control Options", align="center"),
+            urwid.Text(('bold text', u"Control Options"), align="center"),
             animate_controls,
             install_stress_message,
-            urwid.Divider(),
-            urwid.LineBox(unicode_checkbox),
+            self.refresh_rate_ctrl,
             urwid.Divider(),
             urwid.LineBox(urwid.Pile(graph_checkboxes)),
+            urwid.LineBox(unicode_checkbox),
             urwid.Divider(),
             button("Quit", self.exit_program),
             ]
@@ -454,17 +464,17 @@ class GraphView(urwid.WidgetPlaceholder):
 
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
         w = urwid.Columns([
-                          ('weight', 2, self.graph_place_holder),
-                           ('fixed',  1, vline),
                            ('fixed',  20, text_col),
+                           ('fixed',  1, vline),
+                           ('weight', 2, self.graph_place_holder),
                            ],
-                          dividechars=1, focus_column=2)
+                          dividechars=1, focus_column=0)
 
         w = urwid.Padding(w, ('fixed left', 1), ('fixed right', 0))
         w = urwid.AttrWrap(w, 'body')
         w = urwid.LineBox(w)
         w = urwid.AttrWrap(w, 'line')
-        self.main_window_w = self.main_shadow(w)
+        self.main_window_w = w
         return self.main_window_w
 
 
@@ -479,6 +489,7 @@ class GraphController:
         self.terminal = args.terminal
         self.json = args.json
         self.mode = GraphMode()
+        self.refresh_rate = '1.0'
         self.view = GraphView(self, args)
         # use the first mode as the default
         mode = self.get_modes()[0]
@@ -513,7 +524,7 @@ class GraphController:
             output_to_csv(self.view.summaries, DEFAULT_CSV_FILE)
         self.view.update_displayed_information()
         self.animate_alarm = self.loop.set_alarm_in(
-            UPDATE_INTERVAL, self.animate_graph)
+            float(self.refresh_rate), self.animate_graph)
 
     def start_stress(self):
         mode = self.mode
@@ -673,6 +684,7 @@ use: -ct it8792,0 for temp 1
                         default=None,
                         help= custom_temp_help)
     args = parser.parse_args()
+    HELP_MESSAGE = parser.print_help()
     return args
 
 

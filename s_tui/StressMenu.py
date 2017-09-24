@@ -64,7 +64,10 @@ class StressMenu:
 
         if_buttons = urwid.Columns([default_button, save_button, cancel_button])
 
-        self.titles = [self.time_out_ctrl,
+        title = urwid.Text(('bold text', u"  Stress Options  \n"), 'center')
+
+        self.titles = [title,
+                       self.time_out_ctrl,
                        urwid.Divider(u'\u2500'),
                        self.sqrt_workers_ctrl,
                        urwid.Divider(u'\u2500'),
@@ -116,7 +119,7 @@ class StressMenu:
         self.return_fn()
 
     def get_size(self):
-        return len(self.titles) + 3, self.MAX_TITLE_LEN
+        return len(self.titles) + 5, self.MAX_TITLE_LEN
 
     def on_save(self, w):
         self.time_out = self.get_pos_num(self.time_out_ctrl.get_edit_text(), 'none')
