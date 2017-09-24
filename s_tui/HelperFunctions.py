@@ -29,7 +29,6 @@ import csv
 import sys
 import json
 import time
-import urwid
 
 from collections import OrderedDict
 from sys import exit
