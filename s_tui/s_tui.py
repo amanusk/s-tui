@@ -684,7 +684,6 @@ use: -ct it8792,0 for temp 1
                         default=None,
                         help= custom_temp_help)
     args = parser.parse_args()
-    HELP_MESSAGE = parser.print_help()
     return args
 
 
