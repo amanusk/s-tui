@@ -276,7 +276,7 @@ class GraphView(urwid.WidgetPlaceholder):
                                              ('relative', self.left_margin),
                                              self.help_menu.get_size()[1],
                                              ('relative', self.top_margin),
-                                             self.stress_menu.get_size()[0])
+                                             self.help_menu.get_size()[0])
 
     def on_about_menu_open(self, w):
         """Open About menu"""

@@ -63,11 +63,25 @@ If you are installing s-tui on a Raspberry-Pi you might need to install `python-
 ## Options
 ```
 ********s-tui manual********
-Usage in graphical mode:
-* Toggle between stressed and regular operation using the radio buttons.
-* If you wish to alternate stress defaults, you can do it in 'stress options'
+usage: s_tui.py [-h] [-d] [-c] [-t] [-j] [-nm] [-v] [-ct CUSTOM_TEMP]
+
+TUI interface:
+
+The side bar houses the controls for the displayed grahps.
+At the bottom of the side bar, more information is presented in text form.
+
+* Use the arrow keys or 'hjkl' to navigate the side bar
+* Toggle between stressed and regular operation using the radio buttons in 'Modes'.
+* If you wish to alternate stress defaults, you can do it in 'Stress options'
+* Select a different temperature sensors from the 'Temp Sensors' menu
+* Change time between updates using the 'Refresh' field
+* Use the 'Reset' button to reset graphs and statistics
+* Toggle displayed graphs by selecting the [X] check box
+* If a sensor is not available on your system, N/A is presented
 * If your system supports it, you can use the utf8 button to get a smoother graph
-* Reset buttons resets the graph and the max statistics
+* Press 'q' or the 'Quit' button to quit
+
+* Run `s-tui --help` to get this message and additional cli options
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -75,6 +89,7 @@ optional arguments:
   -c, --csv             Save stats to csv file
   -t, --terminal        Display a single line of stats without tui
   -j, --json            Display a single line of stats in JSON format
+  -nm, --no-mouse       Disable Mouse for TTY systems
   -v, --version         Display version
   -ct CUSTOM_TEMP, --custom_temp CUSTOM_TEMP
                         
@@ -116,7 +131,7 @@ Clone
 ```
 git clone https://github.com/amanusk/s-tui.git
 ```
-Install librarries   
+Install libraries   
 These need to be installed to run s-tui.py
 ```
 (sudo) pip install urwid
@@ -129,7 +144,7 @@ sudo apt-get install stress
 
 Run the .py file
 ```
-(sudo)python -m s_tui.s_tui
+(sudo) python -m s_tui.s_tui
 ```
 ### OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)
 FIRESTARTER is a great tool to stress your system to the extreme.  If you would like, you can integrate FIRESTARTER submodule into s-tui.
@@ -142,7 +157,7 @@ cd ./FIRESTARTER
 make
 ```
 Once you have completed these steps, you can either:
-* Install FIRESTARTER to make it accessable to s-tui, e.g make a soft-link to FIRESTARTER in /usr/local/bin.
+* Install FIRESTARTER to make it accessible to s-tui, e.g make a soft-link to FIRESTARTER in /usr/local/bin.
 * Run s-tui from the main project directory with `python -m s_tui.s_tui`  
 An option to run FIRESTARTER will then be available in s-tui
 
@@ -166,8 +181,11 @@ __A__: Top Turbo frequency varies depending on how many cores are utilized. Sudo
 
 
 __Q__: I don't have a temperature graph  
-__A__: Systems have different sensors to read CPU temperature. If you do not see a temperature read, your system might not be supported (yet). You can try manually setting the sensor with the cli interface (see --help), or open an issue and we will try to add support for your system.   
+__A__: Systems have different sensors to read CPU temperature. If you do not see a temperature read, your system might not be supported (yet). You can try manually setting the sensor with the cli interface (see --help), or selecting a sensor from the  'Temp Sensors' menu
 
 
 __Q__: I have a temperature graph, but it is wrong.  
-__A__: A default sensor is selected for temperature reads. On some systems this sensor might indicate the wrong temperature. You can try to manually select a sensor using the cli interface (see --help)  
+__A__: A default sensor is selected for temperature reads. On some systems this sensor might indicate the wrong temperature. You can manually select a sensor from the 'Temp Sensors' menu or using the cli interface (see --help)
+
+__Q__: I am using the TTY with no X server and s-tui crashes on start  
+__A__: By default, s-tui is handles mouse inputs. This causes some systems to crash. Try running `s-tui --no-mouse` 

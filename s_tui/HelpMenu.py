@@ -25,17 +25,27 @@ import urwid
 from s_tui.UiElements import ViListBox
 
 HELP_MESSAGE = """
-Usage in graphical mode:\n\
-* Toggle between stressed and regular operation using the radio buttons.\n\
-* If you wish to alternate stress defaults, you can do it in 'stress options\n\
+TUI interface:
+
+The side bar houses the controls for the displayed grahps.\n\
+At the bottom of the side bar, more information is presented in text form.\n\
+
+* Use the arrow keys or 'hjkl' to navigate the side bar
+* Toggle between stressed and regular operation using the radio buttons in 'Modes'.\n\
+* If you wish to alternate stress defaults, you can do it in 'Stress options'\n\
+* Select a different temperature sensors from the 'Temp Sensors' menu\n\
+* Change time between updates using the 'Refresh' field\n\
+* Use the <Reset> button to reset graphs and statistics\n\
+* Toggle displayed graphs by selecting the [X] check box\n\
+* If a sensor is not available on your system, N/A is presented\n\
 * If your system supports it, you can use the utf8 button to get a smoother graph\n\
-* Select a different temperature sensors for the `Temp Sensors` menu\n\
-* Change the refresh rate in seconds with the `Refresh` field\n\
-* Reset buttons resets the graph and the max statistics\n\
+* Press 'q' or the <quit> button to quit\n\
+\n\
+* Run `s-tui --help` to get this message and additional cli options\n\
 \n\
 """
 
-MESSAGE_LEN = 20
+MESSAGE_LEN = 30
 
 
 class HelpMenu:
