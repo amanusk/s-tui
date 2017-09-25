@@ -215,9 +215,9 @@ class GraphView(urwid.WidgetPlaceholder):
             if float(new_refresh_rate) <= 0.001:
                 pass
             else:
-                self.controller.refresh_rate = float(new_refresh_rate)
+                self.controller.refresh_rate = new_refresh_rate
         except:
-            self.controller.refresh_rate = 1.0
+            self.controller.refresh_rate = '1.0'
 
     def update_displayed_information(self):
         """ Update all the graphs that are being displayed """
@@ -325,7 +325,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.show_graphs()
 
 
-    def exit_program(self):
+    def exit_program(self, w=None):
         """ Kill all stress operations upon exit"""
         try:
             kill_child_processes(self.controller.mode.get_stress_process())
@@ -489,6 +489,7 @@ class GraphController:
         self.terminal = args.terminal
         self.json = args.json
         self.mode = GraphMode()
+        self.handle_mouse = not(args.no_mouse)
         self.refresh_rate = '1.0'
         self.view = GraphView(self, args)
         # use the first mode as the default
@@ -509,13 +510,13 @@ class GraphController:
         return rval
 
     def main(self):
-        self.loop = MainLoop(self.view, DEFAULT_PALETTE)
+        self.loop = MainLoop(self.view, DEFAULT_PALETTE, handle_mouse = self.handle_mouse)
         self.animate_graph()
         try:
             self.loop.run()
         except ZeroDivisionError:
             logging.debug("Some stat caused divide by zero exception. Exiting")
-            self.view.exit_program()
+            self.exit_program()
 
 
     def animate_graph(self, loop=None, user_data=None):
@@ -678,6 +679,8 @@ use: -ct it8792,0 for temp 1
                         default=False, help="Display a single line of stats without tui")
     parser.add_argument('-j', '--json', action='store_true',
                         default=False, help="Display a single line of stats in JSON format")
+    parser.add_argument('-nm', '--no-mouse', action='store_true',
+                        default=False, help="Disable Mouse for TTY systems")
     parser.add_argument('-v', '--version',
                         default=False, action='store_true', help="Display version")
     parser.add_argument('-ct', '--custom_temp',
