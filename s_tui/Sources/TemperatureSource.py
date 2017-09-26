@@ -58,7 +58,9 @@ class TemperatureSource(Source):
         if self.custom_temp is not None:
             # Use the manual sensor
             try:
-                sensor_major, sensor_minor, label = self.custom_temp.split(",")
+                sensors_info = self.custom_temp.split(",")
+                sensor_major = sensors_info[0]
+                sensor_minor = sensors_info[1]
                 logging.debug("Major" + str(sensor_major) + "Minor" + str(sensor_minor))
                 last_value = psutil.sensors_temperatures()[sensor_major][int(sensor_minor)].current
             except:
