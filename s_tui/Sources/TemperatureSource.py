@@ -76,7 +76,7 @@ class TemperatureSource(Source):
             # Support for Ryzen 1700X
             if last_value <= 0:
                 try:
-                    last_value = psutil.sensors_temperatures()['it8686'][2].current
+                    last_value = psutil.sensors_temperatures()['k10temp'][0].current
                 except:
                     last_value = 0
               # Support for Ryzen 7 + asus

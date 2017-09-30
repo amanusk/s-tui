@@ -62,7 +62,11 @@ class TempSensorsMenu:
         title = urwid.Text(('bold text', u"  Available Temperature Sensors  \n"), 'center')
 
         self.available_sensors = []
-        sensors_dict = psutil.sensors_temperatures()
+        sensors_dict = dict()
+        try:
+            sensors_dict = psutil.sensors_temperatures()
+        except IOError:
+            logging.debug("Unable to create sensors dict")
         for key,value in sensors_dict.items():
             sensor_name = key
             for itr in range(len(value)):
