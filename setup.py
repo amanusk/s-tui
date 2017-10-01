@@ -27,6 +27,7 @@ setup(
     author="Alex Manuskin",
     author_email = "alex.manuskin@gmail.com",
     description="Stress Terminal UI stress test and monitoring tool",
+    long_description=open('README.md', 'r').read(),
     license="GPLv2",
     url="https://github.com/amanusk/s-tui",
     keywords=['stress', 'monitoring', 'TUI'], # arbitrary keywords
