@@ -376,10 +376,11 @@ class GraphView(urwid.WidgetPlaceholder):
 
         buttons = [urwid.Text(('bold text', u"Modes"), align="center"),
                    ] +  self.mode_buttons + [
+            install_stress_message,
             urwid.Divider(),
             urwid.Text(('bold text', u"Control Options"), align="center"),
             animate_controls,
-            install_stress_message,
+            urwid.Divider(),
             self.refresh_rate_ctrl,
             urwid.Divider(),
             urwid.LineBox(urwid.Pile(graph_checkboxes)),
