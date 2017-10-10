@@ -645,7 +645,7 @@ def main():
 
     if args.terminal or args.json:
         logging.info("Printing single line to terminal")
-        sources = [FreqSource(is_admin), TemperatureSource(), UtilSource(), RaplPowerSource()]
+        sources = [FreqSource(is_admin), TemperatureSource(args.custom_temp), UtilSource(), RaplPowerSource(), FanSource(args.custom_fan)]
         if args.terminal:
             output_to_terminal(sources)
         elif args.json:
