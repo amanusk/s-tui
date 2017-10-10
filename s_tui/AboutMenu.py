@@ -37,6 +37,7 @@ https://github.com/amanusk/s-tui\n\
 Created by:\n\
     - Alex Manuskin\n\
     - Gil Tsuker\n\
+    - Maor Veitsman\n\
 \n\
 April 2017\n\
 \n\

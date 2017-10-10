@@ -61,6 +61,7 @@ from s_tui.Sources.UtilSource import UtilSource as UtilSource
 from s_tui.Sources.FreqSource import FreqSource as FreqSource
 from s_tui.Sources.TemperatureSource import TemperatureSource as TemperatureSource
 from s_tui.Sources.RaplPowerSource import RaplPowerSource as RaplPowerSource
+from s_tui.Sources.FanSource import FanSource as FanSource
 from s_tui.GlobalData import GlobalData
 
 UPDATE_INTERVAL = 1
@@ -183,6 +184,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.controller = controller
         self.custom_temp = args.custom_temp
+        self.custom_fan = args.custom_fan
         self.args = args
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
         self.mode_buttons = []
@@ -222,7 +224,7 @@ class GraphView(urwid.WidgetPlaceholder):
     def update_displayed_information(self):
         """ Update all the graphs that are being displayed """
 
-        for key,val in self.graphs.items():
+        for key,val in self.summaries.items():
             val.source.update()
 
         for g in self.visible_graphs.values():
@@ -365,7 +367,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         install_stress_message = urwid.Text("")
         if not stress_installed:
-            install_stress_message = urwid.Text("\nstress not installed")
+            install_stress_message = urwid.Text(('button normal', u"(N/A) install stress"))
 
 
         graph_checkboxes = [urwid.CheckBox(x.get_graph_name(), state=True,
@@ -449,6 +451,9 @@ class GraphView(urwid.WidgetPlaceholder):
         rapl_power_source = RaplPowerSource()
         self.graphs[rapl_power_source.get_source_name()] = StuiBarGraph(rapl_power_source, 'power dark', 'power light', 'power dark smooth', 'power light smooth')
         self.summaries[rapl_power_source.get_source_name()] = SummaryTextList(rapl_power_source)
+
+        fan_source = FanSource(self.custom_fan)
+        self.summaries[fan_source.get_source_name()] = SummaryTextList(fan_source)
 
         # only interested in available graph
         self.available_graphs = OrderedDict((key, val) for key, val in self.graphs.items() if val.get_is_available())
@@ -654,8 +659,7 @@ def main():
 
 
 def get_args():
-    custom_temp_help= """
-Custom temperature sensors.
+    custom_temp_help= """Custom temperature sensors.
 The format is: <sensors>,<number>
 As it appears in 'sensors'
 e.g
@@ -666,6 +670,16 @@ temp2: +35.0C
 temp3: +37.0C
 
 use: -ct it8792,0 for temp 1
+    """
+
+    custom_fan_help= """Similar to custom temp
+e.g
+>sensors
+thinkpad-isa-0000
+Adapter: ISA adapter
+fan1:        1975 RPM
+
+use: -cf thinkpad,0 for fan1
     """
 
     parser = argparse.ArgumentParser(
@@ -687,6 +701,9 @@ use: -ct it8792,0 for temp 1
     parser.add_argument('-ct', '--custom_temp',
                         default=None,
                         help= custom_temp_help)
+    parser.add_argument('-cf', '--custom_fan',
+                        default=None,
+                        help= custom_fan_help)
     args = parser.parse_args()
     return args
 
