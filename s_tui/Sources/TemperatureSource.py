@@ -32,13 +32,15 @@ class TemperatureSource(Source):
     DEGREE_SIGN = u'\N{DEGREE SIGN}'
 
     def __init__(self, custom_temp=None):
+        Source.__init__(self)
+
         self.max_temp = 0
         self.measurement_unit = 'C'
         self.last_temp = 0;
         self.custom_temp = custom_temp
         self.is_available = True
 
-        self.update() # Inital update
+        self.update() # Initial update
         # If not relevant sensor found, do not register temperature
         if int(self.max_temp) <= 0:
             self.is_available = False
@@ -132,6 +134,9 @@ class TemperatureSource(Source):
 
 
         self.last_temp = last_value
+
+        # Run base update routines
+        Source.update(self)
 
     def get_reading(self):
         return self.last_temp

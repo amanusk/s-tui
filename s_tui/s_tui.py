@@ -63,6 +63,7 @@ from s_tui.Sources.TemperatureSource import TemperatureSource as TemperatureSour
 from s_tui.Sources.RaplPowerSource import RaplPowerSource as RaplPowerSource
 from s_tui.Sources.FanSource import FanSource as FanSource
 from s_tui.GlobalData import GlobalData
+from s_tui.Sources.EdgeHook import EdgeHook
 
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
@@ -444,6 +445,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.summaries[util_source.get_source_name()] = SummaryTextList(util_source)
 
         temp_source = TemperatureSource(self.custom_temp)
+        temp_source.add_edge_hook(EdgeHook(lambda: logging.debug('Edge Hook fired!')))
         alert_colors = ['high temp light', 'high temp dark', 'high temp light smooth', 'high temp dark smooth']
         self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth', alert_colors=alert_colors)
         self.summaries[temp_source.get_source_name()] = SummaryTextList(temp_source, 'high temp txt')
