@@ -2,11 +2,14 @@
 
 class Source:
 
+    def __init__(self):
+        self.edge_hooks = []
+
     def get_reading(self):
         raise NotImplementedError("Get reading is not implemented")
 
     def update(self):
-        raise NotImplementedError("Get reading is not implemented")
+        self.eval_hooks()
 
     def get_maximum(self):
         raise NotImplementedError("Get maximum is not implemented")
@@ -32,6 +35,16 @@ class Source:
     def get_measurement_unit(self):
         raise NotImplementedError("Get measurement unit is not implemented")
 
+    def add_edge_hook(self, hook):
+        if hook is None:
+            return
+
+        self.edge_hooks.append(hook)
+
+    def eval_hooks(self):
+        if self.get_edge_triggered():
+            for hook in self.edge_hooks:
+                hook.invoke()
 
 class MockSource(Source):
     def get_reading(self):
