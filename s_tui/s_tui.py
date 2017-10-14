@@ -63,7 +63,9 @@ from s_tui.Sources.TemperatureSource import TemperatureSource as TemperatureSour
 from s_tui.Sources.RaplPowerSource import RaplPowerSource as RaplPowerSource
 from s_tui.Sources.FanSource import FanSource as FanSource
 from s_tui.GlobalData import GlobalData
-from s_tui.Sources.EdgeHook import EdgeHook
+from s_tui.Sources.Hook import Hook
+from s_tui.Sources.ScriptHook import ScriptHook
+from s_tui.Sources.ScriptHookLoader import ScriptHookLoader
 
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
@@ -428,6 +430,7 @@ class GraphView(urwid.WidgetPlaceholder):
         return fixed_stats
 
     def main_window(self):
+        self.script_loader = ScriptHookLoader('')
 
         # initiating the graphs
         self.graphs = OrderedDict()
@@ -445,7 +448,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.summaries[util_source.get_source_name()] = SummaryTextList(util_source)
 
         temp_source = TemperatureSource(self.custom_temp)
-        temp_source.add_edge_hook(EdgeHook(lambda: logging.debug('Edge Hook fired!')))
+        temp_source.add_edge_hook(self.script_loader.load_script(temp_source.__class__.__name__, 5000))
         alert_colors = ['high temp light', 'high temp dark', 'high temp light smooth', 'high temp dark smooth']
         self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth', alert_colors=alert_colors)
         self.summaries[temp_source.get_source_name()] = SummaryTextList(temp_source, 'high temp txt')

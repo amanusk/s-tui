@@ -23,9 +23,9 @@ class ScriptHook:
     """Runs an arbitrary shell script stored in the filesystem when invoked
     """
 
-    def __init__(self, path, timeout = 0):
+    def __init__(self, path, timeoutMilliseconds = 0):
         self.path = path
-        self.hook = self._make_script_hook(path, timeout)
+        self.hook = self._make_script_hook(path, timeoutMilliseconds)
 
     def is_ready(self):
         return self.hook.is_ready()
@@ -44,5 +44,5 @@ class ScriptHook:
                 stderr=subprocess.DEVNULL
         )
 
-    def _make_script_hook(self, path, timeout):
-        return Hook(self._run_script, timeout, path)
+    def _make_script_hook(self, path, timeoutMilliseconds):
+        return Hook(self._run_script, timeoutMilliseconds, path)
