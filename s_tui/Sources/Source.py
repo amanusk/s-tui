@@ -42,8 +42,11 @@ class Source:
         self.edge_hooks.append(hook)
 
     def eval_hooks(self):
+        """
+        Evaluate the current state of this Source and invoke any attached hooks if they've been triggered
+        """
         if self.get_edge_triggered():
-            for hook in self.edge_hooks:
+            for hook in [ h for h in self.edge_hooks if h.is_ready() ]:
                 hook.invoke()
 
 class MockSource(Source):
