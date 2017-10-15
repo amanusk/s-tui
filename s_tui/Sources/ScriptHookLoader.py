@@ -21,15 +21,19 @@ from s_tui.Sources.ScriptHook import ScriptHook
 
 class ScriptHookLoader:
     """
-    Inspects hook scripts directory and loads all scripts from there to be run
+    Loads shell scripts from a directory into ScriptHooks for a given Source 
     """
 
     def __init__(self, dir_path):
-        self.scripts_dir_path = os.path.join('s_tui', 'hooks.d')
+        self.scripts_dir_path = os.path.join(dir_path, 'hooks.d')
 
-    def load_script(self, name, timeoutMilliseconds = 0):
-        script_path = os.path.join(self.scripts_dir_path, self.source_to_script_name(name))
+    def load_script(self, source_name, timeoutMilliseconds = 0):
+        """
+        Return ScriptHook for source_name Source and with a ready timeout of timeoutMilliseconds
+        """
+
+        script_path = os.path.join(self.scripts_dir_path, self._source_to_script_name(source_name))
         return ScriptHook(script_path, timeoutMilliseconds)
 
-    def source_to_script_name(self, source_name):
+    def _source_to_script_name(self, source_name):
         return source_name.lower() + '.sh'
