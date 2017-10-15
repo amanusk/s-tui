@@ -36,6 +36,9 @@ class Source:
         raise NotImplementedError("Get measurement unit is not implemented")
 
     def add_edge_hook(self, hook):
+        """
+        Add hook to be triggered when the threshold of this Source is surpassed
+        """
         if hook is None:
             return
 
