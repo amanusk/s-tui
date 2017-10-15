@@ -33,7 +33,11 @@ class ScriptHookLoader:
         """
 
         script_path = os.path.join(self.scripts_dir_path, self._source_to_script_name(source_name))
-        return ScriptHook(script_path, timeoutMilliseconds)
+
+        if os.path.isfile(script_path):
+            return ScriptHook(script_path, timeoutMilliseconds)
+        else:
+            return None
 
     def _source_to_script_name(self, source_name):
         return source_name.lower() + '.sh'
