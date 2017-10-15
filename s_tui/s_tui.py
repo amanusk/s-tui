@@ -50,6 +50,9 @@ from s_tui.HelperFunctions import kill_child_processes
 from s_tui.HelperFunctions import output_to_csv
 from s_tui.HelperFunctions import output_to_terminal
 from s_tui.HelperFunctions import output_to_json
+from s_tui.HelperFunctions import get_user_config_path
+from s_tui.HelperFunctions import make_user_config_dir
+from s_tui.HelperFunctions import user_config_dir_exists
 from s_tui.UiElements import ViListBox
 from s_tui.UiElements import radio_button
 from s_tui.UiElements import button
@@ -75,7 +78,6 @@ DEFAULT_LOG_FILE = "_s-tui.log"
 # TODO: Add timestamp
 
 DEFAULT_CSV_FILE = "stui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
-
 
 VERSION_MESSAGE = \
 "s-tui " + __version__ +\
@@ -430,7 +432,19 @@ class GraphView(urwid.WidgetPlaceholder):
         return fixed_stats
 
     def main_window(self):
-        self.script_loader = ScriptHookLoader('')
+
+        user_config_path = None
+        if not user_config_dir_exists():
+            user_config_path = make_user_config_dir()
+        else:
+            user_config_path = get_user_config_path()
+
+        script_hooks_enabled = True
+        if user_config_path is None:
+            logging.warn('Failed to find or create scripts directory, proceeding without scripting support')
+            script_hooks_enabled = False
+        else:
+            self.script_loader = ScriptHookLoader(user_config_path)
 
         # initiating the graphs
         self.graphs = OrderedDict()
@@ -448,7 +462,10 @@ class GraphView(urwid.WidgetPlaceholder):
         self.summaries[util_source.get_source_name()] = SummaryTextList(util_source)
 
         temp_source = TemperatureSource(self.custom_temp)
-        temp_source.add_edge_hook(self.script_loader.load_script(temp_source.__class__.__name__, 5000))
+
+        if script_hooks_enabled:
+            temp_source.add_edge_hook(self.script_loader.load_script(temp_source.__class__.__name__, 30000)) # Invoke threshold script every 30s while threshold is exceeded.
+
         alert_colors = ['high temp light', 'high temp dark', 'high temp light smooth', 'high temp dark smooth']
         self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth', alert_colors=alert_colors)
         self.summaries[temp_source.get_source_name()] = SummaryTextList(temp_source, 'high temp txt')

@@ -103,6 +103,39 @@ def output_to_json(sources):
     print(json.dumps(results, indent=4))
     exit()
 
+def get_user_config_path():
+    """
+    Return the path to the user s-tui config directory
+    """
+    user_home = os.getenv('XDG_CONFIG_HOME')
+    if user_home is None or len(user_home) == 0:
+        config_path = os.path.expanduser(os.path.join('~', '.config', 's-tui'))
+    else:
+        config_path = os.path.join(user_home, 's-tui')
+
+    return config_path
+
+def user_config_dir_exists():
+    """
+    Check whether the user s-tui config directory exists or not
+    """
+    return os.path.isdir(get_user_config_path())
+
+def make_user_config_dir():
+    """
+    Create the user s-tui config directory if it doesn't exist
+    """
+    config_path = get_user_config_path()
+
+    if not user_config_dir_exists():
+        try:
+            os.mkdir(config_path)
+            os.mkdir(os.path.join(config_path, 'hooks.d'))
+        except OSError:
+            return None
+
+    return config_path
+
 
 DEFAULT_PALETTE = [
     ('body',                    'default',        'default',   'standout'),

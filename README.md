@@ -113,6 +113,20 @@ s-tui is a great tool for monitoring. If you would like to stress your computer,
 sudo apt-get install stress
 ```
 
+## Configuration
+
+s-tui is a self-contained application which can run out-of-the-box and doesn't need config files to drive its core features. However, additional features like running scripts when a certain threshold has been exceeded (e.g. CPU temperature) does necessitate creating a config directory. This directory will be made in `~/.config/s-tui` by default.
+
+### Adding threshold scripts
+
+s-tui gives you the ability to run arbitrary shell scripts when a certain threshold is surpassed, like your CPU temperature. You can define this custom behaviour by adding a shell file to the directory `~/.config/s-tui/hooks.d` with one of the following names, depending on what threshold you're interesting in reacting to:
+
+* `temperaturesource.sh`: triggered when the CPU temperature threshold is exceeded
+
+If s-tui finds a script in the hooks directory with the name of a source it supports, it will run that script every 30 seconds as long as the current value of the source remains above the threshold.
+
+Note that at the moment only CPU temperature threshold hooks are supported.
+
 ## Other installation methods
 ### Ubuntu
 Installation is available from ppa. Apt does not hold the latest versions of psutil and urwid. Some features will not work.
