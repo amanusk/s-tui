@@ -16,6 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import os
 import subprocess
 from s_tui.Sources.Hook import Hook
 
@@ -36,13 +37,14 @@ class ScriptHook:
     def _run_script(self, *args):
         # Run script in a shell subprocess asynchronously so as to not block main thread (graphs)
         # if the script is a long-running task
-        subprocess.Popen(
-                [ "sh", args[0][0] ],
-                # TODO -- Could redirect this to a separate log file but not a priority just now
-                # Silence hook scripts so that they don't interfere with the application's tui
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-        )
+        with open(os.devnull, 'w') as DEVNULL:
+            subprocess.Popen(
+                    [ "sh", args[0][0] ],
+                    # TODO -- Could redirect this to a separate log file but not a priority just now
+                    # Silence hook scripts so that they don't interfere with the application's tui
+                    stdout=DEVNULL,
+                    stderr=DEVNULL
+            )
 
     def _make_script_hook(self, path, timeoutMilliseconds):
         return Hook(self._run_script, timeoutMilliseconds, path)
