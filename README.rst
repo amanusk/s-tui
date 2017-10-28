@@ -10,8 +10,7 @@ way from the terminal.
 Screenshot
 ----------
 
-.. figure:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui.gif?raw=true
-   :alt: 
+|image2| |image3|
 
 -  `The Stress Terminal UI: s-tui <#the-stress-terminal-ui-s-tui>`__
 -  `Screenshot <#screenshot>`__
@@ -20,8 +19,6 @@ Screenshot
 -  `Simple installation <#simple-installation>`__
 
    -  `pip (x86 ARM) <#pip-x86--arm>`__
-   -  `Run local executable (x86
-      only): <#run-local-executable-x86-only>`__
 
 -  `Options <#options>`__
 -  `Dependencies <#dependencies>`__
@@ -62,6 +59,8 @@ Simple installation
 pip (x86 + ARM)
 ~~~~~~~~~~~~~~~
 
+The most up to date version of s-tui is available with pip
+
 ::
 
     sudo pip install s-tui
@@ -74,14 +73,6 @@ Or if you cannot use sudo:
 
 If you are installing s-tui on a Raspberry-Pi you might need to install
 ``python-dev`` first
-
-Run local executable (x86 only):
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
--  Download the latest release version from
-   https://github.com/amanusk/s-tui/releases
--  Change s-tui to executable ``chmod +x s-tui``
--  Run ``(sudo) ./s-tui``
 
 Options
 -------
@@ -130,6 +121,16 @@ Options
                             temp3: +37.0C
                             
                             use: -ct it8792,0 for temp 1
+                               
+      -cf CUSTOM_FAN, --custom_fan CUSTOM_FAN
+                            Similar to custom temp
+                            e.g
+                            >sensors
+                            thinkpad-isa-0000
+                            Adapter: ISA adapter
+                            fan1:        1975 RPM
+                            
+                            use: -cf thinkpad,0 for fan1
 
 Dependencies
 ------------
@@ -145,21 +146,34 @@ computer, install stress. Stress options will then show up in s-tui
 Configuration
 -------------
 
-s-tui is a self-contained application which can run out-of-the-box and doesn't need config files to drive its core features. However, additional features like running scripts when a certain threshold has been exceeded (e.g. CPU temperature) does necessitate creating a config directory. This directory will be made in ``~/.config/s-tui`` by default.
+s-tui is a self-contained application which can run out-of-the-box and
+doesn't need config files to drive its core features. However,
+additional features like running scripts when a certain threshold has
+been exceeded (e.g. CPU temperature) does necessitate creating a config
+directory. This directory will be made in ``~/.config/s-tui`` by
+default.
 
 Adding threshold scripts
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-s-tui gives you the ability to run arbitrary shell scripts when a certain threshold is surpassed, like your CPU temperature. You can define this custom behaviour by adding a shell file to the directory ``~/.config/s-tui/hooks.d`` with one of the following names, depending on what threshold you're interesting in reacting to:
+s-tui gives you the ability to run arbitrary shell scripts when a
+certain threshold is surpassed, like your CPU temperature. You can
+define this custom behaviour by adding a shell file to the directory
+``~/.config/s-tui/hooks.d`` with one of the following names, depending
+on what threshold you're interesting in reacting to:
 
--  ``temperaturesource.sh``: triggered when the CPU temperature threshold is exceeded
+-  ``temperaturesource.sh``: triggered when the CPU temperature
+   threshold is exceeded
 
-If s-tui finds a script in the hooks directory with the name of a source it supports, it will run that script every 30 seconds as long as the current value of the source remains above the threshold.
+If s-tui finds a script in the hooks directory with the name of a source
+it supports, it will run that script every 30 seconds as long as the
+current value of the source remains above the threshold.
 
-Note that at the moment only CPU temperature threshold hooks are supported.
+Note that at the moment only CPU temperature threshold hooks are
+supported.
 
-Other installation methods
---------------------------
+More installation methods
+-------------------------
 
 Ubuntu
 ~~~~~~
@@ -176,11 +190,15 @@ versions of psutil and urwid. Some features will not work.
 Arch-Linux
 ~~~~~~~~~~
 
-| An AUR package is available called 's-tui'
-| Thanks to @DonOregano
+AUR packages of s-tui are available
 
-Build
------
+| ``s-tui`` is the latest stable release version
+| ``s-tui-git`` follows the master branch
+| install with
+| ``(sudo) yaourt -S s-tui``
+
+Run source code
+---------------
 
 | Running s-tui from source
 | Clone
@@ -189,8 +207,7 @@ Build
 
     git clone https://github.com/amanusk/s-tui.git
 
-| Install libraries
-| These need to be installed to run s-tui.py
+Install dependencies, these need to be installed to run ``s-tui.py``
 
 ::
 
@@ -279,3 +296,6 @@ Q&A
    :target: https://travis-ci.org/amanusk/s-tui
 .. |PyPI version| image:: https://badge.fury.io/py/s-tui.svg
    :target: https://badge.fury.io/py/s-tui
+.. |image2| image:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui.gif?raw=true
+.. |image3| image:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/stui_logo.png?raw=true
+

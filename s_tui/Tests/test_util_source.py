@@ -1,7 +1,7 @@
 import unittest
 import sys
 import os
-from ..Sources import UtilSource
+from s_tui.Sources import UtilSource
 
 class TestUtilSource(unittest.TestCase):
 

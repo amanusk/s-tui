@@ -3,11 +3,12 @@
 [![Build Status](https://travis-ci.org/amanusk/s-tui.svg?branch=master)](https://travis-ci.org/amanusk/s-tui)
 [![PyPI version](https://badge.fury.io/py/s-tui.svg)](https://badge.fury.io/py/s-tui)
 
+![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/stui_logo.png?raw=true)
 
 s-tui is a terminal UI for monitoring your computer. s-tui allows to monitor CPU temperature, frequency, power and utilization in a graphical way from the terminal. 
 
 ## Screenshot
-![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui.gif?raw=true)
+![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui2.gif?raw=true)
 
 * [The Stress Terminal UI: s-tui](#the-stress-terminal-ui-s-tui)
   * [Screenshot](#screenshot)
@@ -15,7 +16,6 @@ s-tui is a terminal UI for monitoring your computer. s-tui allows to monitor CPU
   * [Usage](#usage)
   * [Simple installation](#simple-installation)
 	 * [pip (x86   ARM)](#pip-x86--arm)
-	 * [Run local executable (x86 only):](#run-local-executable-x86-only)
   * [Options](#options)
   * [Dependencies](#dependencies)
   * [Other installation methods](#other-installation-methods)
@@ -45,6 +45,7 @@ sudo s-tui
 
 ## Simple installation
 ### pip (x86 + ARM)
+The most up to date version of s-tui is available with pip
 ```
 sudo pip install s-tui
 ```
@@ -54,11 +55,6 @@ pip install s-tui --user
 ```
 
 If you are installing s-tui on a Raspberry-Pi you might need to install `python-dev` first
-
-### Run local executable (x86 only):
-* Download the latest release version from https://github.com/amanusk/s-tui/releases
-* Change s-tui to executable `chmod +x s-tui`
-* Run `(sudo) ./s-tui`
 
 ## Options
 ```
@@ -104,7 +100,16 @@ optional arguments:
                         temp3: +37.0C
                         
                         use: -ct it8792,0 for temp 1
-
+                           
+  -cf CUSTOM_FAN, --custom_fan CUSTOM_FAN
+                        Similar to custom temp
+                        e.g
+                        >sensors
+                        thinkpad-isa-0000
+                        Adapter: ISA adapter
+                        fan1:        1975 RPM
+                        
+                        use: -cf thinkpad,0 for fan1
 ```
 
 ## Dependencies
@@ -127,7 +132,7 @@ If s-tui finds a script in the hooks directory with the name of a source it supp
 
 Note that at the moment only CPU temperature threshold hooks are supported.
 
-## Other installation methods
+## More installation methods
 ### Ubuntu
 Installation is available from ppa. Apt does not hold the latest versions of psutil and urwid. Some features will not work.
 ```
@@ -136,17 +141,20 @@ sudo apt-get update
 sudo apt-get install python-s-tui
 ```
 ### Arch-Linux
-An AUR package is available called 's-tui'  
-Thanks to @DonOregano
+AUR packages of s-tui are available
 
-## Build
+`s-tui` is the latest stable release version  
+`s-tui-git` follows the master branch  
+install with  
+`(sudo) yaourt -S s-tui`
+
+## Run source code
 Running s-tui from source  
-Clone
+Clone 
 ```
 git clone https://github.com/amanusk/s-tui.git
 ```
-Install libraries   
-These need to be installed to run s-tui.py
+Install dependencies, these need to be installed to run `s-tui.py`
 ```
 (sudo) pip install urwid
 (sudo) pip install psutil
