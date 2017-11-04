@@ -134,7 +134,12 @@ Note that at the moment only CPU temperature threshold hooks are supported.
 
 ## More installation methods
 ### Ubuntu
-Installation is available from ppa. Apt does not hold the latest versions of psutil and urwid. Some features will not work.
+The latest stable version of s-tui is available via pip. To install pip on Ubuntu run:  
+`sudo apt-get install gcc python-dev python-pip`  
+Once pip is installed, install s-tui from pip:  
+`(sudo) pip install s-tui`  
+
+A *deprecated* ppa is available (tested on Ubuntu 16.04)
 ```
 sudo add-apt-repository ppa:amanusk/python-s-tui
 sudo apt-get update
@@ -143,8 +148,8 @@ sudo apt-get install python-s-tui
 ### Arch-Linux
 AUR packages of s-tui are available
 
-`s-tui` is the latest stable release version  
-`s-tui-git` follows the master branch  
+`s-tui` is the latest stable release version. Maintined by [@DonOregano](https://github.com/DonOregano)  
+`s-tui-git` follows the master branch. maintained by [@MauroMombelli](https://github.com/MauroMombelli)  
 install with  
 `(sudo) yaourt -S s-tui`
 
