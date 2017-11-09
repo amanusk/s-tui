@@ -3,6 +3,9 @@ The Stress Terminal UI: s-tui
 
 |Build Status| |PyPI version|
 
+.. figure:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/stui_logo.png?raw=true
+   :alt: 
+
 s-tui is a terminal UI for monitoring your computer. s-tui allows to
 monitor CPU temperature, frequency, power and utilization in a graphical
 way from the terminal.
@@ -10,7 +13,8 @@ way from the terminal.
 Screenshot
 ----------
 
-|image2| |image3|
+.. figure:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui2.gif?raw=true
+   :alt: 
 
 -  `The Stress Terminal UI: s-tui <#the-stress-terminal-ui-s-tui>`__
 -  `Screenshot <#screenshot>`__
@@ -178,8 +182,13 @@ More installation methods
 Ubuntu
 ~~~~~~
 
-Installation is available from ppa. Apt does not hold the latest
-versions of psutil and urwid. Some features will not work.
+| The latest stable version of s-tui is available via pip. To install
+  pip on Ubuntu run:
+| ``sudo apt-get install gcc python-dev python-pip``
+| Once pip is installed, install s-tui from pip:
+| ``(sudo) pip install s-tui``
+
+A *deprecated* ppa is available (tested on Ubuntu 16.04)
 
 ::
 
@@ -192,8 +201,10 @@ Arch-Linux
 
 AUR packages of s-tui are available
 
-| ``s-tui`` is the latest stable release version
-| ``s-tui-git`` follows the master branch
+| ``s-tui`` is the latest stable release version. Maintined by
+  [@DonOregano](https://github.com/DonOregano)
+| ``s-tui-git`` follows the master branch. maintained by
+  [@MauroMombelli](https://github.com/MauroMombelli)
 | install with
 | ``(sudo) yaourt -S s-tui``
 
@@ -296,6 +307,3 @@ Q&A
    :target: https://travis-ci.org/amanusk/s-tui
 .. |PyPI version| image:: https://badge.fury.io/py/s-tui.svg
    :target: https://badge.fury.io/py/s-tui
-.. |image2| image:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui.gif?raw=true
-.. |image3| image:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/stui_logo.png?raw=true
-
