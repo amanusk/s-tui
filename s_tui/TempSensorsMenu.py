@@ -65,7 +65,7 @@ class TempSensorsMenu:
         sensors_dict = dict()
         try:
             sensors_dict = psutil.sensors_temperatures()
-        except AttributeError, IOError:
+        except (AttributeError, IOError):
             logging.debug("Unable to create sensors dict")
         for key,value in sensors_dict.items():
             sensor_name = key
@@ -75,7 +75,7 @@ class TempSensorsMenu:
                     sensor_label = value[itr].label
                     logging.debug("Sensor Label")
                     logging.debug(sensor_label)
-                except IndexError:
+                except (IndexError):
                     pass
 
                 self.available_sensors.append(sensor_name +\

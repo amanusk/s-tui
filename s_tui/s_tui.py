@@ -111,7 +111,7 @@ class GraphMode:
             # Try if stress installed
             try:
                 subprocess.Popen("stress", stdout=DEVNULL, stderr=DEVNULL, shell=False)
-            except OSError:
+            except (OSError):
                 logging.debug("stress is not installed")
             else:
                 stress_installed = True
@@ -120,7 +120,7 @@ class GraphMode:
             # Try if stress-ng installed
             try:
                 subprocess.Popen("stress-ng", stdout=DEVNULL, stderr=DEVNULL, shell=False)
-            except OSError:
+            except (OSError):
                 logging.debug("stress-ng is not installed")
             else:
                 stress_installed = True
@@ -246,7 +246,7 @@ class GraphView(urwid.WidgetPlaceholder):
         for g in self.graphs.values():
             try:
                 g.source.reset()
-            except NotImplementedError:
+            except (NotImplementedError):
                 pass
         self.update_displayed_information()
 
@@ -542,7 +542,7 @@ class GraphController:
         self.animate_graph()
         try:
             self.loop.run()
-        except ZeroDivisionError:
+        except (ZeroDivisionError):
             logging.debug("Some stat caused divide by zero exception. Exiting")
             self.exit_program()
 
@@ -657,7 +657,7 @@ def main():
     global is_admin
     try:
         is_admin = os.getuid() == 0
-    except AttributeError:
+    except (AttributeError):
         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
     if not is_admin:
         logging.info("Started without root permissions")

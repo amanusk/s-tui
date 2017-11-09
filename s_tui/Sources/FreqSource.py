@@ -47,10 +47,10 @@ def read_msr(msr, cpu=0):
             read_res = f.read(8)
         s_decoded = [ord(c) for c in read_res]
         return s_decoded
-    except IOError as e:
+    except (IOError) as e:
         e.message = e.message + "Unable to read file " + msr_file
         raise e
-    except OSError as e:
+    except (OSError) as e:
         e.message = e.message + "File " + msr_file + " does not exist"
         raise e
 
@@ -83,7 +83,7 @@ class FreqSource(Source):
                 if freq > 0:
                     self.top_freq = freq
                     self.turbo_freq = True
-            except Exception as e:
+            except (Exception) as e:
                 logging.debug(e.message)
 
         if self.turbo_freq == False:

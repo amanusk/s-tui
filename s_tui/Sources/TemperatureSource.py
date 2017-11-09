@@ -65,7 +65,7 @@ class TemperatureSource(Source):
                 sensor_minor = sensors_info[1]
                 logging.debug("Major" + str(sensor_major) + "Minor" + str(sensor_minor))
                 last_value = psutil.sensors_temperatures()[sensor_major][int(sensor_minor)].current
-            except:
+            except (KeyError, IndexError):
                 self.is_available = False
                 logging.debug("Illegal sensor")
                 self.last_temp = 1
@@ -73,37 +73,37 @@ class TemperatureSource(Source):
             if last_value <= 0:
                 try:
                     last_value = psutil.sensors_temperatures()['coretemp'][0].current
-                except:
+                except (KeyError):
                     last_value = 0
             # Support for Ryzen 1700X
             if last_value <= 0:
                 try:
                     last_value = psutil.sensors_temperatures()['k10temp'][0].current
-                except:
+                except (KeyError):
                     last_value = 0
               # Support for Ryzen 7 + asus
             if last_value <= 0:
                 try:
                     last_value = psutil.sensors_temperatures()['it8655'][0].current
-                except:
+                except (KeyError):
                     last_value = 0
             # Support for specific systems
             if last_value <= 0:
                 try:
                     last_value = psutil.sensors_temperatures()['it8622'][0].current
-                except:
+                except (KeyError):
                     last_value = 0
             # Support for specific systems
             if last_value <= 0:
                 try:
                     last_value = psutil.sensors_temperatures()['it8721'][0].current
-                except:
+                except (KeyError):
                     last_value = 0
             # Raspberry pi 3 running Ubuntu 16.04
             if last_value <= 0:
                 try:
                     last_value = psutil.sensors_temperatures()['bcm2835_thermal'][0].current
-                except:
+                except (KeyError):
                     last_value = 0
             # Raspberry pi + raspiban CPU temp
             if last_value <= 0:
@@ -111,7 +111,7 @@ class TemperatureSource(Source):
                     last_value = os.popen('cat /sys/class/thermal/thermal_zone0/temp 2> /dev/null').read()
                     logging.info("Recorded temp " + last_value)
                     last_value = int(last_value) / 1000
-                except:
+                except (ValueError, TypeError):
                     last_value = 0
             # Fall back for most single processor systems
             # Take the first value of the first processor
@@ -129,7 +129,7 @@ class TemperatureSource(Source):
         try:
             if int(last_value) > int(self.max_temp):
                 self.max_temp = last_value
-        except:
+        except (ValueError, TypeError):
             self.max_temp = 0
 
 

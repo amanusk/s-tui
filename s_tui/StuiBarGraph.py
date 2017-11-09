@@ -86,7 +86,7 @@ class StuiBarGraph(LabeledBarGraph):
                 label = [round((min_val + i * (max_val - min_val) / label_cnt),1)
                          for i in range(label_cnt + 1)]
             return label
-        except ZeroDivisionError:
+        except (ZeroDivisionError):
             logging.debug("Side lable creation divided by 0")
             return ""
 
@@ -125,7 +125,7 @@ class StuiBarGraph(LabeledBarGraph):
                 self.set_alert_colors()
             else:
                 self.set_regular_colors()
-        except NotImplementedError:
+        except (NotImplementedError):
             pass
 
 

@@ -33,7 +33,7 @@ import time
 from collections import OrderedDict
 from sys import exit
 
-__version__ = "0.6.7"
+__version__ = "0.6.7.1"
 
 
 def get_processor_name():
@@ -131,7 +131,7 @@ def make_user_config_dir():
         try:
             os.mkdir(config_path)
             os.mkdir(os.path.join(config_path, 'hooks.d'))
-        except OSError:
+        except (OSError):
             return None
 
     return config_path

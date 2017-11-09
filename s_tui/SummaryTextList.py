@@ -27,7 +27,7 @@ class SummaryTextList:
                         else:
                             self.summary_text_items[key].set_text(str(val))
 
-                except NotImplementedError:
+                except (NotImplementedError):
                     self.summary_text_items[key].set_text(str(val))
 
     def get_is_available(self):

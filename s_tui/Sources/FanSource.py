@@ -44,7 +44,7 @@ class FanSource(Source):
                 sensor_minor = sensors_info[1]
                 logging.debug("Fan Major " + str(sensor_major) + " Fan Minor " + str(sensor_minor))
                 result = psutil.sensors_fans()[sensor_major][int(sensor_minor)].current
-            except:
+            except (KeyError, IndexError, ValueError):
                 result = 0
                 logging.debug("Fan Speend Not Available")
                 self.is_available = False
@@ -53,7 +53,7 @@ class FanSource(Source):
                 fans = psutil.sensors_fans()
                 fan_list = list(fans.keys())
                 result = fans[fan_list[0]][0].current
-            except:
+            except (KeyError, IndexError, ValueError):
                 result = 0
                 logging.debug("Fan Speend Not Available")
                 self.is_available = False
