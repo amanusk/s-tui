@@ -527,6 +527,7 @@ class GraphController:
         self.view.on_mode_change(mode)
         self.view.update_displayed_information()
 
+
     def get_modes(self):
         """Allow our view access to the list of modes."""
         return self.mode.get_modes()
