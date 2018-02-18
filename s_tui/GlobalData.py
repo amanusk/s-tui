@@ -15,4 +15,4 @@ class GlobalData:
             self.num_cpus = psutil.cpu_count()
             logging.info("num cpus " + str(self.num_cpus))
         except (IOError, OSError) as e:
-            logging.debug(e.message)
+            logging.debug(e)
