@@ -24,6 +24,8 @@ s-tui is a terminal UI for monitoring your computer. s-tui allows to monitor CPU
   * [Build](#build)
   * [Compatibility](#compatibility)
   * [FAQ](#faq)
+  * [Contributing](#contributing)
+  * [Tip](#tip)
 
 
 ## What it does
@@ -171,7 +173,7 @@ sudo apt-get install stress
 
 Run the .py file
 ```
-(sudo)python s_tui.py 
+(sudo) python ./s_tui.py 
 ```
 ### OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)
 FIRESTARTER is a great tool to stress your system to the extreme.  If you would like, you can integrate FIRESTARTER submodule into s-tui.
@@ -216,3 +218,15 @@ __A__: A default sensor is selected for temperature reads. On some systems this 
 
 __Q__: I am using the TTY with no X server and s-tui crashes on start  
 __A__: By default, s-tui is handles mouse inputs. This causes some systems to crash. Try running `s-tui --no-mouse` 
+
+## Contributing
+New issues and PRs are welcome :) Please look at the issues that need help in the issues section.
+I try to test new versions on as many systems as I can, but I cannot cover them all. 
+
+## Tip
+If you like this work, please star in on GitHub. 
+If you realy like it, share it with hour friends and co-workers.
+If you really really like this work, leave a tip :)
+
+ETH: `0xc169699A825066f2F07E0b29C4082094b32A3F3e`
+
