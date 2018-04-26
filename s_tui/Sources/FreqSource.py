@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2018 Alex Manuskin, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -14,7 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+
 from __future__ import absolute_import
 
 import psutil
@@ -27,6 +28,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 TURBO_MSR = 429
+
 
 def read_msr(msr, cpu=0):
     """
@@ -51,6 +53,7 @@ def read_msr(msr, cpu=0):
         raise IOError(str(e) + " Unable to read file " + msr_file)
     except (OSError) as e:
         raise OSError(str(e) + " File " + msr_file + " does not exist")
+
 
 class FreqSource(Source):
 
@@ -84,7 +87,7 @@ class FreqSource(Source):
             except (Exception) as e:
                 logging.debug(e)
 
-        if self.turbo_freq == False:
+        if self.turbo_freq is False:
             try:
                 self.top_freq = psutil.cpu_freq().max
 
@@ -92,26 +95,30 @@ class FreqSource(Source):
                 logging.debug("Max freq from psutil not available")
                 try:
                     cmd = "lscpu | grep 'CPU max MHz'"
-                    ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+                    ps = subprocess.Popen(cmd, shell=True,
+                                          stdout=subprocess.PIPE,
+                                          stderr=subprocess.STDOUT)
                     output = ps.communicate()[0]
                     self.top_freq = float(re.findall(b'\d+\.\d+', output)[0])
                     logging.debug("Top freq " + str(self.top_freq))
                     if self.top_freq <= 0:
                         cmd = "lscpu | grep 'CPU * MHz'"
-                        ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+                        ps = subprocess.Popen(cmd, shell=True,
+                                              stdout=subprocess.PIPE,
+                                              stderr=subprocess.STDOUT)
                         output = ps.communicate()[0]
-                        self.top_freq = float(re.findall(b'\d+\.\d+', output)[0])
+                        self.top_freq = float(re.findall(b'\d+\.\d+',
+                                                         output)[0])
                 except:
                     logging.debug("Max frequency from lscpu not available")
                     logging.debug("CPU top freqency N/A")
 
         self.update()
         # If top freq not available, take the current as top
-        if self.last_freq >= 0 and self.top_freq <=0:
+        if self.last_freq >= 0 and self.top_freq <= 0:
             self.top_freq = self.last_freq
         if self.last_freq <= 0:
             self.is_avaiable = False
-
 
     def update(self):
         """Update CPU frequency data"""
@@ -142,7 +149,8 @@ class FreqSource(Source):
         if self.is_admin and self.samples_taken > self.WAIT_SAMPLES:
             self.perf_lost = int(self.top_freq) - int(cur_freq)
             if self.top_freq != 0:
-                self.perf_lost = (round(float(self.perf_lost) / float(self.top_freq) * 100, 1))
+                self.perf_lost = (round(float(self.perf_lost) /
+                                        float(self.top_freq) * 100, 1))
             else:
                 self.perf_lost = 0
             if self.perf_lost > self.max_perf_lost:
@@ -174,15 +182,20 @@ class FreqSource(Source):
     def get_summary(self):
         if self.is_admin:
             return OrderedDict([
-                    ( 'Top Freq', '%d %s' % (self.top_freq, self.get_measurement_unit()))
-                    , ('Cur Freq', '%.1f %s' % (self.last_freq, self.get_measurement_unit()))
-                    , ('Perf Lost', '%d %s' % (self.max_perf_lost, '%'))
+                ('Top Freq', '%d %s' % (self.top_freq,
+                                        self.get_measurement_unit())),
+                ('Cur Freq', '%.1f %s' % (
+                    self.last_freq, self.get_measurement_unit())),
+                ('Perf Lost', '%d %s' % (self.max_perf_lost, '%'))
             ])
         else:
             return OrderedDict([
-                    ( 'Top Freq', '%d %s' % (self.top_freq, self.get_measurement_unit()))
-                    , ('Cur Freq', '%.1f %s' % (self.last_freq, self.get_measurement_unit()))
-                    , ('Perf Lost', '%d %s' % (self.max_perf_lost, '(N/A) run sudo'))
+                ('Top Freq', '%d %s' % (self.top_freq,
+                                        self.get_measurement_unit())),
+                ('Cur Freq', '%.1f %s' % (
+                    self.last_freq, self.get_measurement_unit())),
+                ('Perf Lost', '%d %s' % (self.max_perf_lost,
+                                         '(N/A) run sudo'))
             ])
 
     def get_source_name(self):

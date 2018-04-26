@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2017 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -76,7 +76,7 @@ DEFAULT_CSV_FILE = "stui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
 
 VERSION_MESSAGE = \
     "s-tui " + __version__ +\
-    " - (C) 2017 Alex Manuskin, Gil Tsuker\n\
+    " - (C) 2017-2018 Alex Manuskin, Gil Tsuker\n\
     Released under GNU GPLv2"
 
 fire_starter = None

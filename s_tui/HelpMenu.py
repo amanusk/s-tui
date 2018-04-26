@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 """A class display the help message menu
 """
@@ -27,18 +27,21 @@ from s_tui.UiElements import ViListBox
 HELP_MESSAGE = """
 TUI interface:
 
-The side bar houses the controls for the displayed grahps.\n\
+The side bar houses the controls for the displayed graphs.\n\
 At the bottom of the side bar, more information is presented in text form.\n\
 
 * Use the arrow keys or 'hjkl' to navigate the side bar
-* Toggle between stressed and regular operation using the radio buttons in 'Modes'.\n\
-* If you wish to alternate stress defaults, you can do it in 'Stress options'\n\
+* Toggle between stressed and regular operation using the radio buttons in \
+        'Modes'.\n\
+* If you wish to alternate stress defaults, you can do it in 'Stress \
+        options'\n\
 * Select a different temperature sensors from the 'Temp Sensors' menu\n\
 * Change time between updates using the 'Refresh' field\n\
 * Use the <Reset> button to reset graphs and statistics\n\
 * Toggle displayed graphs by selecting the [X] check box\n\
 * If a sensor is not available on your system, N/A is presented\n\
-* If your system supports it, you can use the utf8 button to get a smoother graph\n\
+* If your system supports it, you can use the utf8 button to get a smoother \
+        graph\n\
 * Press 'q' or the <quit> button to quit\n\
 \n\
 * Run `s-tui --help` to get this message and additional cli options\n\

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2018 Alex Manuskin, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -14,13 +14,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+
 from __future__ import absolute_import
 
 import time
 import psutil
 from s_tui.Sources.Source import Source
-#from Source import Source
 
 import logging
 logger = logging.getLogger(__name__)
@@ -42,8 +42,10 @@ class FanSource(Source):
                 sensors_info = self.custom_fan.split(",")
                 sensor_major = sensors_info[0]
                 sensor_minor = sensors_info[1]
-                logging.debug("Fan Major " + str(sensor_major) + " Fan Minor " + str(sensor_minor))
-                result = psutil.sensors_fans()[sensor_major][int(sensor_minor)].current
+                logging.debug("Fan Major " + str(sensor_major) +
+                              " Fan Minor " + str(sensor_minor))
+                result = psutil.sensors_fans()[sensor_major][
+                    int(sensor_minor)].current
             except (KeyError, IndexError, ValueError, AttributeError):
                 result = 0
                 logging.debug("Fan Speend Not Available")
@@ -73,14 +75,14 @@ class FanSource(Source):
         return self.is_available
 
     def get_summary(self):
-        return {'Fan': '%.1f %s' % (self.fan_speed, self.get_measurement_unit())}
+        return {'Fan': '%.1f %s' %
+                (self.fan_speed, self.get_measurement_unit())}
 
     def get_source_name(self):
         return 'Fan'
 
     def get_measurement_unit(self):
         return 'RPM'
-
 
 
 if '__main__' == __name__:

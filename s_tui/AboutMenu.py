@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 """A class display the About message menu
 """
@@ -27,7 +27,9 @@ from s_tui.UiElements import ViListBox
 from s_tui.HelperFunctions import __version__
 
 ABOUT_MESSAGE = " \n\
-s-tui is a monitoring tool for your CPU temperature, frequency and utilization. s-tui makes it possilble to monitor your computer over SSH without a need for a GUI\n\
+s-tui is a monitoring tool for your CPU temperature, frequency, utilization \
+        and power.\n\
+With s-tui you can monitor your system over SSH without a need for a GUI\n\
 \n\
 Code for s-tui is available on github\n\
 https://github.com/amanusk/s-tui\n\
@@ -42,7 +44,7 @@ Created by:\n\
 April 2017\n\
 \n\
 s-tui " + __version__ +\
-        " Released under GNU GPLv2 "
+    " Released under GNU GPLv2 "
 
 MESSAGE_LEN = 20
 

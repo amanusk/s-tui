@@ -171,7 +171,7 @@ sudo apt-get install stress
 
 Run the .py file
 ```
-(sudo) python -m s_tui.s_tui
+(sudo)python s_tui.py 
 ```
 ### OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)
 FIRESTARTER is a great tool to stress your system to the extreme.  If you would like, you can integrate FIRESTARTER submodule into s-tui.
@@ -185,7 +185,7 @@ make
 ```
 Once you have completed these steps, you can either:
 * Install FIRESTARTER to make it accessible to s-tui, e.g make a soft-link to FIRESTARTER in /usr/local/bin.
-* Run s-tui from the main project directory with `python -m s_tui.s_tui`  
+* Run s-tui from the main project directory with `python s-tui.py`  
 An option to run FIRESTARTER will then be available in s-tui
 
 ## Compatibility

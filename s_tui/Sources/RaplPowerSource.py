@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2018 Alex Manuskin, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -14,7 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+
 from __future__ import absolute_import
 
 import os
@@ -26,17 +27,25 @@ from s_tui.Sources.Source import Source
 import logging
 logger = logging.getLogger(__name__)
 
+
 class RaplPowerSource(Source):
 
     intel_rapl_folder = '/sys/class/powercap/intel-rapl/'
 
     MICRO_JOULE_IN_JOULE = 1000000.0
 
-    def __init__(self, package_number = 0):
+    def __init__(self, package_number=0):
         self.package_number = package_number
-        self.intel_rapl_package_energy_file = os.path.join(self.intel_rapl_folder, 'intel-rapl:%d'%package_number, 'energy_uj')
-        self.intel_rapl_package_max_energy_file = os.path.join(self.intel_rapl_folder, 'intel-rapl:%d'%package_number, 'constraint_0_max_power_uw')
-        if (not os.path.exists(self.intel_rapl_package_energy_file) or not os.path.exists(self.intel_rapl_package_max_energy_file)):
+        self.intel_rapl_package_energy_file = os.path.join(
+            self.intel_rapl_folder,
+            'intel-rapl:%d' % package_number,
+            'energy_uj')
+        self.intel_rapl_package_max_energy_file = os.path.join(
+            self.intel_rapl_folder,
+            'intel-rapl:%d' % package_number,
+            'constraint_0_max_power_uw')
+        if (not os.path.exists(self.intel_rapl_package_energy_file) or not
+                os.path.exists(self.intel_rapl_package_max_energy_file)):
             self.is_available = False
             self.last_measurement_time = 0
             self.last_measurement_value = 0
@@ -47,7 +56,6 @@ class RaplPowerSource(Source):
         self.is_available = True
         self.last_measurement_time = time.time()
         self.last_measurement_value = self.read_power_measurement_file()
-        #self.max_power = self.read_max_power_file() / self.MICRO_JOULE_IN_JOULE
         self.max_power = 1
         self.last_watts = 0
 
@@ -64,12 +72,14 @@ class RaplPowerSource(Source):
     def read_max_power_file(self):
         if not self.is_available:
             return -1
-        return float(self.read_measurement(self.intel_rapl_package_max_energy_file))
+        return float(self.read_measurement(
+            self.intel_rapl_package_max_energy_file))
 
     def read_power_measurement_file(self):
         if not self.is_available:
             return -1
-        return float(self.read_measurement(self.intel_rapl_package_energy_file))
+        return float(self.read_measurement(
+            self.intel_rapl_package_energy_file))
 
     def get_power_usage(self):
         if not self.is_available:
@@ -77,11 +87,14 @@ class RaplPowerSource(Source):
         current_measurement_value = self.read_power_measurement_file()
         current_measurement_time = time.time()
 
-        joule_used = (current_measurement_value - self.last_measurement_value) / float(self.MICRO_JOULE_IN_JOULE)
-        logging.info("current " + str(current_measurement_value) + " last " + str(self.last_measurement_value))
+        joule_used = ((current_measurement_value - self.last_measurement_value)
+                      / float(self.MICRO_JOULE_IN_JOULE))
+        logging.info("current " + str(current_measurement_value) +
+                     " last " + str(self.last_measurement_value))
         seconds_passed = current_measurement_time - self.last_measurement_time
         watts_used = joule_used / seconds_passed
-        logging.info("Joule_Used " + str(joule_used) + " seconds_passed " + str(seconds_passed))
+        logging.info("Joule_Used " + str(joule_used) +
+                     " seconds_passed " + str(seconds_passed))
 
         self.last_measurement_value = current_measurement_value
         self.last_measurement_time = current_measurement_time
@@ -112,8 +125,10 @@ class RaplPowerSource(Source):
         self.last_watts = 0
 
     def get_summary(self):
-        return {'Cur Power': '%.1f %s' % (self.last_watts, self.get_measurement_unit())
-                , 'Max Power': '%.1f %s' % (self.max_power, self.get_measurement_unit())}
+        return {'Cur Power': '%.1f %s' %
+                (self.last_watts, self.get_measurement_unit()),
+                'Max Power': '%.1f %s' %
+                (self.max_power, self.get_measurement_unit())}
 
     def get_source_name(self):
         return 'Power'
@@ -123,7 +138,7 @@ class RaplPowerSource(Source):
 
 
 if '__main__' == __name__:
-    rapl = RaplPower()
+    rapl = RaplPowerSource()
     while True:
         print(rapl.get_power_usage())
         time.sleep(2)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -14,17 +14,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
 import subprocess
 from s_tui.Sources.Hook import Hook
 
+
 class ScriptHook:
-    """Runs an arbitrary shell script stored in the filesystem when invoked
+    """
+    Runs an arbitrary shell script stored in the filesystem when invoked
     """
 
-    def __init__(self, path, timeoutMilliseconds = 0):
+    def __init__(self, path, timeoutMilliseconds=0):
         self.path = path
         self.hook = self._make_script_hook(path, timeoutMilliseconds)
 
@@ -35,13 +37,16 @@ class ScriptHook:
         self.hook.invoke()
 
     def _run_script(self, *args):
-        # Run script in a shell subprocess asynchronously so as to not block main thread (graphs)
+        # Run script in a shell subprocess asynchronously so
+        # as to not block main thread (graphs)
         # if the script is a long-running task
         with open(os.devnull, 'w') as DEVNULL:
             subprocess.Popen(
-                    [ "sh", args[0][0] ],
-                    # TODO -- Could redirect this to a separate log file but not a priority just now
-                    # Silence hook scripts so that they don't interfere with the application's tui
+                    ["sh", args[0][0]],
+                    # TODO -- Could redirect this to a separate log file
+                    # but not a priority just now
+                    # Silence hook scripts so that they don't
+                    # interfere with the application's tui
                     stdout=DEVNULL,
                     stderr=DEVNULL
             )

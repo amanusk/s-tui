@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2018 Alex Manuskin, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 from __future__ import absolute_import
 
@@ -36,11 +36,11 @@ class TemperatureSource(Source):
 
         self.max_temp = 0
         self.measurement_unit = 'C'
-        self.last_temp = 0;
+        self.last_temp = 0
         self.custom_temp = custom_temp
         self.is_available = True
 
-        self.update() # Initial update
+        self.update()  # Initial update
         # If not relevant sensor found, do not register temperature
         if int(self.max_temp) <= 0:
             self.is_available = False
@@ -63,13 +63,15 @@ class TemperatureSource(Source):
                 sensors_info = self.custom_temp.split(",")
                 sensor_major = sensors_info[0]
                 sensor_minor = sensors_info[1]
-                logging.debug("Major" + str(sensor_major) + "Minor" + str(sensor_minor))
-                last_value = psutil.sensors_temperatures()[sensor_major][int(sensor_minor)].current
+                logging.debug("Major" + str(sensor_major) +
+                              "Minor" + str(sensor_minor))
+                last_value = psutil.sensors_temperatures()[sensor_major]
+                [int(sensor_minor)].current
             except (KeyError, IndexError, AttributeError):
                 self.is_available = False
                 logging.debug("Illegal sensor")
                 self.last_temp = 1
-        else: # Choose out a list of known sensors
+        else:  # Choose out a list of known sensors
             if last_value <= 0:
                 try:
                     last_value = psutil.sensors_temperatures()['coretemp'][0].current
@@ -123,15 +125,12 @@ class TemperatureSource(Source):
                 except:
                     last_value = 0
 
-
-        # self.cpu_temp = self.append_latest_value(self.cpu_temp, last_value)
         # Update max temp
         try:
             if int(last_value) > int(self.max_temp):
                 self.max_temp = last_value
         except (ValueError, TypeError):
             self.max_temp = 0
-
 
         self.last_temp = last_value
 
@@ -154,8 +153,10 @@ class TemperatureSource(Source):
         return self.max_temp > self.THRESHOLD_TEMP
 
     def get_summary(self):
-        return {'Cur Temp': '%.1f %s' % (self.last_temp, self.get_measurement_unit())
-                , 'Max Temp': '%.1f %s' % (self.max_temp, self.get_measurement_unit())}
+        return {'Cur Temp': '%.1f %s' %
+                (self.last_temp, self.get_measurement_unit()),
+                'Max Temp': '%.1f %s' %
+                (self.max_temp, self.get_measurement_unit())}
 
     def get_source_name(self):
         return 'Temperature'
@@ -167,7 +168,6 @@ class TemperatureSource(Source):
     def get_measurement_unit(self):
         return self.measurement_unit
 
-    def set_source(source):
+    def set_source(self, source):
         self.custom_temp = source
         return
-
