@@ -100,7 +100,7 @@ class GraphMode:
     """
 
     def __init__(self):
-        self.modes = ['Regular Operation']
+        self.modes = ['Monitor']
         global stress_installed
         global stress_program
         with open(os.devnull, 'w') as DEVNULL:
@@ -125,7 +125,7 @@ class GraphMode:
                 stress_program = 'stress-ng'
 
             if stress_installed:
-                self.modes.append('Stress Operation')
+                self.modes.append('Stress')
 
             global fire_starter
             if os.path.isfile('./FIRESTARTER/FIRESTARTER'):
