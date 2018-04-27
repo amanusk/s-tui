@@ -33,6 +33,7 @@ import psutil
 import urwid
 import signal
 import itertools
+import configparser
 
 from sys import exit
 from collections import OrderedDict
@@ -48,9 +49,11 @@ from s_tui.HelperFunctions import kill_child_processes
 from s_tui.HelperFunctions import output_to_csv
 from s_tui.HelperFunctions import output_to_terminal
 from s_tui.HelperFunctions import output_to_json
-from s_tui.HelperFunctions import get_user_config_path
+from s_tui.HelperFunctions import get_user_config_dir
+from s_tui.HelperFunctions import get_user_config_file
 from s_tui.HelperFunctions import make_user_config_dir
 from s_tui.HelperFunctions import user_config_dir_exists
+from s_tui.HelperFunctions import user_config_file_exists
 from s_tui.UiElements import ViListBox
 from s_tui.UiElements import radio_button
 from s_tui.UiElements import button
@@ -72,7 +75,7 @@ log_file = os.devnull
 DEFAULT_LOG_FILE = "_s-tui.log"
 # TODO: Add timestamp
 
-DEFAULT_CSV_FILE = "stui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
+DEFAULT_CSV_FILE = "s-tui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
 
 VERSION_MESSAGE = \
     "s-tui " + __version__ +\
@@ -180,6 +183,8 @@ class GraphView(urwid.WidgetPlaceholder):
     """
     A class responsible for providing the application's interface and
     graph display.
+    The GraphView can change the state of the graph, since it provides the UI
+    The change is state should be reflected in the GraphController
     """
     def __init__(self, controller, args):
 
@@ -192,6 +197,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.refresh_rate_ctrl = urwid.Edit(('bold text', u'Refresh[s]:'),
                                             self.controller.refresh_rate)
 
+        # Visible graphs are the graphs currently displayed, this is a
+        # subset of the available graphs for display
         self.visible_graphs = {}
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
 
@@ -225,7 +232,7 @@ class GraphView(urwid.WidgetPlaceholder):
     def update_displayed_information(self):
         """ Update all the graphs that are being displayed """
 
-        for key, val in self.summaries.items():
+        for key, val in self.available_summaries.items():
             val.source.update()
 
         for g in self.visible_graphs.values():
@@ -312,9 +319,12 @@ class GraphView(urwid.WidgetPlaceholder):
                 rb.set_state(True, do_callback=False)
                 break
 
-    def on_unicode_checkbox(self, w, state):
+    def on_unicode_checkbox(self, w=None, state=False):
         """Enable smooth edges if utf-8 is supported"""
         logging.debug("unicode State is " + str(state))
+
+        # Update the controller to the state of the checkbox
+        self.controller.smooth_graph_mode = state
         if state:
             self.hline = urwid.AttrWrap(
                 urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
@@ -334,7 +344,32 @@ class GraphView(urwid.WidgetPlaceholder):
             logging.debug('Could not kill process')
         raise urwid.ExitMainLoop()
 
-    def graph_controls(self):
+    def save_settings(self, w=None):
+        """ Save the current configuration to a user config file """
+
+        if not user_config_dir_exists():
+            make_user_config_dir()
+
+        conf = configparser.ConfigParser()
+        config_file = get_user_config_file()
+        with open(config_file, 'w') as cfgfile:
+            conf.add_section('GraphControll')
+            conf.set('GraphControll', 'refresh', str(
+                self.controller.refresh_rate))
+            conf.set('GraphControll', 'UTF8', str(
+                self.controller.smooth_graph_mode))
+            for graph_name in self.available_graphs.keys():
+                try:
+                    if graph_name in self.visible_graphs:
+                        conf.set('GraphControll', graph_name, 'True')
+                    else:
+                        conf.set('GraphControll', graph_name, 'False')
+                except (AttributeError, configparser.NoOptionError,
+                        configparser.NoSectionError):
+                    pass
+            conf.write(cfgfile)
+
+    def graph_controls(self, conf):
         """ Dislplay sidebar controls. i.e. buttons, and controls"""
         modes = self.controller.get_modes()
         # setup mode radio buttons
@@ -356,10 +391,14 @@ class GraphView(urwid.WidgetPlaceholder):
         # Create the menu
         animate_controls = urwid.GridFlow(control_options, 18, 2, 0, 'center')
 
+        # Create smooth graph selection button
+        default_smooth = self.controller.smooth_graph_mode
         if urwid.get_encoding_mode() == "utf8":
             unicode_checkbox = urwid.CheckBox(
-                "Smooth Graph", state=False,
+                "Smooth Graph", state=default_smooth,
                 on_state_change=self.on_unicode_checkbox)
+            # Init the state of the graph accoding to the selected mode
+            self.on_unicode_checkbox(state=default_smooth)
         else:
             unicode_checkbox = urwid.Text(
                 "UTF-8 encoding not detected")
@@ -369,8 +408,17 @@ class GraphView(urwid.WidgetPlaceholder):
             install_stress_message = urwid.Text(
                 ('button normal', u"(N/A) install stress"))
 
+        # Disable graphs the user selected not to display in config file
+        graphs_available_state = dict()
+        for g in self.available_graphs.values():
+            try:
+                graphs_available_state[g.get_graph_name()] = conf.getboolean(
+                    'GraphControll', g.get_graph_name())
+            except:
+                graphs_available_state[g.get_graph_name()] = True
+
         graph_checkboxes = [urwid.CheckBox(x.get_graph_name(),
-                            state=True,
+                            graphs_available_state[x.get_graph_name()],
                             on_state_change=lambda w,
                             state, x=x:  self.change_checkbox_state(x, state))
                             for x in self.available_graphs.values()]
@@ -390,6 +438,8 @@ class GraphView(urwid.WidgetPlaceholder):
             urwid.Divider(),
             urwid.LineBox(urwid.Pile(graph_checkboxes)),
             urwid.LineBox(unicode_checkbox),
+            urwid.Divider(),
+            button("Save Settings", self.save_settings),
             urwid.Divider(),
             button("Quit", self.exit_program),
             ]
@@ -430,21 +480,6 @@ class GraphView(urwid.WidgetPlaceholder):
         return fixed_stats
 
     def main_window(self):
-
-        user_config_path = None
-        if not user_config_dir_exists():
-            user_config_path = make_user_config_dir()
-        else:
-            user_config_path = get_user_config_path()
-
-        script_hooks_enabled = True
-        if user_config_path is None:
-            logging.warn("Failed to find or create scripts directory,\
-                             proceeding without scripting support")
-            script_hooks_enabled = False
-        else:
-            self.script_loader = ScriptHookLoader(user_config_path)
-
         # initiating the graphs
         self.graphs = OrderedDict()
         self.summaries = OrderedDict()
@@ -473,9 +508,9 @@ class GraphView(urwid.WidgetPlaceholder):
 
         temp_source = TempSource(self.custom_temp)
 
-        if script_hooks_enabled:
+        if self.controller.script_hooks_enabled:
             temp_source.add_edge_hook(
-                self.script_loader.load_script(
+                self.controller.script_loader.load_script(
                     temp_source.__class__.__name__, 30000)
             )  # Invoke threshold script every 30s while threshold is exceeded.
 
@@ -515,10 +550,22 @@ class GraphView(urwid.WidgetPlaceholder):
             val.get_is_available())
 
         self.visible_graphs = self.available_graphs.copy()
+        logging.debug("All availabe graphs: " + str(self.visible_graphs))
+
+        # Remove graphs from shown graphs if user configed them out
+        conf = self.controller.conf
+        for graph_name in self.available_graphs.keys():
+            try:
+                if conf.getboolean('GraphControll', graph_name) is False:
+                    del self.visible_graphs[graph_name]
+            except (AttributeError, configparser.NoOptionError, ValueError,
+                    configparser.NoSectionError):
+                pass
+
         self.show_graphs()
 
         cpu_stats = self.cpu_stats()
-        graph_controls = self.graph_controls()
+        graph_controls = self.graph_controls(conf)
         graph_stats = self.graph_stats()
 
         text_col = ViListBox(urwid.SimpleListWalker(cpu_stats + graph_controls
@@ -543,24 +590,84 @@ class GraphView(urwid.WidgetPlaceholder):
 
 class GraphController:
     """
-    A class responsible for setting up the model and view and running
-    the application.
+    The GraphController holds the state of the graph, this includes the current
+    * Operation mode (stress/no-stress)
+    * Current selected graphs for display,
+    * The state of the radio and selector buttons
+    * The current graphs refresh rate
+
+    The controller is generated once, and is updated accroding to inputs
     """
     def __init__(self, args):
+
+        # Load and configure user config dir when contoller starts
+        user_config_dir = None
+        if not user_config_dir_exists():
+            user_config_dir = make_user_config_dir()
+        else:
+            user_config_dir = get_user_config_dir()
+
+        self.script_hooks_enabled = True
+        if user_config_dir is None:
+            logging.warn("Failed to find or create scripts directory,\
+                             proceeding without scripting support")
+            self.script_hooks_enabled = False
+        else:
+            self.script_loader = ScriptHookLoader(user_config_dir)
+
+        # Use user config file if one was saved before
+        self.conf = None
+        if user_config_file_exists():
+            self.conf = configparser.ConfigParser()
+            self.conf.read(get_user_config_file())
+        else:
+            logging.debug("Config file not found")
+
+        logging.debug("Config was set to " + str(self.conf))
+
         self.animate_alarm = None
-        self.save_csv = args.csv
         self.terminal = args.terminal
         self.json = args.json
         self.mode = GraphMode()
+
+        # Set refresh rate accorrding to user config
+        self.refresh_rate = '1'
+        try:
+            self.refresh_rate = str(self.conf.getfloat(
+                'GraphControll', 'refresh'))
+            logging.debug("User refresh rate: " + str(self.refresh_rate))
+        except (AttributeError, ValueError, configparser.NoOptionError,
+                configparser.NoSectionError):
+            logging.debug("No refresh rate configed")
+
         self.handle_mouse = not(args.no_mouse)
-        self.refresh_rate = '1.0'
+
+        # Set initial smooth graph state
+        self.smooth_graph_mode = False
+        try:
+            if self.conf.getboolean('GraphControll', 'UTF8'):
+                self.smooth_graph_mode = True
+            else:
+                logging.debug("UTF8 selected as false" +
+                              self.conf.get('GraphControll', 'UTF8'))
+        except (AttributeError, ValueError, configparser.NoOptionError,
+                configparser.NoSectionError):
+            logging.debug("No user config for utf8")
+
         self.view = GraphView(self, args)
-        # use the first mode as the default
+        # use the first mode (no stress) as the default
         mode = self.get_modes()[0]
         self.mode.set_mode(mode)
         # update the view
         self.view.on_mode_change(mode)
         self.view.update_displayed_information()
+
+        # Update csv file to save
+        self.csv_file = DEFAULT_CSV_FILE
+        self.save_csv = args.csv
+        if args.csv_file is not None:
+            self.csv_file = args.csv_file
+            logging.info("Printing output to csv " + self.csv_file)
 
     def get_modes(self):
         """Allow our view access to the list of modes."""
@@ -584,8 +691,8 @@ class GraphController:
 
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
-        if self.save_csv:
-            output_to_csv(self.view.summaries, DEFAULT_CSV_FILE)
+        if self.save_csv or self.csv_file is not None:
+            output_to_csv(self.view.summaries, self.csv_file)
         self.view.update_displayed_information()
         self.animate_alarm = self.loop.set_alarm_in(
             float(self.refresh_rate), self.animate_graph)
@@ -683,9 +790,11 @@ def main():
     # Setup logging util
     global log_file
     level = ""
-    if args.debug:
+    log_file = DEFAULT_LOG_FILE
+    if args.debug or args.debug_file is not None:
         level = logging.DEBUG
-        log_file = DEFAULT_LOG_FILE
+        if args.debug_file is not None:
+            log_file = args.debug_file
         log_formatter = logging.Formatter("%(asctime)s [%(funcName)s()]\
                                           [%(levelname)-5.5s]  %(message)s")
         root_logger = logging.getLogger()
@@ -701,9 +810,6 @@ def main():
         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
     if not is_admin:
         logging.info("Started without root permissions")
-
-    if args.csv:
-        logging.info("Printing output to csv " + DEFAULT_CSV_FILE)
 
     if args.terminal or args.json:
         logging.info("Printing single line to terminal")
@@ -752,8 +858,16 @@ use: -cf thinkpad,0 for fan1
     parser.add_argument('-d', '--debug',
                         default=False, action='store_true',
                         help="Output debug log to _s-tui.log")
+    parser.add_argument('--debug-file',
+                        default=None,
+                        help="Use a custom debug file. Default: "
+                        + "_s-tui.log")
     parser.add_argument('-c', '--csv', action='store_true',
                         default=False, help="Save stats to csv file")
+    parser.add_argument('--csv-file',
+                        default=None,
+                        help="Use a custom CSV file. Default: "
+                        + "s-tui_log_<TIME>.csv")
     parser.add_argument('-t', '--terminal', action='store_true',
                         default=False,
                         help="Display a single line of stats without tui")

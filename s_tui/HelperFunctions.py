@@ -31,7 +31,7 @@ import time
 from collections import OrderedDict
 from sys import exit
 
-__version__ = "0.6.7.4"
+__version__ = "0.7.0"
 
 
 def get_processor_name():
@@ -106,7 +106,7 @@ def output_to_json(sources):
     exit()
 
 
-def get_user_config_path():
+def get_user_config_dir():
     """
     Return the path to the user s-tui config directory
     """
@@ -118,19 +118,37 @@ def get_user_config_path():
 
     return config_path
 
+def get_user_config_file():
+    """
+    Return the path to the user s-tui config directory
+    """
+    user_home = os.getenv('XDG_CONFIG_HOME')
+    if user_home is None or len(user_home) == 0:
+        config_path = os.path.expanduser(os.path.join('~', '.config', 's-tui', 's-tui.conf'))
+    else:
+        config_path = os.path.join(user_home, 's-tui', 's-tui.conf')
+
+    return config_path
+
 
 def user_config_dir_exists():
     """
     Check whether the user s-tui config directory exists or not
     """
-    return os.path.isdir(get_user_config_path())
+    return os.path.isdir(get_user_config_dir())
+
+def user_config_file_exists():
+    """
+    Check whether the user s-tui config file exists or not
+    """
+    return os.path.isfile(get_user_config_file())
 
 
 def make_user_config_dir():
     """
     Create the user s-tui config directory if it doesn't exist
     """
-    config_path = get_user_config_path()
+    config_path = get_user_config_dir()
 
     if not user_config_dir_exists():
         try:

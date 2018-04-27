@@ -63,11 +63,9 @@ class TemperatureSource(Source):
                 sensors_info = self.custom_temp.split(",")
                 sensor_major = sensors_info[0]
                 sensor_minor = sensors_info[1]
-                logging.debug("Major" + str(sensor_major) +
-                              "Minor" + str(sensor_minor))
-                last_value = psutil.sensors_temperatures()[sensor_major]
-                [int(sensor_minor)].current
-            except (KeyError, IndexError, AttributeError):
+                logging.debug("Major" + str(sensor_major) + "Minor" + str(sensor_minor))
+                last_value = psutil.sensors_temperatures()[sensor_major][int(sensor_minor)].current
+            except (KeyError, IndexError):
                 self.is_available = False
                 logging.debug("Illegal sensor")
                 self.last_temp = 1

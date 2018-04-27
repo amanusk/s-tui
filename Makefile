@@ -13,7 +13,7 @@ readme:
 
 # Remove files created by pyinstaller
 del:
-	rm -rf ./s_tui/dist/ ./s_tui/build/ ./s_tui/s*.spec ./s_tui/*.pyc ./s_tui/*.log s-tui.spec
+	rm -rf ./s_tui/dist/ ./build/ ./s_tui/s*.spec ./s_tui/*.pyc ./s_tui/*.log s-tui.spec
 
 # Clear pyinstall cache and delete file
 clean:
