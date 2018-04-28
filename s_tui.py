@@ -409,6 +409,7 @@ class GraphView(urwid.WidgetPlaceholder):
                 ('button normal', u"(N/A) install stress"))
 
         # Disable graphs the user selected not to display in config file
+        # TODO: Get this from graph state
         graphs_available_state = dict()
         for g in self.available_graphs.values():
             try:
@@ -553,6 +554,7 @@ class GraphView(urwid.WidgetPlaceholder):
         logging.debug("All availabe graphs: " + str(self.visible_graphs))
 
         # Remove graphs from shown graphs if user configed them out
+        # TODO: get this information from the state
         conf = self.controller.conf
         for graph_name in self.available_graphs.keys():
             try:
@@ -687,7 +689,10 @@ class GraphController:
             self.loop.run()
         except (ZeroDivisionError):
             logging.debug("Some stat caused divide by zero exception. Exiting")
-            self.exit_program()
+            self.view.exit_program()
+        except (AttributeError):
+            logging.debug("Catch attribute Error in urwid and restart")
+            self.main()
 
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
@@ -699,7 +704,7 @@ class GraphController:
 
     def start_stress(self):
         mode = self.mode
-        if mode.get_current_mode() == 'Stress Operation':
+        if mode.get_current_mode() == 'Stress':
             try:
                 kill_child_processes(mode.get_stress_process())
             except:
@@ -768,7 +773,7 @@ class GraphController:
                     logging.debug("Unable to start stress")
 
         else:
-            logging.debug('Regular operation mode')
+            logging.debug('Monitoring')
             try:
                 kill_child_processes(mode.get_stress_process())
                 self.view.graphs['Frequency'].source.set_stress_stopped()

@@ -63,6 +63,8 @@ class StuiBarGraph(LabeledBarGraph):
              self.measurement_unit + ']'])
         self.bar_graph.set_bar_width(bar_width)
 
+        self.color_counter = 0
+
     def get_current_summary(self):
         pass
 
@@ -147,14 +149,24 @@ class StuiBarGraph(LabeledBarGraph):
         num_displayed_bars = self.bar_graph.get_size()[1]
         # print num_displayed_bars
         # Iterage over all the information in the graph
-        for n in range(self.MAX_SAMPLES - num_displayed_bars,
-                       self.MAX_SAMPLES):
-            value = round(self.graph_data[n], 1)
-            # toggle between two bar types
-            if n & 1:
-                l.append([0, value])
-            else:
-                l.append([value, 0])
+        if self.color_counter % 2 == 0:
+            for n in range(self.MAX_SAMPLES - num_displayed_bars,
+                           self.MAX_SAMPLES):
+                value = round(self.graph_data[n], 1)
+                # toggle between two bar types
+                if n & 1:
+                    l.append([0, value])
+                else:
+                    l.append([value, 0])
+        else:
+            for n in range(self.MAX_SAMPLES - num_displayed_bars,
+                           self.MAX_SAMPLES):
+                value = round(self.graph_data[n], 1)
+                if n & 1:
+                    l.append([value, 0])
+                else:
+                    l.append([0, value])
+        self.color_counter += 1
 
         self.bar_graph.set_data(l, float(data_max))
         y_label_size = self.bar_graph.get_size()[0]

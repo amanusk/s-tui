@@ -50,6 +50,7 @@ def get_processor_name():
 
 
 def kill_child_processes(parent_proc, sig=signal.SIGTERM):
+    logging.debug("Killing stress process")
     try:
         for proc in parent_proc.children(recursive=True):
             logging.debug('Killing' + str(proc))
@@ -118,13 +119,15 @@ def get_user_config_dir():
 
     return config_path
 
+
 def get_user_config_file():
     """
     Return the path to the user s-tui config directory
     """
     user_home = os.getenv('XDG_CONFIG_HOME')
     if user_home is None or len(user_home) == 0:
-        config_path = os.path.expanduser(os.path.join('~', '.config', 's-tui', 's-tui.conf'))
+        config_path = os.path.expanduser(os.path.join('~', '.config',
+                                                      's-tui', 's-tui.conf'))
     else:
         config_path = os.path.join(user_home, 's-tui', 's-tui.conf')
 
@@ -136,6 +139,7 @@ def user_config_dir_exists():
     Check whether the user s-tui config directory exists or not
     """
     return os.path.isdir(get_user_config_dir())
+
 
 def user_config_file_exists():
     """
