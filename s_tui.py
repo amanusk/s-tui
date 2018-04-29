@@ -186,12 +186,9 @@ class GraphView(urwid.WidgetPlaceholder):
     The GraphView can change the state of the graph, since it provides the UI
     The change is state should be reflected in the GraphController
     """
-    def __init__(self, controller, args):
+    def __init__(self, controller):
 
         self.controller = controller
-        self.custom_temp = args.custom_temp
-        self.custom_fan = args.custom_fan
-        self.args = args
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
         self.mode_buttons = []
         self.refresh_rate_ctrl = urwid.Edit(('bold text', u'Refresh[s]:'),
@@ -260,9 +257,11 @@ class GraphView(urwid.WidgetPlaceholder):
         """Return to main screen and update sensor"""
         if self.temp_sensors_menu.current_active_mode:
             logging.info("State is not None")
-            self.args.custom_temp = self.temp_sensors_menu.current_active_mode
-            self.__init__(self.controller, self.args)
-            logging.info("Temp sensor updated to " + self.args.custom_temp)
+            self.controller.custom_temp = (self.temp_sensors_menu.
+                                           current_active_mode)
+            self.__init__(self.controller)
+            logging.info("Temp sensor updated to " +
+                         self.controller.custom_temp)
         else:
             logging.info("Temp sensor is None")
 
@@ -367,6 +366,9 @@ class GraphView(urwid.WidgetPlaceholder):
                 except (AttributeError, configparser.NoOptionError,
                         configparser.NoSectionError):
                     pass
+            # Writing temp sensor
+            conf.add_section('TempControll')
+            conf.set('TempControll', 'sensor', self.controller.custom_temp)
             conf.write(cfgfile)
 
     def graph_controls(self, conf):
@@ -507,7 +509,7 @@ class GraphView(urwid.WidgetPlaceholder):
             util_source
         )
 
-        temp_source = TempSource(self.custom_temp)
+        temp_source = TempSource(self.controller.custom_temp)
 
         if self.controller.script_hooks_enabled:
             temp_source.add_edge_hook(
@@ -538,7 +540,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.summaries[rapl_power_source.get_source_name()] = SummaryTextList(
             rapl_power_source)
 
-        fan_source = FanSource(self.custom_fan)
+        fan_source = FanSource(self.controller.args.custom_fan)
         self.summaries[fan_source.get_source_name()] = SummaryTextList(
             fan_source)
 
@@ -627,11 +629,6 @@ class GraphController:
 
         logging.debug("Config was set to " + str(self.conf))
 
-        self.animate_alarm = None
-        self.terminal = args.terminal
-        self.json = args.json
-        self.mode = GraphMode()
-
         # Set refresh rate accorrding to user config
         self.refresh_rate = '1'
         try:
@@ -642,9 +639,7 @@ class GraphController:
                 configparser.NoSectionError):
             logging.debug("No refresh rate configed")
 
-        self.handle_mouse = not(args.no_mouse)
-
-        # Set initial smooth graph state
+        # Set initial smooth graph state according to user config
         self.smooth_graph_mode = False
         try:
             if self.conf.getboolean('GraphControll', 'UTF8'):
@@ -656,7 +651,28 @@ class GraphController:
                 configparser.NoSectionError):
             logging.debug("No user config for utf8")
 
-        self.view = GraphView(self, args)
+        self.custom_temp = None
+
+        # Try to load selected temp sensor if a manual one is not set
+        if args.custom_temp is None:
+            try:
+                config_sensor = self.conf.get('TempControll', 'sensor')
+                self.custom_temp = config_sensor
+                logging.debug("Temp sensors set to " + config_sensor)
+            except (AttributeError, ValueError, configparser.NoOptionError,
+                    configparser.NoSectionError):
+                logging.debug("No user config for temp sensor")
+
+        self.args = args
+
+        self.animate_alarm = None
+        self.terminal = args.terminal
+        self.json = args.json
+        self.mode = GraphMode()
+
+        self.handle_mouse = not(args.no_mouse)
+
+        self.view = GraphView(self)
         # use the first mode (no stress) as the default
         mode = self.get_modes()[0]
         self.mode.set_mode(mode)
