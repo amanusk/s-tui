@@ -61,7 +61,7 @@ If you are installing s-tui on a Raspberry-Pi you might need to install `python-
 ## Options
 ```
 ********s-tui manual********
-usage: s_tui.py [-h] [-d] [-c] [-t] [-j] [-nm] [-v] [-ct CUSTOM_TEMP]
+usage: s-tui [-h] [-d] [-c] [-t] [-j] [-nm] [-v] [-ct CUSTOM_TEMP]
 
 TUI interface:
 
@@ -161,7 +161,7 @@ Clone
 ```
 git clone https://github.com/amanusk/s-tui.git
 ```
-Install dependencies, these need to be installed to run `s-tui.py`
+Install dependencies, these need to be installed to run `python -m s_tui.s_tui`
 ```
 (sudo) pip install urwid
 (sudo) pip install psutil
@@ -173,7 +173,7 @@ sudo apt-get install stress
 
 Run the .py file
 ```
-(sudo) python ./s_tui.py 
+(sudo) python -m s_tui.s_tui
 ```
 ### OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)
 FIRESTARTER is a great tool to stress your system to the extreme.  If you would like, you can integrate FIRESTARTER submodule into s-tui.
@@ -187,7 +187,7 @@ make
 ```
 Once you have completed these steps, you can either:
 * Install FIRESTARTER to make it accessible to s-tui, e.g make a soft-link to FIRESTARTER in /usr/local/bin.
-* Run s-tui from the main project directory with `python s-tui.py`  
+* Run s-tui from the main project directory with `python -m s_tui.s_tui`  
 An option to run FIRESTARTER will then be available in s-tui
 
 ## Compatibility

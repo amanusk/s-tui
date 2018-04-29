@@ -32,7 +32,7 @@ setup(
     keywords=['stress', 'monitoring', 'TUI'],  # arbitrary keywords
 
     entry_points={
-        'console_scripts': ['s-tui=s_tui.py:main']
+        'console_scripts': ['s-tui=s_tui.s_tui:main']
     },
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
