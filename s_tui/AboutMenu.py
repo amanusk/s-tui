@@ -28,7 +28,7 @@ from s_tui.HelperFunctions import __version__
 
 ABOUT_MESSAGE = " \n\
 s-tui is a monitoring tool for your CPU temperature, frequency, utilization \
-        and power.\n\
+and power.\n\
 With s-tui you can monitor your system over SSH without a need for a GUI\n\
 \n\
 Code for s-tui is available on github\n\
