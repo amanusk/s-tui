@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2017 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #
 # This implementation was inspired by Ian Ward
 # Urwid web site: http://excess.org/urwid/
@@ -33,13 +33,12 @@ import psutil
 import urwid
 import signal
 import itertools
+import configparser
 
 from sys import exit
 from collections import OrderedDict
 from distutils.spawn import find_executable
 from s_tui.AboutMenu import AboutMenu
-from s_tui.ComplexBarGraphs import LabeledBarGraph
-from s_tui.ComplexBarGraphs import ScalableBarGraph
 from s_tui.HelpMenu import HelpMenu
 from s_tui.HelpMenu import HELP_MESSAGE
 from s_tui.StressMenu import StressMenu
@@ -50,24 +49,23 @@ from s_tui.HelperFunctions import kill_child_processes
 from s_tui.HelperFunctions import output_to_csv
 from s_tui.HelperFunctions import output_to_terminal
 from s_tui.HelperFunctions import output_to_json
-from s_tui.HelperFunctions import get_user_config_path
+from s_tui.HelperFunctions import get_user_config_dir
+from s_tui.HelperFunctions import get_user_config_file
 from s_tui.HelperFunctions import make_user_config_dir
 from s_tui.HelperFunctions import user_config_dir_exists
+from s_tui.HelperFunctions import user_config_file_exists
 from s_tui.UiElements import ViListBox
 from s_tui.UiElements import radio_button
 from s_tui.UiElements import button
 from s_tui.TempSensorsMenu import TempSensorsMenu
 from s_tui.StuiBarGraph import StuiBarGraph
 from s_tui.SummaryTextList import SummaryTextList
-from s_tui.Sources.Source import MockSource as MockSource
 from s_tui.Sources.UtilSource import UtilSource as UtilSource
 from s_tui.Sources.FreqSource import FreqSource as FreqSource
-from s_tui.Sources.TemperatureSource import TemperatureSource as TemperatureSource
+from s_tui.Sources.TemperatureSource import TemperatureSource as TempSource
 from s_tui.Sources.RaplPowerSource import RaplPowerSource as RaplPowerSource
 from s_tui.Sources.FanSource import FanSource as FanSource
 from s_tui.GlobalData import GlobalData
-from s_tui.Sources.Hook import Hook
-from s_tui.Sources.ScriptHook import ScriptHook
 from s_tui.Sources.ScriptHookLoader import ScriptHookLoader
 
 UPDATE_INTERVAL = 1
@@ -77,12 +75,12 @@ log_file = os.devnull
 DEFAULT_LOG_FILE = "_s-tui.log"
 # TODO: Add timestamp
 
-DEFAULT_CSV_FILE = "stui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
+DEFAULT_CSV_FILE = "s-tui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
 
 VERSION_MESSAGE = \
-"s-tui " + __version__ +\
-" - (C) 2017 Alex Manuskin, Gil Tsuker\n\
-Released under GNU GPLv2"
+    "s-tui " + __version__ +\
+    " - (C) 2017-2018 Alex Manuskin, Gil Tsuker\n\
+    Released under GNU GPLv2"
 
 fire_starter = None
 
@@ -95,8 +93,6 @@ stress_program = None
 INTRO_MESSAGE = HELP_MESSAGE
 
 
-
-
 class GraphMode:
     """
     A class responsible for storing the data related to
@@ -104,13 +100,14 @@ class GraphMode:
     """
 
     def __init__(self):
-        self.modes = ['Regular Operation']
+        self.modes = ['Monitor']
         global stress_installed
         global stress_program
         with open(os.devnull, 'w') as DEVNULL:
             # Try if stress installed
             try:
-                subprocess.Popen("stress", stdout=DEVNULL, stderr=DEVNULL, shell=False)
+                subprocess.Popen("stress", stdout=DEVNULL, stderr=DEVNULL,
+                                 shell=False)
             except (OSError):
                 logging.debug("stress is not installed")
             else:
@@ -119,7 +116,8 @@ class GraphMode:
 
             # Try if stress-ng installed
             try:
-                subprocess.Popen("stress-ng", stdout=DEVNULL, stderr=DEVNULL, shell=False)
+                subprocess.Popen("stress-ng", stdout=DEVNULL, stderr=DEVNULL,
+                                 shell=False)
             except (OSError):
                 logging.debug("stress-ng is not installed")
             else:
@@ -127,11 +125,12 @@ class GraphMode:
                 stress_program = 'stress-ng'
 
             if stress_installed:
-                self.modes.append('Stress Operation')
+                self.modes.append('Stress')
 
             global fire_starter
             if os.path.isfile('./FIRESTARTER/FIRESTARTER'):
-                fire_starter = os.path.join(os.getcwd(), 'FIRESTARTER', 'FIRESTARTER')
+                fire_starter = os.path.join(os.getcwd(), 'FIRESTARTER',
+                                            'FIRESTARTER')
             elif find_executable('FIRESTARTER') is not None:
                 fire_starter = 'FIRESTARTER'
 
@@ -184,18 +183,19 @@ class GraphView(urwid.WidgetPlaceholder):
     """
     A class responsible for providing the application's interface and
     graph display.
+    The GraphView can change the state of the graph, since it provides the UI
+    The change is state should be reflected in the GraphController
     """
-    def __init__(self, controller, args):
+    def __init__(self, controller):
 
         self.controller = controller
-        self.custom_temp = args.custom_temp
-        self.custom_fan = args.custom_fan
-        self.args = args
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
         self.mode_buttons = []
-        self.refresh_rate_ctrl = urwid.Edit(('bold text', u'Refresh[s]:'), self.controller.refresh_rate)
+        self.refresh_rate_ctrl = urwid.Edit(('bold text', u'Refresh[s]:'),
+                                            self.controller.refresh_rate)
 
-
+        # Visible graphs are the graphs currently displayed, this is a
+        # subset of the available graphs for display
         self.visible_graphs = {}
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
 
@@ -214,8 +214,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.h_relative = 50
 
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
-        urwid.connect_signal(self.refresh_rate_ctrl, 'change', self.update_refresh_rate)
-
+        urwid.connect_signal(self.refresh_rate_ctrl, 'change',
+                             self.update_refresh_rate)
 
     def update_refresh_rate(self, edit, new_refresh_rate):
         try:
@@ -229,7 +229,7 @@ class GraphView(urwid.WidgetPlaceholder):
     def update_displayed_information(self):
         """ Update all the graphs that are being displayed """
 
-        for key,val in self.summaries.items():
+        for key, val in self.available_summaries.items():
             val.source.update()
 
         for g in self.visible_graphs.values():
@@ -237,7 +237,6 @@ class GraphView(urwid.WidgetPlaceholder):
 
         for s in self.available_summaries.values():
             s.update()
-
 
     def on_reset_button(self, w):
         """Reset graph data and display empty graph"""
@@ -258,14 +257,15 @@ class GraphView(urwid.WidgetPlaceholder):
         """Return to main screen and update sensor"""
         if self.temp_sensors_menu.current_active_mode:
             logging.info("State is not None")
-            self.args.custom_temp = self.temp_sensors_menu.current_active_mode
-            self.__init__(self.controller, self.args)
-            logging.info("Temp sensor updated to " + self.args.custom_temp)
+            self.controller.custom_temp = (self.temp_sensors_menu.
+                                           current_active_mode)
+            self.__init__(self.controller)
+            logging.info("Temp sensor updated to " +
+                         self.controller.custom_temp)
         else:
             logging.info("Temp sensor is None")
 
         self.original_widget = self.main_window_w
-
 
     def on_stress_menu_open(self, w):
         """Open stress options"""
@@ -296,12 +296,13 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def on_temp_sensors_menu_open(self, w):
         """Open About menu"""
-        self.original_widget = urwid.Overlay(self.temp_sensors_menu.main_window,
-                                             self.original_widget,
-                                             ('relative', self.left_margin),
-                                             self.temp_sensors_menu.get_size()[1],
-                                             ('relative', self.top_margin),
-                                             self.temp_sensors_menu.get_size()[0])
+        self.original_widget = urwid.Overlay(
+            self.temp_sensors_menu.main_window,
+            self.original_widget,
+            ('relative', self.left_margin),
+            self.temp_sensors_menu.get_size()[1],
+            ('relative', self.top_margin),
+            self.temp_sensors_menu.get_size()[0])
 
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
@@ -310,7 +311,6 @@ class GraphView(urwid.WidgetPlaceholder):
             self.controller.set_mode(button.get_label())
             self.controller.start_stress()
 
-
     def on_mode_change(self, m):
         """Handle external mode change by updating radio buttons."""
         for rb in self.mode_buttons:
@@ -318,19 +318,22 @@ class GraphView(urwid.WidgetPlaceholder):
                 rb.set_state(True, do_callback=False)
                 break
 
-    def on_unicode_checkbox(self, w, state):
+    def on_unicode_checkbox(self, w=None, state=False):
         """Enable smooth edges if utf-8 is supported"""
         logging.debug("unicode State is " + str(state))
+
+        # Update the controller to the state of the checkbox
+        self.controller.smooth_graph_mode = state
         if state:
-            self.hline = urwid.AttrWrap(urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
+            self.hline = urwid.AttrWrap(
+                urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
         else:
             self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
 
-        for g_name,g in self.graphs.items():
+        for g_name, g in self.graphs.items():
             g.set_smooth_colors(state)
 
         self.show_graphs()
-
 
     def exit_program(self, w=None):
         """ Kill all stress operations upon exit"""
@@ -340,7 +343,35 @@ class GraphView(urwid.WidgetPlaceholder):
             logging.debug('Could not kill process')
         raise urwid.ExitMainLoop()
 
-    def graph_controls(self):
+    def save_settings(self, w=None):
+        """ Save the current configuration to a user config file """
+
+        if not user_config_dir_exists():
+            make_user_config_dir()
+
+        conf = configparser.ConfigParser()
+        config_file = get_user_config_file()
+        with open(config_file, 'w') as cfgfile:
+            conf.add_section('GraphControll')
+            conf.set('GraphControll', 'refresh', str(
+                self.controller.refresh_rate))
+            conf.set('GraphControll', 'UTF8', str(
+                self.controller.smooth_graph_mode))
+            for graph_name in self.available_graphs.keys():
+                try:
+                    if graph_name in self.visible_graphs:
+                        conf.set('GraphControll', graph_name, 'True')
+                    else:
+                        conf.set('GraphControll', graph_name, 'False')
+                except (AttributeError, configparser.NoOptionError,
+                        configparser.NoSectionError):
+                    pass
+            # Writing temp sensor
+            conf.add_section('TempControll')
+            conf.set('TempControll', 'sensor', self.controller.custom_temp)
+            conf.write(cfgfile)
+
+    def graph_controls(self, conf):
         """ Dislplay sidebar controls. i.e. buttons, and controls"""
         modes = self.controller.get_modes()
         # setup mode radio buttons
@@ -352,37 +383,55 @@ class GraphView(urwid.WidgetPlaceholder):
         # Create list of buttons
         control_options = [button("Reset", self.on_reset_button)]
         if stress_installed:
-            control_options.append(button('Stress Options', self.on_stress_menu_open))
-        control_options.append(button('Temp Sensors', self.on_temp_sensors_menu_open))
+            control_options.append(button('Stress Options',
+                                          self.on_stress_menu_open))
+        control_options.append(button('Temp Sensors',
+                                      self.on_temp_sensors_menu_open))
         control_options.append(button('Help', self.on_help_menu_open))
         control_options.append(button('About', self.on_about_menu_open))
 
         # Create the menu
         animate_controls = urwid.GridFlow(control_options, 18, 2, 0, 'center')
 
-
+        # Create smooth graph selection button
+        default_smooth = self.controller.smooth_graph_mode
         if urwid.get_encoding_mode() == "utf8":
             unicode_checkbox = urwid.CheckBox(
-                "Smooth Graph", state=False,
+                "Smooth Graph", state=default_smooth,
                 on_state_change=self.on_unicode_checkbox)
+            # Init the state of the graph accoding to the selected mode
+            self.on_unicode_checkbox(state=default_smooth)
         else:
             unicode_checkbox = urwid.Text(
                 "UTF-8 encoding not detected")
 
-
         install_stress_message = urwid.Text("")
         if not stress_installed:
-            install_stress_message = urwid.Text(('button normal', u"(N/A) install stress"))
+            install_stress_message = urwid.Text(
+                ('button normal', u"(N/A) install stress"))
 
+        # Disable graphs the user selected not to display in config file
+        # TODO: Get this from graph state
+        graphs_available_state = dict()
+        for g in self.available_graphs.values():
+            try:
+                graphs_available_state[g.get_graph_name()] = conf.getboolean(
+                    'GraphControll', g.get_graph_name())
+            except:
+                graphs_available_state[g.get_graph_name()] = True
 
-        graph_checkboxes = [urwid.CheckBox(x.get_graph_name(), state=True,
-                            on_state_change=lambda w, state, x=x:  self.change_checkbox_state(x, state))
+        graph_checkboxes = [urwid.CheckBox(x.get_graph_name(),
+                            graphs_available_state[x.get_graph_name()],
+                            on_state_change=lambda w,
+                            state, x=x:  self.change_checkbox_state(x, state))
                             for x in self.available_graphs.values()]
-        unavalable_graphs = [urwid.Text(( "[N/A] " + x.get_graph_name()) ) for x in self.graphs.values() if x.source.get_is_available() == False]
+        unavalable_graphs = [urwid.Text(("[N/A] " + x.get_graph_name()))
+                             for x in self.graphs.values()
+                             if x.source.get_is_available() is False]
         graph_checkboxes += unavalable_graphs
 
         buttons = [urwid.Text(('bold text', u"Modes"), align="center"),
-                   ] +  self.mode_buttons + [
+                   ] + self.mode_buttons + [
             install_stress_message,
             urwid.Divider(),
             urwid.Text(('bold text', u"Control Options"), align="center"),
@@ -392,6 +441,8 @@ class GraphView(urwid.WidgetPlaceholder):
             urwid.Divider(),
             urwid.LineBox(urwid.Pile(graph_checkboxes)),
             urwid.LineBox(unicode_checkbox),
+            urwid.Divider(),
+            button("Save Settings", self.save_settings),
             urwid.Divider(),
             button("Quit", self.exit_program),
             ]
@@ -406,22 +457,22 @@ class GraphView(urwid.WidgetPlaceholder):
             del self.visible_graphs[x.get_graph_name()]
         self.show_graphs()
 
-
     def show_graphs(self):
         """Show a pile of the graph selected for dislpay"""
-        elements = itertools.chain.from_iterable(([graph, ('fixed', 1, self.hline)]
-                                            for graph in self.visible_graphs.values()))
+        elements = itertools.chain.from_iterable(
+            ([graph, ('fixed', 1, self.hline)]
+                for graph in self.visible_graphs.values()))
         self.graph_place_holder.original_widget = urwid.Pile(elements)
 
     def cpu_stats(self):
-           """Read and display processor name """
-           cpu_name = urwid.Text("CPU Name N/A", align="center")
-           try:
-               cpu_name = urwid.Text(get_processor_name().strip(), align="center")
-           except:
-               logging.info("CPU name not available")
-           cpu_stats = [cpu_name, urwid.Divider()]
-           return cpu_stats
+        """Read and display processor name """
+        cpu_name = urwid.Text("CPU Name N/A", align="center")
+        try:
+            cpu_name = urwid.Text(get_processor_name().strip(), align="center")
+        except:
+            logging.info("CPU name not available")
+        cpu_stats = [cpu_name, urwid.Divider()]
+        return cpu_stats
 
     def graph_stats(self):
 
@@ -432,63 +483,98 @@ class GraphView(urwid.WidgetPlaceholder):
         return fixed_stats
 
     def main_window(self):
-
-        user_config_path = None
-        if not user_config_dir_exists():
-            user_config_path = make_user_config_dir()
-        else:
-            user_config_path = get_user_config_path()
-
-        script_hooks_enabled = True
-        if user_config_path is None:
-            logging.warn('Failed to find or create scripts directory, proceeding without scripting support')
-            script_hooks_enabled = False
-        else:
-            self.script_loader = ScriptHookLoader(user_config_path)
-
         # initiating the graphs
         self.graphs = OrderedDict()
         self.summaries = OrderedDict()
 
         # TODO: Update to find sensors automatically
 
-
         freq_source = FreqSource(is_admin)
-        self.graphs[freq_source.get_source_name()] = StuiBarGraph(freq_source, 'freq light', 'freq dark', 'freq light smooth', 'freq dark smooth')
-        self.summaries[freq_source.get_source_name()] = SummaryTextList(freq_source)
+        self.graphs[freq_source.get_source_name()] = StuiBarGraph(
+            freq_source, 'freq light', 'freq dark',
+            'freq light smooth', 'freq dark smooth'
+        )
+
+        self.summaries[freq_source.get_source_name()] = SummaryTextList(
+            freq_source
+        )
 
         util_source = UtilSource()
-        self.graphs[util_source.get_source_name()] = StuiBarGraph(util_source, 'util light', 'util dark', 'util light smooth', 'util dark smooth')
-        self.summaries[util_source.get_source_name()] = SummaryTextList(util_source)
+        self.graphs[util_source.get_source_name()] = StuiBarGraph(
+            util_source, 'util light', 'util dark',
+            'util light smooth', 'util dark smooth'
+        )
 
-        temp_source = TemperatureSource(self.custom_temp)
+        self.summaries[util_source.get_source_name()] = SummaryTextList(
+            util_source
+        )
 
-        if script_hooks_enabled:
-            temp_source.add_edge_hook(self.script_loader.load_script(temp_source.__class__.__name__, 30000)) # Invoke threshold script every 30s while threshold is exceeded.
+        temp_source = TempSource(self.controller.custom_temp)
 
-        alert_colors = ['high temp light', 'high temp dark', 'high temp light smooth', 'high temp dark smooth']
-        self.graphs[temp_source.get_source_name()] = StuiBarGraph(temp_source, 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth', alert_colors=alert_colors)
-        self.summaries[temp_source.get_source_name()] = SummaryTextList(temp_source, 'high temp txt')
+        if self.controller.script_hooks_enabled:
+            temp_source.add_edge_hook(
+                self.controller.script_loader.load_script(
+                    temp_source.__class__.__name__, 30000)
+            )  # Invoke threshold script every 30s while threshold is exceeded.
+
+        alert_colors = ['high temp light',
+                        'high temp dark',
+                        'high temp light smooth',
+                        'high temp dark smooth']
+
+        self.graphs[temp_source.get_source_name()] = StuiBarGraph(
+            temp_source, 'temp light', 'temp dark',
+            'temp light smooth', 'temp dark smooth',
+            alert_colors=alert_colors
+        )
+
+        self.summaries[temp_source.get_source_name()] = SummaryTextList(
+            temp_source, 'high temp txt')
 
         rapl_power_source = RaplPowerSource()
-        self.graphs[rapl_power_source.get_source_name()] = StuiBarGraph(rapl_power_source, 'power dark', 'power light', 'power dark smooth', 'power light smooth')
-        self.summaries[rapl_power_source.get_source_name()] = SummaryTextList(rapl_power_source)
 
-        fan_source = FanSource(self.custom_fan)
-        self.summaries[fan_source.get_source_name()] = SummaryTextList(fan_source)
+        self.graphs[rapl_power_source.get_source_name()] = StuiBarGraph(
+            rapl_power_source, 'power dark', 'power light',
+            'power dark smooth', 'power light smooth')
+
+        self.summaries[rapl_power_source.get_source_name()] = SummaryTextList(
+            rapl_power_source)
+
+        fan_source = FanSource(self.controller.args.custom_fan)
+        self.summaries[fan_source.get_source_name()] = SummaryTextList(
+            fan_source)
 
         # only interested in available graph
-        self.available_graphs = OrderedDict((key, val) for key, val in self.graphs.items() if val.get_is_available())
-        self.available_summaries = OrderedDict((key, val) for key, val in self.summaries.items() if val.get_is_available())
+        self.available_graphs = OrderedDict(
+            (key, val) for key, val in self.graphs.items()
+            if val.get_is_available())
+        self.available_summaries = OrderedDict(
+            (key, val) for key, val in self.summaries.items() if
+            val.get_is_available())
 
         self.visible_graphs = self.available_graphs.copy()
+        logging.debug("All availabe graphs: " + str(self.visible_graphs))
+
+        # Remove graphs from shown graphs if user configed them out
+        # TODO: get this information from the state
+        conf = self.controller.conf
+        for graph_name in self.available_graphs.keys():
+            try:
+                if conf.getboolean('GraphControll', graph_name) is False:
+                    del self.visible_graphs[graph_name]
+            except (AttributeError, configparser.NoOptionError, ValueError,
+                    configparser.NoSectionError):
+                pass
+
         self.show_graphs()
 
         cpu_stats = self.cpu_stats()
-        graph_controls = self.graph_controls()
+        graph_controls = self.graph_controls(conf)
         graph_stats = self.graph_stats()
 
-        text_col = ViListBox(urwid.SimpleListWalker(cpu_stats + graph_controls + [urwid.Divider()] + graph_stats))
+        text_col = ViListBox(urwid.SimpleListWalker(cpu_stats + graph_controls
+                                                    + [urwid.Divider()]
+                                                    + graph_stats))
 
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
         w = urwid.Columns([
@@ -508,25 +594,100 @@ class GraphView(urwid.WidgetPlaceholder):
 
 class GraphController:
     """
-    A class responsible for setting up the model and view and running
-    the application.
+    The GraphController holds the state of the graph, this includes the current
+    * Operation mode (stress/no-stress)
+    * Current selected graphs for display,
+    * The state of the radio and selector buttons
+    * The current graphs refresh rate
+
+    The controller is generated once, and is updated accroding to inputs
     """
     def __init__(self, args):
+
+        # Load and configure user config dir when contoller starts
+        user_config_dir = None
+        if not user_config_dir_exists():
+            user_config_dir = make_user_config_dir()
+        else:
+            user_config_dir = get_user_config_dir()
+
+        self.script_hooks_enabled = True
+        if user_config_dir is None:
+            logging.warn("Failed to find or create scripts directory,\
+                             proceeding without scripting support")
+            self.script_hooks_enabled = False
+        else:
+            self.script_loader = ScriptHookLoader(user_config_dir)
+
+        # Use user config file if one was saved before
+        self.conf = None
+        if user_config_file_exists():
+            self.conf = configparser.ConfigParser()
+            self.conf.read(get_user_config_file())
+        else:
+            logging.debug("Config file not found")
+
+        logging.debug("Config was set to " + str(self.conf))
+
+        # Set refresh rate accorrding to user config
+        self.refresh_rate = '1'
+        try:
+            self.refresh_rate = str(self.conf.getfloat(
+                'GraphControll', 'refresh'))
+            logging.debug("User refresh rate: " + str(self.refresh_rate))
+        except (AttributeError, ValueError, configparser.NoOptionError,
+                configparser.NoSectionError):
+            logging.debug("No refresh rate configed")
+
+        # Set initial smooth graph state according to user config
+        self.smooth_graph_mode = False
+        try:
+            if self.conf.getboolean('GraphControll', 'UTF8'):
+                self.smooth_graph_mode = True
+            else:
+                logging.debug("UTF8 selected as false" +
+                              self.conf.get('GraphControll', 'UTF8'))
+        except (AttributeError, ValueError, configparser.NoOptionError,
+                configparser.NoSectionError):
+            logging.debug("No user config for utf8")
+
+        self.custom_temp = None
+
+        # Try to load selected temp sensor if a manual one is not set
+        if args.custom_temp is None:
+            try:
+                config_sensor = self.conf.get('TempControll', 'sensor')
+                self.custom_temp = config_sensor
+                logging.debug("Temp sensors set to " + config_sensor)
+            except (AttributeError, ValueError, configparser.NoOptionError,
+                    configparser.NoSectionError):
+                logging.debug("No user config for temp sensor")
+
+        self.args = args
+
         self.animate_alarm = None
-        self.save_csv = args.csv
         self.terminal = args.terminal
         self.json = args.json
         self.mode = GraphMode()
+
         self.handle_mouse = not(args.no_mouse)
-        self.refresh_rate = '1.0'
-        self.view = GraphView(self, args)
-        # use the first mode as the default
+
+        self.view = GraphView(self)
+        # use the first mode (no stress) as the default
         mode = self.get_modes()[0]
         self.mode.set_mode(mode)
         # update the view
         self.view.on_mode_change(mode)
         self.view.update_displayed_information()
 
+        # Update csv file to save
+        self.csv_file = None
+        self.save_csv = args.csv
+        if args.csv_file is not None:
+            self.csv_file = args.csv_file
+            logging.info("Printing output to csv " + self.csv_file)
+        elif args.csv_file is None and args.csv:
+            self.csv_file = DEFAULT_CSV_FILE
 
     def get_modes(self):
         """Allow our view access to the list of modes."""
@@ -539,26 +700,29 @@ class GraphController:
         return rval
 
     def main(self):
-        self.loop = MainLoop(self.view, DEFAULT_PALETTE, handle_mouse = self.handle_mouse)
+        self.loop = MainLoop(self.view, DEFAULT_PALETTE,
+                             handle_mouse=self.handle_mouse)
         self.animate_graph()
         try:
             self.loop.run()
         except (ZeroDivisionError):
             logging.debug("Some stat caused divide by zero exception. Exiting")
-            self.exit_program()
-
+            self.view.exit_program()
+        except (AttributeError):
+            logging.debug("Catch attribute Error in urwid and restart")
+            self.main()
 
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
-        if self.save_csv:
-            output_to_csv(self.view.summaries, DEFAULT_CSV_FILE)
+        if self.save_csv or self.csv_file is not None:
+            output_to_csv(self.view.summaries, self.csv_file)
         self.view.update_displayed_information()
         self.animate_alarm = self.loop.set_alarm_in(
             float(self.refresh_rate), self.animate_graph)
 
     def start_stress(self):
         mode = self.mode
-        if mode.get_current_mode() == 'Stress Operation':
+        if mode.get_current_mode() == 'Stress':
             try:
                 kill_child_processes(mode.get_stress_process())
             except:
@@ -597,13 +761,11 @@ class GraphController:
 
             with open(os.devnull, 'w') as DEVNULL:
                 try:
-                    stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL, stderr=DEVNULL, shell=False)
+                    stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL,
+                                                   stderr=DEVNULL, shell=False)
                     mode.set_stress_process(psutil.Process(stress_proc.pid))
                 except:
                     logging.debug("Unable to start stress")
-
-            #self.data.max_perf_lost = 0
-            #self.data.samples_taken = 0
 
         elif mode.get_current_mode() == 'FIRESTARTER':
             logging.debug('Started FIRESTARTER mode')
@@ -617,20 +779,26 @@ class GraphController:
             logging.debug("Firestarter " + str(fire_starter))
             with open(os.devnull, 'w') as DEVNULL:
                 try:
-                    stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL, stderr=DEVNULL, shell=False)
+                    stress_proc = subprocess.Popen(
+                        stress_cmd,
+                        stdout=DEVNULL,
+                        stderr=DEVNULL,
+                        shell=False)
                     mode.set_stress_process(psutil.Process(stress_proc.pid))
-                    logging.debug('Started process' + str(mode.get_stress_process()))
+                    logging.debug('Started process' +
+                                  str(mode.get_stress_process()))
                 except:
                     logging.debug("Unable to start stress")
 
         else:
-            logging.debug('Regular operation mode')
+            logging.debug('Monitoring')
             try:
                 kill_child_processes(mode.get_stress_process())
                 self.view.graphs['Frequency'].source.set_stress_stopped()
             except:
                 try:
-                    logging.debug('Could not kill process' + str(mode.get_stress_process()))
+                    logging.debug('Could not kill process' +
+                                  str(mode.get_stress_process()))
                 except:
                     logging.debug('Could not kill process FIRESTARTER')
 
@@ -645,10 +813,13 @@ def main():
     # Setup logging util
     global log_file
     level = ""
-    if args.debug:
+    log_file = DEFAULT_LOG_FILE
+    if args.debug or args.debug_file is not None:
         level = logging.DEBUG
-        log_file = DEFAULT_LOG_FILE
-        log_formatter = logging.Formatter("%(asctime)s [%(funcName)s()] [%(levelname)-5.5s]  %(message)s")
+        if args.debug_file is not None:
+            log_file = args.debug_file
+        log_formatter = logging.Formatter("%(asctime)s [%(funcName)s()]\
+                                          [%(levelname)-5.5s]  %(message)s")
         root_logger = logging.getLogger()
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(log_formatter)
@@ -663,18 +834,16 @@ def main():
     if not is_admin:
         logging.info("Started without root permissions")
 
-    if args.csv:
-        logging.info("Printing output to csv " + DEFAULT_CSV_FILE)
-
     if args.terminal or args.json:
         logging.info("Printing single line to terminal")
-        sources = [FreqSource(is_admin), TemperatureSource(args.custom_temp), UtilSource(), RaplPowerSource(), FanSource(args.custom_fan)]
+        sources = [FreqSource(is_admin), TempSource(args.custom_temp),
+                   UtilSource(),
+                   RaplPowerSource(),
+                   FanSource(args.custom_fan)]
         if args.terminal:
             output_to_terminal(sources)
         elif args.json:
             output_to_json(sources)
-
-
 
     global graph_controller
     graph_controller = GraphController(args)
@@ -682,7 +851,7 @@ def main():
 
 
 def get_args():
-    custom_temp_help= """Custom temperature sensors.
+    custom_temp_help = """Custom temperature sensors.
 The format is: <sensors>,<number>
 As it appears in 'sensors'
 e.g
@@ -695,7 +864,7 @@ temp3: +37.0C
 use: -ct it8792,0 for temp 1
     """
 
-    custom_fan_help= """Similar to custom temp
+    custom_fan_help = """Similar to custom temp
 e.g
 >sensors
 thinkpad-isa-0000
@@ -710,23 +879,35 @@ use: -cf thinkpad,0 for fan1
         formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-d', '--debug',
-                        default=False, action='store_true', help="Output debug log to _s-tui.log")
+                        default=False, action='store_true',
+                        help="Output debug log to _s-tui.log")
+    parser.add_argument('--debug-file',
+                        default=None,
+                        help="Use a custom debug file. Default: "
+                        + "_s-tui.log")
     parser.add_argument('-c', '--csv', action='store_true',
                         default=False, help="Save stats to csv file")
+    parser.add_argument('--csv-file',
+                        default=None,
+                        help="Use a custom CSV file. Default: "
+                        + "s-tui_log_<TIME>.csv")
     parser.add_argument('-t', '--terminal', action='store_true',
-                        default=False, help="Display a single line of stats without tui")
+                        default=False,
+                        help="Display a single line of stats without tui")
     parser.add_argument('-j', '--json', action='store_true',
-                        default=False, help="Display a single line of stats in JSON format")
+                        default=False,
+                        help="Display a single line of stats in JSON format")
     parser.add_argument('-nm', '--no-mouse', action='store_true',
                         default=False, help="Disable Mouse for TTY systems")
     parser.add_argument('-v', '--version',
-                        default=False, action='store_true', help="Display version")
+                        default=False, action='store_true',
+                        help="Display version")
     parser.add_argument('-ct', '--custom_temp',
                         default=None,
-                        help= custom_temp_help)
+                        help=custom_temp_help)
     parser.add_argument('-cf', '--custom_fan',
                         default=None,
-                        help= custom_fan_help)
+                        help=custom_fan_help)
     args = parser.parse_args()
     return args
 

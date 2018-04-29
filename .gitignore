@@ -16,3 +16,6 @@ s_tui/GraphData.py
 TODO.md
 Notes
 env*/*
+*.log
+*.conf
+*.cfg

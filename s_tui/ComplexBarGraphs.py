@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 """ScalableBarGraph Class extends urwid.BarGraph so that
 the current size of the bar graph is also obtainable
@@ -24,7 +24,6 @@ get_size() - returns the tuple (row, col)
 from __future__ import absolute_import
 
 import urwid
-#from graphics import BarGraph
 
 
 class ScalableBarGraph(urwid.BarGraph):
@@ -67,7 +66,6 @@ class ScalableBarGraph(urwid.BarGraph):
             remain -= 1
         return widths
 
-
     def get_size(self):
         return self._size
 
@@ -77,6 +75,7 @@ class ScalableBarGraph(urwid.BarGraph):
 
 class LabeledBarGraph(urwid.Pile):
     """Add option to add lables for X and Y axes """
+
     def __init__(self, widget_list, focus_item=None):
         if len(widget_list) != 4:
             raise Exception(
@@ -108,21 +107,13 @@ class LabeledBarGraph(urwid.Pile):
             self.y_label,
             ('fixed', 0 if len(widget_list[1]) == 0 else 1, self.x_label)
         ], focus_item=focus_item)
-        # if self.y_label is not None and self.x_label is not None:
-        #     self.y_label = ('weight', 1, self.y_label)
-        #
-        # elif self.y_label is not None:
-        #     super(LabeledBarGraph, self).__init__([self.title, self.y_label], focus_item=focus_item)
-        # elif self.x_label is not None:
-        #     super(LabeledBarGraph, self).__init__([self.title, self.bar_graph, self.x_label], focus_item=focus_item)
-        # else:
-        #     super(LabeledBarGraph, self).__init__([self.title, self.bar_graph], focus_item=focus_item)
 
     def set_title(self, title):
         if len(title) == 0:
             return
 
-        self.title.original_widget = urwid.ListBox([urwid.Text(title, align="center")])
+        self.title.original_widget = urwid.ListBox(
+            [urwid.Text(title, align="center")])
 
     def set_x_label(self, x_label):
         if len(x_label) == 0:
@@ -134,7 +125,8 @@ class LabeledBarGraph(urwid.Pile):
         x_label_num_list = [urwid.ListBox([urwid.Text('  ' + str_x_label[0])])]
 
         for num in x_label_nums:
-            x_label_num_list = x_label_num_list + [urwid.ListBox([urwid.Text(num)])]
+            x_label_num_list = x_label_num_list + \
+                [urwid.ListBox([urwid.Text(num)])]
         x_label_num_list[-1] = (1, x_label_num_list[-1])
 
         self.x_label.original_widget = urwid.Columns(x_label_num_list)
@@ -164,7 +156,8 @@ class LabeledBarGraph(urwid.Pile):
 
     @staticmethod
     def check_label(label):
-        if len(label) >= 2 and not(None in label) or len(label) == 0 or label is None:
+        if (len(label) >= 2 and not(None in label) or
+                len(label) == 0 or label is None):
             return True
 
         return False
