@@ -33,7 +33,10 @@ import psutil
 import urwid
 import signal
 import itertools
-import configparser
+try:
+    import configparser
+except:
+    import ConfigParser as configparser
 
 from sys import exit
 from collections import OrderedDict
