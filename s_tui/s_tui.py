@@ -371,7 +371,10 @@ class GraphView(urwid.WidgetPlaceholder):
                     pass
             # Writing temp sensor
             conf.add_section('TempControll')
-            conf.set('TempControll', 'sensor', self.controller.custom_temp)
+            try:
+                conf.set('TempControll', 'sensor', self.controller.custom_temp)
+            except:
+                pass
             conf.write(cfgfile)
 
     def graph_controls(self, conf):
