@@ -373,7 +373,8 @@ class GraphView(urwid.WidgetPlaceholder):
             conf.add_section('TempControll')
             if self.controller.custom_temp is not None and not "None":
                 try:
-                    conf.set('TempControll', 'sensor', self.controller.custom_temp)
+                    conf.set('TempControll', 'sensor',
+                             self.controller.custom_temp)
                 except:
                     pass
             conf.write(cfgfile)
@@ -560,7 +561,6 @@ class GraphView(urwid.WidgetPlaceholder):
             val.get_is_available())
 
         self.visible_graphs = self.available_graphs.copy()
-        logging.debug("All availabe graphs: " + str(self.visible_graphs))
 
         # Remove graphs from shown graphs if user configed them out
         # TODO: get this information from the state
@@ -634,8 +634,6 @@ class GraphController:
         else:
             logging.debug("Config file not found")
 
-        logging.debug("Config was set to " + str(self.conf))
-
         # Set refresh rate accorrding to user config
         self.refresh_rate = '1'
         try:
@@ -652,7 +650,7 @@ class GraphController:
             if self.conf.getboolean('GraphControll', 'UTF8'):
                 self.smooth_graph_mode = True
             else:
-                logging.debug("UTF8 selected as false" +
+                logging.debug("UTF8 selected as " +
                               self.conf.get('GraphControll', 'UTF8'))
         except (AttributeError, ValueError, configparser.NoOptionError,
                 configparser.NoSectionError):
@@ -825,8 +823,8 @@ def main():
         level = logging.DEBUG
         if args.debug_file is not None:
             log_file = args.debug_file
-        log_formatter = logging.Formatter("%(asctime)s [%(funcName)s()]\
-                                          [%(levelname)-5.5s]  %(message)s")
+        log_formatter = logging.Formatter(
+            "%(asctime)s [%(funcName)s()] [%(levelname)-5.5s]  %(message)s")
         root_logger = logging.getLogger()
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(log_formatter)
