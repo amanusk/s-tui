@@ -1,7 +1,7 @@
 The Stress Terminal UI: s-tui
 =============================
 
-|Build Status| |PyPI version|
+|Build Status| |PyPI version| |Downloads|
 
 .. figure:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/stui_logo.png?raw=true
    :alt: 
@@ -86,7 +86,7 @@ Options
 ::
 
     ********s-tui manual********
-    usage: s_tui.py [-h] [-d] [-c] [-t] [-j] [-nm] [-v] [-ct CUSTOM_TEMP]
+    usage: s-tui [-h] [-d] [-c] [-t] [-j] [-nm] [-v] [-ct CUSTOM_TEMP]
 
     TUI interface:
 
@@ -220,7 +220,8 @@ Run source code
 
     git clone https://github.com/amanusk/s-tui.git
 
-Install dependencies, these need to be installed to run ``s-tui.py``
+Install dependencies, these need to be installed to run
+``python -m s_tui.s_tui``
 
 ::
 
@@ -237,7 +238,7 @@ Run the .py file
 
 ::
 
-    (sudo) python ./s_tui.py 
+    (sudo) python -m s_tui.s_tui
 
 OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -257,7 +258,7 @@ FIRESTARTER
 | Once you have completed these steps, you can either: \* Install
   FIRESTARTER to make it accessible to s-tui, e.g make a soft-link to
   FIRESTARTER in /usr/local/bin. \* Run s-tui from the main project
-  directory with ``python s-tui.py``
+  directory with ``python -m s_tui.s_tui``
 | An option to run FIRESTARTER will then be available in s-tui
 
 Compatibility
@@ -327,3 +328,5 @@ ETH: ``0xc169699A825066f2F07E0b29C4082094b32A3F3e``
    :target: https://travis-ci.org/amanusk/s-tui
 .. |PyPI version| image:: https://badge.fury.io/py/s-tui.svg
    :target: https://badge.fury.io/py/s-tui
+.. |Downloads| image:: http://pepy.tech/badge/s-tui
+   :target: http://pepy.tech/count/s-tui
