@@ -213,8 +213,6 @@ class GraphView(urwid.WidgetPlaceholder):
         self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
         self.left_margin = 0
         self.top_margin = 0
-        self.v_relative = 50
-        self.h_relative = 50
 
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
         urwid.connect_signal(self.refresh_rate_ctrl, 'change',
@@ -240,6 +238,9 @@ class GraphView(urwid.WidgetPlaceholder):
 
         for s in self.available_summaries.values():
             s.update()
+
+        if self.controller.mode.get_current_mode() != 'Monitor':
+            self.controller.stress_time = time.perf_counter() - self.controller.stress_start_time
 
     def on_reset_button(self, w):
         """Reset graph data and display empty graph"""
@@ -438,9 +439,11 @@ class GraphView(urwid.WidgetPlaceholder):
                              if x.source.get_is_available() is False]
         graph_checkboxes += unavalable_graphs
 
+
         buttons = [urwid.Text(('bold text', u"Modes"), align="center"),
                    ] + self.mode_buttons + [
             install_stress_message,
+            urwid.Text(('bold text', str(self.controller.stress_time)), align="center"),
             urwid.Divider(),
             urwid.Text(('bold text', u"Control Options"), align="center"),
             animate_controls,
@@ -677,6 +680,9 @@ class GraphController:
 
         self.handle_mouse = not(args.no_mouse)
 
+        self.stress_start_time = time.perf_counter()
+        self.stress_time = None
+
         self.view = GraphView(self)
         # use the first mode (no stress) as the default
         mode = self.get_modes()[0]
@@ -727,6 +733,7 @@ class GraphController:
 
     def start_stress(self):
         mode = self.mode
+        self.stress_start_time = time.perf_counter()
         if mode.get_current_mode() == 'Stress':
             try:
                 kill_child_processes(mode.get_stress_process())
