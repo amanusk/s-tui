@@ -352,6 +352,7 @@ class GraphView(urwid.WidgetPlaceholder):
         if not user_config_dir_exists():
             make_user_config_dir()
 
+
         conf = configparser.ConfigParser()
         config_file = get_user_config_file()
         with open(config_file, 'w') as cfgfile:
@@ -371,12 +372,13 @@ class GraphView(urwid.WidgetPlaceholder):
                     pass
             # Writing temp sensor
             conf.add_section('TempControll')
-            if self.controller.custom_temp is not None and not "None":
+            if self.controller.custom_temp is not None:
+                logging.debug("Custom temp sensor is " + self.controller.custom_temp)
                 try:
                     conf.set('TempControll', 'sensor',
                              self.controller.custom_temp)
                 except:
-                    pass
+                    exit(0)
             conf.write(cfgfile)
 
     def graph_controls(self, conf):
@@ -656,7 +658,7 @@ class GraphController:
                 configparser.NoSectionError):
             logging.debug("No user config for utf8")
 
-        self.custom_temp = None
+        self.custom_temp = args.custom_temp
 
         # Try to load selected temp sensor if a manual one is not set
         if args.custom_temp is None:

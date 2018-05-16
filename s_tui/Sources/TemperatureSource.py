@@ -37,103 +37,147 @@ class TemperatureSource(Source):
         self.max_temp = 0
         self.measurement_unit = 'C'
         self.last_temp = 0
+        logging.debug("arg temp  " + str(custom_temp))
         self.custom_temp = custom_temp
         self.is_available = True
 
-        self.update()  # Initial update
+        self.update = self.init_update()  # Initial update
+        self.update()
+        logging.debug("Update is updated to " + str(self.update))
         # If not relevant sensor found, do not register temperature
         if int(self.max_temp) <= 0:
             self.is_available = False
             logging.debug("Temperature sensor unavailable")
 
-    def update(self):
+    # Replace with a function that does the update
+    def init_update(self):
         """
         Read the latest Temperature reading.
         Reading for temperature might be different between systems
         Support for additional systems can be added here
         """
-        last_value = 0
-        # NOTE: Negative values might not be supported
+        def empty_func():
+            """
+            emptly func just returns None, in case no valid update 
+            was availale
+            """
+            return None
 
-        # Temperature on most common systems is in coretemp
-        last_value = 0
+        def update_max_temp(last_value):
+            try:
+                if int(last_value) > int(self.max_temp):
+                    self.max_temp = last_value
+            except (ValueError, TypeError):
+                self.max_temp = 0
+
+        logging.debug("custom temp is " + str(self.custom_temp))
         if self.custom_temp is not None:
             # Use the manual sensor
+            logging.debug("Selected custom temp")
             try:
                 sensors_info = self.custom_temp.split(",")
                 sensor_major = sensors_info[0]
                 sensor_minor = sensors_info[1]
-                logging.debug("Major" + str(sensor_major) + "Minor" + str(sensor_minor))
+                logging.debug("Major " + str(sensor_major) + "Minor " + str(sensor_minor))
                 last_value = psutil.sensors_temperatures()[sensor_major][int(sensor_minor)].current
+                def update():
+                    sensors_info = self.custom_temp.split(",")
+                    sensor_major = sensors_info[0]
+                    sensor_minor = sensors_info[1]
+                    last_value = psutil.sensors_temperatures()[sensor_major][int(sensor_minor)].current
+                    update_max_temp(last_value)
+                    self.last_temp = last_value
+                    Source.update(self)
+                return update
             except (KeyError, IndexError, AttributeError):
                 self.is_available = False
                 logging.debug("Illegal sensor")
-                self.last_temp = 1
-        else:  # Choose out a list of known sensors
-            if last_value <= 0:
-                try:
-                    last_value = psutil.sensors_temperatures()['coretemp'][0].current
-                except (KeyError, AttributeError):
-                    last_value = 0
-            # Support for Ryzen 1700X
-            if last_value <= 0:
-                try:
-                    last_value = psutil.sensors_temperatures()['k10temp'][0].current
-                except (KeyError, AttributeError):
-                    last_value = 0
-              # Support for Ryzen 7 + asus
-            if last_value <= 0:
-                try:
-                    last_value = psutil.sensors_temperatures()['it8655'][0].current
-                except (KeyError, AttributeError):
-                    last_value = 0
-            # Support for specific systems
-            if last_value <= 0:
-                try:
-                    last_value = psutil.sensors_temperatures()['it8622'][0].current
-                except (KeyError, AttributeError):
-                    last_value = 0
-            # Support for specific systems
-            if last_value <= 0:
-                try:
-                    last_value = psutil.sensors_temperatures()['it8721'][0].current
-                except (KeyError, AttributeError):
-                    last_value = 0
-            # Raspberry pi 3 running Ubuntu 16.04
-            if last_value <= 0:
-                try:
-                    last_value = psutil.sensors_temperatures()['bcm2835_thermal'][0].current
-                except (KeyError, AttributeError):
-                    last_value = 0
-            # Raspberry pi + raspiban CPU temp
-            if last_value <= 0:
-                try:
-                    last_value = os.popen('cat /sys/class/thermal/thermal_zone0/temp 2> /dev/null').read()
-                    logging.info("Recorded temp " + last_value)
-                    last_value = int(last_value) / 1000
-                except (ValueError, TypeError):
-                    last_value = 0
-            # Fall back for most single processor systems
-            # Take the first value of the first processor
-            if last_value <= 0:
-                try:
-                    temperatures = psutil.sensors_temperatures()
-                    chips = list(temperatures.keys())
-                    last_value = temperatures[chips[0]][0].current
-                except:
-                    last_value = 0
+                return empty_func
 
-        # Update max temp
+        # Update for most Intel systems
         try:
-            if int(last_value) > int(self.max_temp):
-                self.max_temp = last_value
-        except (ValueError, TypeError):
-            self.max_temp = 0
+            last_value = psutil.sensors_temperatures()['coretemp'][0].current
+            def update():
+                last_value = psutil.sensors_temperatures()['coretemp'][0].current
+                # Update max temp
 
-        self.last_temp = last_value
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            return update
+        except (KeyError, AttributeError):
+                last_value = 0
+        # Support for Ryzen 1700X
+        try:
+            last_value = psutil.sensors_temperatures()['k10temp'][0].current
+            def update():
+                last_value = psutil.sensors_temperatures()['k10temp'][0].current
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            return update
+        except (KeyError, AttributeError):
+                last_value = 0
+        # Support for Ryzen 7 + asus
+        try:
+            last_value = psutil.sensors_temperatures()['it8655'][0].current
+            def update():
+                last_value = psutil.sensors_temperatures()['it8655'][0].current
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            return update
+        except (KeyError, AttributeError):
+                last_value = 0
+        # Support for specific systems
+        try:
+            last_value = psutil.sensors_temperatures()['it8622'][0].current
+            def update():
+                last_value = psutil.sensors_temperatures()['it8622'][0].current
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            return update
+        except (KeyError, AttributeError):
+                last_value = 0
+        try:
+            last_value = psutil.sensors_temperatures()['it8721'][0].current
+            def update():
+                last_value = psutil.sensors_temperatures()['it8721'][0].current
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            return update
+        except (KeyError, AttributeError):
+                last_value = 0
+        try:
+            last_value = psutil.sensors_temperatures()['bcm2835_thermal'][0].current
+            def update():
+                last_value = psutil.sensors_temperatures()['bcm2835_thermal'][0].current
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            return update
+        except (KeyError, AttributeError):
+                last_value = 0
+        # Fall back for many systems, such as raspberry pi
+        try:
+            last_value = os.popen(
+                'cat /sys/class/thermal/thermal_zone0/temp 2> /dev/null').read()
+            def update():
+                last_value = os.popen(
+                    'cat /sys/class/thermal/thermal_zone0/temp 2> /dev/null').read()
+                logging.info("Recorded temp " + last_value)
+                last_value = int(last_value) / 1000
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            return update
+        except (KeyError, AttributeError):
+                last_value = 0
+                # NOTE:  On the last except: return an empty func
+                return empty_func
 
-        # Run base update routines
-        Source.update(self)
 
     def get_reading(self):
         return self.last_temp
