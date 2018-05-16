@@ -197,7 +197,7 @@ class TemperatureSource(Source):
                 Source.update(self)
             set_threshold(sensor)
             return update
-        except (KeyError, AttributeError):
+        except (KeyError, AttributeError, IndexError):
             pass
 
         # Fall back for many systems, such as raspberry pi
