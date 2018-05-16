@@ -180,6 +180,26 @@ class TemperatureSource(Source):
             return update
         except (KeyError, AttributeError):
             pass
+
+        # Fall back for most single processor systems
+        # Take the first value of the first processor
+        try:
+            temperatures = psutil.sensors_temperatures()
+            chips = list(temperatures.keys())
+            sensor = temperatures[chips[0]][0]
+            logging.debug("Fallback: setting temp sensor " + str(sensor))
+            def update():
+                temperatures = psutil.sensors_temperatures()
+                chips = list(temperatures.keys())
+                sensor = temperatures[chips[0]][0].current
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            set_threshold(sensor)
+            return update
+        except (KeyError, AttributeError):
+            pass
+
         # Fall back for many systems, such as raspberry pi
         try:
             last_value = os.popen(
@@ -188,7 +208,12 @@ class TemperatureSource(Source):
                 last_value = os.popen(
                     'cat /sys/class/thermal/thermal_zone0/temp 2> /dev/null').read()
                 logging.info("Recorded temp " + last_value)
-                last_value = int(last_value) / 1000
+                try:
+                    last_value = int(last_value) / 1000
+                except(ValueError):
+                    logging.debug("Thermal zone contains no data")
+                    self.is_available = False
+                    return empty_func
                 update_max_temp(last_value)
                 self.last_temp = last_value
                 Source.update(self)
