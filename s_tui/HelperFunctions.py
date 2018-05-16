@@ -31,7 +31,7 @@ import time
 from collections import OrderedDict
 from sys import exit
 
-__version__ = "0.7.5"
+__version__ = "0.7.6"
 
 
 def get_processor_name():
