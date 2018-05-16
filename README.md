@@ -125,6 +125,8 @@ sudo apt-get install stress
 
 s-tui is a self-contained application which can run out-of-the-box and doesn't need config files to drive its core features. However, additional features like running scripts when a certain threshold has been exceeded (e.g. CPU temperature) does necessitate creating a config directory. This directory will be made in `~/.config/s-tui` by default.
 
+Selecting \<Save Settings\> will save the current configuration to `~/.config/s-tui/s-tui.conf`. If you would like to restore defaults, simply remove the file.
+
 ### Adding threshold scripts
 
 s-tui gives you the ability to run arbitrary shell scripts when a certain threshold is surpassed, like your CPU temperature. You can define this custom behaviour by adding a shell file to the directory `~/.config/s-tui/hooks.d` with one of the following names, depending on what threshold you're interesting in reacting to:
