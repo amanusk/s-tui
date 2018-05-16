@@ -378,7 +378,15 @@ class GraphView(urwid.WidgetPlaceholder):
                     conf.set('TempControll', 'sensor',
                              self.controller.custom_temp)
                 except:
-                    exit(0)
+                    pass
+            if self.controller.temp_thresh is not None:
+                logging.debug("Custom temp threshold set to "
+                              + str(self.controller.temp_thresh))
+                try:
+                    conf.set('TempControll', 'threshold',
+                             self.controller.temp_thresh)
+                except:
+                    pass
             conf.write(cfgfile)
 
     def graph_controls(self, conf):
@@ -519,7 +527,8 @@ class GraphView(urwid.WidgetPlaceholder):
             util_source
         )
 
-        temp_source = TempSource(self.controller.custom_temp)
+        temp_source = TempSource(self.controller.custom_temp,
+                                 self.controller.temp_thresh)
 
         if self.controller.script_hooks_enabled:
             temp_source.add_edge_hook(
@@ -659,6 +668,7 @@ class GraphController:
             logging.debug("No user config for utf8")
 
         self.custom_temp = args.custom_temp
+        self.temp_thresh = args.t_thresh
 
         # Try to load selected temp sensor if a manual one is not set
         if args.custom_temp is None:
@@ -670,6 +680,17 @@ class GraphController:
                     configparser.NoSectionError):
                 logging.debug("No user config for temp sensor")
 
+        # Try to load high temperature threshold if configured
+        if args.t_thresh is None:
+            try:
+                self.temp_thresh = self.conf.get('TempControll', 'threshold')
+                logging.debug("Temperature threshold set to " +
+                              str(self.temp_thresh))
+            except (AttributeError, ValueError, configparser.NoOptionError,
+                    configparser.NoSectionError):
+                logging.debug("No user config for temp threshold")
+
+        # Needed for use in view
         self.args = args
 
         self.animate_alarm = None
@@ -912,6 +933,9 @@ use: -cf thinkpad,0 for fan1
     parser.add_argument('-ct', '--custom_temp',
                         default=None,
                         help=custom_temp_help)
+    parser.add_argument('-tt', '--t_thresh',
+                        default=None,
+                        help="High Temperature threshold. Default: 80")
     parser.add_argument('-cf', '--custom_fan',
                         default=None,
                         help=custom_fan_help)

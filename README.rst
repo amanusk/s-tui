@@ -159,6 +159,10 @@ been exceeded (e.g. CPU temperature) does necessitate creating a config
 directory. This directory will be made in ``~/.config/s-tui`` by
 default.
 
+Selecting <Save Settings> will save the current configuration to
+``~/.config/s-tui/s-tui.conf``. If you would like to restore defaults,
+simply remove the file.
+
 Adding threshold scripts
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
