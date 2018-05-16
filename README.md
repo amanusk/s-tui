@@ -229,7 +229,7 @@ I try to test new versions on as many systems as I can, but I cannot cover them 
 ## Tip
 If you like this work, please star in on GitHub. 
 
-If you realy like it, share it with hour friends and co-workers.
+If you realy like it, share it with your friends and co-workers.
 
 If you really really like this work, leave a tip :)
 
