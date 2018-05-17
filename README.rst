@@ -194,13 +194,13 @@ Ubuntu
 | Once pip is installed, install s-tui from pip:
 | ``(sudo) pip install s-tui``
 
-A *deprecated* ppa is available (tested on Ubuntu 16.04)
+A ppa is available (xenial,bionic)
 
 ::
 
     sudo add-apt-repository ppa:amanusk/python-s-tui
     sudo apt-get update
-    sudo apt-get install python-s-tui
+    sudo apt-get install python3-s-tui
 
 Arch-Linux
 ~~~~~~~~~~
@@ -212,7 +212,7 @@ AUR packages of s-tui are available
 | ``s-tui-git`` follows the master branch. maintained by
   [@MauroMombelli](https://github.com/MauroMombelli)
 | install with
-| ``(sudo) yaourt -S s-tui``
+| ``yaourt -S s-tui``
 
 Run source code
 ---------------
