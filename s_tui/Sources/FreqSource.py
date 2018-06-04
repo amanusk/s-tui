@@ -37,10 +37,9 @@ def read_msr(msr, cpu=0):
     """
     if not os.path.exists("/dev/cpu/0/msr"):
         try:
-            os.system("/sbin/modprobe msr")
-            logging.debug("Ran modprobe sucessfully")
-        except:
-            pass
+            if os.system("/sbin/modprobe msr 2> /dev/null") == 0:
+                logging.debug("Ran modprobe sucessfully")
+        except(OSError):
             return None
     msr_file = '/dev/cpu/%d/msr' % (cpu,)
     try:
@@ -91,7 +90,7 @@ class FreqSource(Source):
             try:
                 self.top_freq = psutil.cpu_freq().max
 
-            except:
+            except(AttributeError):
                 logging.debug("Max freq from psutil not available")
                 try:
                     cmd = "lscpu | grep 'CPU max MHz'"
@@ -109,7 +108,7 @@ class FreqSource(Source):
                         output = ps.communicate()[0]
                         self.top_freq = float(re.findall(b'\d+\.\d+',
                                                          output)[0])
-                except:
+                except(IndexError, OSError):
                     logging.debug("Max frequency from lscpu not available")
                     logging.debug("CPU top freqency N/A")
 
@@ -129,15 +128,16 @@ class FreqSource(Source):
                     if "cpu MHz" in line:
                         core_freq = re.findall('\d+\.\d+', line)
                         cores_freq += core_freq
-            return round(sum(float(x) for x in cores_freq) / len(cores_freq), 1)
+            return round(sum(float(x) for x in cores_freq)
+                         / len(cores_freq), 1)
 
         try:
             cur_freq = int(psutil.cpu_freq().current)
-        except:
+        except (AttributeError):
             cur_freq = 0
             try:
                 cur_freq = get_avarage_cpu_freq()
-            except:
+            except(OSError, ZeroDivisionError, FileNotFoundError):
                 cur_freq = 0
                 logging.debug("Frequency unavailable")
 
