@@ -66,7 +66,7 @@ class RaplPowerSource(Source):
             with open(file_path) as f:
                 value = f.read()
                 return float(value)
-        except:
+        except(FileNotFoundError, OSError):
             return 0
 
     def read_max_power_file(self):
