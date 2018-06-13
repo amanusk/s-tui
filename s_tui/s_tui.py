@@ -378,8 +378,8 @@ class GraphView(urwid.WidgetPlaceholder):
                        configparser.NoSectionError):
                     pass
             if self.controller.temp_thresh is not None:
-                logging.debug("Custom temp threshold set to "
-                              + str(self.controller.temp_thresh))
+                logging.debug("Custom temp threshold set to " +
+                              str(self.controller.temp_thresh))
                 try:
                     conf.set('TempControll', 'threshold',
                              self.controller.temp_thresh)
@@ -463,7 +463,7 @@ class GraphView(urwid.WidgetPlaceholder):
             button("Save Settings", self.save_settings),
             urwid.Divider(),
             button("Quit", self.exit_program),
-            ]
+        ]
 
         return buttons
 
@@ -590,16 +590,17 @@ class GraphView(urwid.WidgetPlaceholder):
         graph_controls = self.graph_controls(conf)
         graph_stats = self.graph_stats()
 
-        text_col = ViListBox(urwid.SimpleListWalker(cpu_stats + graph_controls
-                                                    + [urwid.Divider()]
-                                                    + graph_stats))
+        text_col = ViListBox(urwid.SimpleListWalker(cpu_stats +
+                                                    graph_controls +
+                                                    [urwid.Divider()] +
+                                                    graph_stats))
 
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
         w = urwid.Columns([
-                           ('fixed',  20, text_col),
-                           ('fixed',  1, vline),
-                           ('weight', 2, self.graph_place_holder),
-                           ],
+                          ('fixed',  20, text_col),
+                          ('fixed',  1, vline),
+                          ('weight', 2, self.graph_place_holder),
+                          ],
                           dividechars=1, focus_column=0)
 
         w = urwid.Padding(w, ('fixed left', 1), ('fixed right', 0))
@@ -901,14 +902,14 @@ use: -cf thinkpad,0 for fan1
                         help="Output debug log to _s-tui.log")
     parser.add_argument('--debug-file',
                         default=None,
-                        help="Use a custom debug file. Default: "
-                        + "_s-tui.log")
+                        help="Use a custom debug file. Default: " +
+                        "_s-tui.log")
     parser.add_argument('-c', '--csv', action='store_true',
                         default=False, help="Save stats to csv file")
     parser.add_argument('--csv-file',
                         default=None,
-                        help="Use a custom CSV file. Default: "
-                        + "s-tui_log_<TIME>.csv")
+                        help="Use a custom CSV file. Default: " +
+                        "s-tui_log_<TIME>.csv")
     parser.add_argument('-t', '--terminal', action='store_true',
                         default=False,
                         help="Display a single line of stats without tui")

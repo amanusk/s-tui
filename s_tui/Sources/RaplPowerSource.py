@@ -66,7 +66,7 @@ class RaplPowerSource(Source):
             with open(file_path) as f:
                 value = f.read()
                 return float(value)
-        except(FileNotFoundError, OSError):
+        except(OSError):
             return 0
 
     def read_max_power_file(self):
@@ -87,8 +87,9 @@ class RaplPowerSource(Source):
         current_measurement_value = self.read_power_measurement_file()
         current_measurement_time = time.time()
 
-        joule_used = ((current_measurement_value - self.last_measurement_value)
-                      / float(self.MICRO_JOULE_IN_JOULE))
+        joule_used = ((current_measurement_value -
+                       self.last_measurement_value) /
+                      float(self.MICRO_JOULE_IN_JOULE))
         logging.info("current " + str(current_measurement_value) +
                      " last " + str(self.last_measurement_value))
         seconds_passed = current_measurement_time - self.last_measurement_time
@@ -99,12 +100,9 @@ class RaplPowerSource(Source):
         self.last_measurement_value = current_measurement_value
         self.last_measurement_time = current_measurement_time
         self.last_watts = watts_used
-        try:
-            if watts_used > self.max_power:
-                self.max_power = math.ceil(watts_used)
-                logging.info("Max power updated " + str(self.max_power))
-        except:
-            self.max_power = 1
+        if watts_used > self.max_power:
+            self.max_power = math.ceil(watts_used)
+            logging.info("Max power updated " + str(self.max_power))
         return watts_used
 
     # Source super class implementation
