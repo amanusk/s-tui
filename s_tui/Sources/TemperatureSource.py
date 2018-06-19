@@ -138,7 +138,8 @@ class TemperatureSource(Source):
                 except (KeyError, IndexError):
                     pass
 
-            if sensors is not None:
+            if sensor is not None:
+                logging.debug("Temperature sensor is set to " + str(sensor))
                 set_threshold(sensor)
 
                 def update():
@@ -146,6 +147,7 @@ class TemperatureSource(Source):
                 return update
             # If sensors was not found using psutil, try reading file
             else:
+                logging.debug("Unable to set sensors with psutil")
                 try:
                     thermal_file = '/sys/class/thermal/thermal_zone0/temp'
                     cmd = 'cat ' + thermal_file + ' 2> /dev/null'
