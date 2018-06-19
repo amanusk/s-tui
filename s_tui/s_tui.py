@@ -109,8 +109,9 @@ class GraphMode:
         with open(os.devnull, 'w') as DEVNULL:
             # Try if stress installed
             try:
-                subprocess.Popen("stress", stdout=DEVNULL, stderr=DEVNULL,
-                                 shell=False)
+                p = subprocess.Popen("stress", stdout=DEVNULL,
+                                     stderr=DEVNULL, shell=False)
+                p.kill()
             except (OSError):
                 logging.debug("stress is not installed")
             else:
@@ -119,8 +120,9 @@ class GraphMode:
 
             # Try if stress-ng installed
             try:
-                subprocess.Popen("stress-ng", stdout=DEVNULL, stderr=DEVNULL,
-                                 shell=False)
+                p = subprocess.Popen("stress-ng", stdout=DEVNULL,
+                                     stderr=DEVNULL, shell=False)
+                p.kill()
             except (OSError):
                 logging.debug("stress-ng is not installed")
             else:
