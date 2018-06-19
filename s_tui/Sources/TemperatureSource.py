@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 
 count = -3
 
-
 class TemperatureSource(Source):
+
     THRESHOLD_TEMP = 80
     DEGREE_SIGN = u'\N{DEGREE SIGN}'
 
@@ -49,8 +49,7 @@ class TemperatureSource(Source):
         if temp_thresh is not None:
             if int(temp_thresh) > 0:
                 self.temp_thresh = int(temp_thresh)
-                logging.debug("Updated custom threshold to " +
-                              str(self.temp_thresh))
+                logging.debug("Updated custom threshold to " + str(self.temp_thresh))
         self.update()
         logging.debug("Update is updated to " + str(self.update))
 
@@ -63,7 +62,7 @@ class TemperatureSource(Source):
         """
         def empty_func():
             """
-            emptly func just returns None, in case no valid update
+            emptly func just returns None, in case no valid update 
             was availale
             """
             return None
@@ -79,32 +78,29 @@ class TemperatureSource(Source):
         def set_threshold(sensor):
             try:
                 self.temp_thresh = sensor.high
-                logging.debug("Temperature threshold set to " +
-                              str(self.temp_thresh))
-            except(ValueError, TypeError):
+                logging.debug("Temperature threshold set to " + str(self.temp_thresh))
+            except:
                 self.temp_thresh = self.THRESHOLD_TEMP
 
-        def update_func(sensor):
-            last_value = sensor.current
-            update_max_temp(last_value)
-            self.last_temp = last_value
-            Source.update(self)
 
         logging.debug("custom temp is " + str(self.custom_temp))
-        # Use the manual sensor
         if self.custom_temp is not None:
+            # Use the manual sensor
             logging.debug("Selected custom temp")
             try:
                 sensors_info = self.custom_temp.split(",")
                 sensor_major = sensors_info[0]
                 sensor_minor = sensors_info[1]
-                logging.debug("Major " + str(sensor_major) + "Minor " +
-                              str(sensor_minor))
-                sources = psutil.sensors_temperatures()
-                sensor = sources[sensor_major][int(sensor_minor)]
-
+                logging.debug("Major " + str(sensor_major) + "Minor " + str(sensor_minor))
+                sensor = psutil.sensors_temperatures()[sensor_major][int(sensor_minor)]
                 def update():
-                    update_func(sensor)
+                    sensors_info = self.custom_temp.split(",")
+                    sensor_major = sensors_info[0]
+                    sensor_minor = sensors_info[1]
+                    last_value = psutil.sensors_temperatures()[sensor_major][int(sensor_minor)].current
+                    update_max_temp(last_value)
+                    self.last_temp = last_value
+                    Source.update(self)
                 set_threshold(sensor)
                 return update
             except (KeyError, IndexError, AttributeError):
@@ -112,70 +108,122 @@ class TemperatureSource(Source):
                 logging.debug("Illegal sensor")
                 return empty_func
 
-        # Select from possible known sensors
+        # Update for most Intel systems
         try:
-            sensors = psutil.sensors_temperatures()
-            sensor = None
-            if 'coretemp' in sensors:
-                sensor = psutil.sensors_temperatures()['coretemp'][0]
-            elif 'k10temp' in sensors:
-                sensor = psutil.sensors_temperatures()['k10temp'][0]
-            elif 'it8655' in sensors:
-                sensor = psutil.sensors_temperatures()['it8655'][0]
-            elif 'it8622' in sensors:
-                sensor = psutil.sensors_temperatures()['it8622'][0]
-            elif 'it8721' in sensors:
-                sensor = psutil.sensors_temperatures()['it8721'][0]
-            elif 'bcm2835_thermal' in sensors:
-                sensor = psutil.sensors_temperatures()['bcm2835_thermal'][0]
-            else:
-                # Fallback to first in list
+            sensor = psutil.sensors_temperatures()['coretemp'][0]
+            def update():
+                last_value = psutil.sensors_temperatures()['coretemp'][0].current
+                # Update max temp
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            # Try set high temp for trigger
+            set_threshold(sensor)
+            return update
+        except (KeyError, AttributeError):
+            pass
+        # Support for Ryzen 1700X
+        try:
+            sensor = psutil.sensors_temperatures()['k10temp'][0]
+            def update():
+                last_value = psutil.sensors_temperatures()['k10temp'][0].current
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            set_threshold(sensor)
+            return update
+        except (KeyError, AttributeError):
+            pass
+        # Support for Ryzen 7 + asus
+        try:
+            sensor = psutil.sensors_temperatures()['it8655'][0]
+            def update():
+                last_value = psutil.sensors_temperatures()['it8655'][0].current
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            set_threshold(sensor)
+            return update
+        except (KeyError, AttributeError):
+                last_value = 0
+        # Support for specific systems
+        try:
+            sensor = psutil.sensors_temperatures()['it8622'][0]
+            def update():
+                last_value = psutil.sensors_temperatures()['it8622'][0].current
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            set_threshold(sensor)
+            return update
+        except (KeyError, AttributeError):
+            pass
+        try:
+            sensor = psutil.sensors_temperatures()['it8721'][0]
+            def update():
+                last_value = psutil.sensors_temperatures()['it8721'][0].current
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            set_threshold(sensor)
+            return update
+        except (KeyError, AttributeError):
+            pass
+        try:
+            sensor = psutil.sensors_temperatures()['bcm2835_thermal'][0]
+            def update():
+                last_value = psutil.sensors_temperatures()['bcm2835_thermal'][0].current
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            set_threshold(sensor)
+            return update
+        except (KeyError, AttributeError):
+            pass
+
+        # Fall back for most single processor systems
+        # Take the first value of the first processor
+        try:
+            temperatures = psutil.sensors_temperatures()
+            chips = list(temperatures.keys())
+            sensor = temperatures[chips[0]][0]
+            logging.debug("Fallback: setting temp sensor " + str(sensor))
+            def update():
+                temperatures = psutil.sensors_temperatures()
+                chips = list(temperatures.keys())
+                sensor = temperatures[chips[0]][0].current
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            set_threshold(sensor)
+            return update
+        except (KeyError, AttributeError, IndexError):
+            pass
+
+        # Fall back for many systems, such as raspberry pi
+        try:
+            last_value = os.popen(
+                'cat /sys/class/thermal/thermal_zone0/temp 2> /dev/null').read()
+            def update():
+                last_value = os.popen(
+                    'cat /sys/class/thermal/thermal_zone0/temp 2> /dev/null').read()
+                logging.info("Recorded temp " + last_value)
                 try:
-                    chips = list(sensors.keys())
-                    sensor = sensors[chips[0]][0]
-                    logging.debug("Fallback: setting temp sensor " +
-                                  str(sensor))
-                except (KeyError, IndexError):
-                    pass
-
-            if sensor is not None:
-                logging.debug("Temperature sensor is set to " + str(sensor))
-                set_threshold(sensor)
-
-                def update():
-                    update_func(sensor)
-                return update
-            # If sensors was not found using psutil, try reading file
-            else:
-                logging.debug("Unable to set sensors with psutil")
-                try:
-                    thermal_file = '/sys/class/thermal/thermal_zone0/temp'
-                    cmd = 'cat ' + thermal_file + ' 2> /dev/null'
-                    os.popen(cmd).read()
-
-                    def update():
-                        with os.popen(cmd) as temp_file:
-                            last_value = temp_file.read()
-                            logging.info("Recorded temp " + last_value)
-                            try:
-                                last_value = int(last_value) / 1000
-                            except(ValueError):
-                                logging.debug("Thermal zone contains no data")
-                                self.is_available = False
-                                return empty_func
-                            update_max_temp(last_value)
-                            self.last_temp = last_value
-                            Source.update(self)
-                    self.temp_thresh = self.THRESHOLD_TEMP
-                    logging.debug("Used thermal zone as file")
-                    return update
-                except (KeyError):
+                    last_value = int(last_value) / 1000
+                except(ValueError):
+                    logging.debug("Thermal zone contains no data")
                     self.is_available = False
                     return empty_func
-
-        except(AttributeError):
+                update_max_temp(last_value)
+                self.last_temp = last_value
+                Source.update(self)
+            self.temp_thresh = self.THRESHOLD_TEMP
+            return update
+        except (KeyError, AttributeError):
+            # NOTE:  On the last except: return an empty func
             self.is_available = False
             return empty_func
+
 
     def get_reading(self):
         return self.last_temp

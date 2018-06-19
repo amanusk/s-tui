@@ -137,7 +137,7 @@ class StuiBarGraph(LabeledBarGraph):
         except (NotImplementedError):
             pass
 
-        bars = []
+        l = []
 
         current_reading = self.source.get_reading()
         logging.info("Reading " + str(current_reading))
@@ -155,20 +155,20 @@ class StuiBarGraph(LabeledBarGraph):
                 value = round(self.graph_data[n], 1)
                 # toggle between two bar types
                 if n & 1:
-                    bars.append([0, value])
+                    l.append([0, value])
                 else:
-                    bars.append([value, 0])
+                    l.append([value, 0])
         else:
             for n in range(self.MAX_SAMPLES - num_displayed_bars,
                            self.MAX_SAMPLES):
                 value = round(self.graph_data[n], 1)
                 if n & 1:
-                    bars.append([value, 0])
+                    l.append([value, 0])
                 else:
-                    bars.append([0, value])
+                    l.append([0, value])
         self.color_counter += 1
 
-        self.bar_graph.set_data(bars, float(data_max))
+        self.bar_graph.set_data(l, float(data_max))
         y_label_size = self.bar_graph.get_size()[0]
         s = self.get_label_scale(0, float(data_max), float(y_label_size))
         self.set_y_label(s)

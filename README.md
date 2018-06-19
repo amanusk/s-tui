@@ -3,7 +3,6 @@
 [![Build Status](https://travis-ci.org/amanusk/s-tui.svg?branch=master)](https://travis-ci.org/amanusk/s-tui)
 [![PyPI version](https://badge.fury.io/py/s-tui.svg)](https://badge.fury.io/py/s-tui)
 [![Downloads](http://pepy.tech/badge/s-tui)](http://pepy.tech/count/s-tui)
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/s-tui/Lobby)
 
 ![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/stui_logo.png?raw=true)
 

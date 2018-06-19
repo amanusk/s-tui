@@ -36,12 +36,9 @@ class UtilSource(Source):
         result = 0
         try:
             result = float(psutil.cpu_percent(interval=0.0))
-        except(AttributeError):
+        except:
             result = 0
             logging.debug("Cpu Utilization unavailable")
-        except(ValueError):
-            result = 0
-            logging.debug("Utilization is not a float")
 
         self.last_freq = float(result)
         logging.info("Utilization recorded " + str(self.last_freq))

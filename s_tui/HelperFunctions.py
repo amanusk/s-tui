@@ -31,7 +31,7 @@ import time
 from collections import OrderedDict
 from sys import exit
 
-__version__ = "0.7.7"
+__version__ = "0.7.6"
 
 
 def get_processor_name():
@@ -56,9 +56,8 @@ def kill_child_processes(parent_proc, sig=signal.SIGTERM):
             logging.debug('Killing' + str(proc))
             proc.kill()
         parent_proc.kill()
-    except(AttributeError):
+    except:
         logging.debug('No such process')
-        logging.debug('Could not kill process')
 
 
 def output_to_csv(sources, csv_writeable_file):
