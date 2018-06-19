@@ -76,16 +76,18 @@ class TemperatureSource(Source):
                 # Not 0 to avoid problems with graph creation
                 self.max_temp = 1
 
-        def set_threshold(sensor):
+        def set_threshold(sensor, idx):
             try:
-                self.temp_thresh = sensor.high
+                sample = psutil.sensors_temperatures()
+                self.temp_thresh = sample[sensor][0].high
                 logging.debug("Temperature threshold set to " +
                               str(self.temp_thresh))
             except(ValueError, TypeError):
                 self.temp_thresh = self.THRESHOLD_TEMP
 
-        def update_func(sensor):
-            last_value = sensor.current
+        def update_func(sensor, idx):
+            sample = psutil.sensors_temperatures()
+            last_value = sample[sensor][idx].current
             update_max_temp(last_value)
             self.last_temp = last_value
             Source.update(self)
@@ -98,14 +100,12 @@ class TemperatureSource(Source):
                 sensors_info = self.custom_temp.split(",")
                 sensor_major = sensors_info[0]
                 sensor_minor = sensors_info[1]
-                logging.debug("Major " + str(sensor_major) + "Minor " +
+                logging.debug("Major " + str(sensor_major) + " Minor " +
                               str(sensor_minor))
-                sources = psutil.sensors_temperatures()
-                sensor = sources[sensor_major][int(sensor_minor)]
 
                 def update():
-                    update_func(sensor)
-                set_threshold(sensor)
+                    update_func(sensor_major, int(sensor_minor))
+                set_threshold(sensor_major, int(sensor_minor))
                 return update
             except (KeyError, IndexError, AttributeError):
                 self.is_available = False
@@ -117,22 +117,22 @@ class TemperatureSource(Source):
             sensors = psutil.sensors_temperatures()
             sensor = None
             if 'coretemp' in sensors:
-                sensor = psutil.sensors_temperatures()['coretemp'][0]
+                sensor = 'coretemp'
             elif 'k10temp' in sensors:
-                sensor = psutil.sensors_temperatures()['k10temp'][0]
+                sensor = 'k10temp'
             elif 'it8655' in sensors:
-                sensor = psutil.sensors_temperatures()['it8655'][0]
+                sensor = 0
             elif 'it8622' in sensors:
-                sensor = psutil.sensors_temperatures()['it8622'][0]
+                sensor = 'it8622'
             elif 'it8721' in sensors:
-                sensor = psutil.sensors_temperatures()['it8721'][0]
+                sensor = 'it8721'
             elif 'bcm2835_thermal' in sensors:
-                sensor = psutil.sensors_temperatures()['bcm2835_thermal'][0]
+                sensor = 'bcm2835_thermal'
             else:
                 # Fallback to first in list
                 try:
                     chips = list(sensors.keys())
-                    sensor = sensors[chips[0]][0]
+                    sensor = chips[0]
                     logging.debug("Fallback: setting temp sensor " +
                                   str(sensor))
                 except (KeyError, IndexError):
@@ -140,10 +140,10 @@ class TemperatureSource(Source):
 
             if sensor is not None:
                 logging.debug("Temperature sensor is set to " + str(sensor))
-                set_threshold(sensor)
+                set_threshold(sensor, 0)
 
                 def update():
-                    update_func(sensor)
+                    update_func(sensor, 0)
                 return update
             # If sensors was not found using psutil, try reading file
             else:
