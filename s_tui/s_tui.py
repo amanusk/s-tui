@@ -35,7 +35,7 @@ import signal
 import itertools
 try:
     import configparser
-except(ImportError):
+except:
     import ConfigParser as configparser
 
 from sys import exit
@@ -226,7 +226,7 @@ class GraphView(urwid.WidgetPlaceholder):
                 pass
             else:
                 self.controller.refresh_rate = new_refresh_rate
-        except(ValueError):
+        except:
             self.controller.refresh_rate = '1.0'
 
     def update_displayed_information(self):
@@ -340,7 +340,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def exit_program(self, w=None):
         """ Kill all stress operations upon exit"""
-        kill_child_processes(self.controller.mode.get_stress_process())
+        try:
+            kill_child_processes(self.controller.mode.get_stress_process())
+        except:
+            logging.debug('Could not kill process')
         raise urwid.ExitMainLoop()
 
     def save_settings(self, w=None):
@@ -348,6 +351,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         if not user_config_dir_exists():
             make_user_config_dir()
+
 
         conf = configparser.ConfigParser()
         config_file = get_user_config_file()
@@ -369,13 +373,11 @@ class GraphView(urwid.WidgetPlaceholder):
             # Writing temp sensor
             conf.add_section('TempControll')
             if self.controller.custom_temp is not None:
-                logging.debug("Custom temp sensor is " +
-                              self.controller.custom_temp)
+                logging.debug("Custom temp sensor is " + self.controller.custom_temp)
                 try:
                     conf.set('TempControll', 'sensor',
                              self.controller.custom_temp)
-                except(AttributeError, configparser.NoOptionError,
-                       configparser.NoSectionError):
+                except:
                     pass
             if self.controller.temp_thresh is not None:
                 logging.debug("Custom temp threshold set to "
@@ -383,8 +385,7 @@ class GraphView(urwid.WidgetPlaceholder):
                 try:
                     conf.set('TempControll', 'threshold',
                              self.controller.temp_thresh)
-                except(AttributeError, configparser.NoOptionError,
-                       configparser.NoSectionError):
+                except:
                     pass
             conf.write(cfgfile)
 
@@ -434,8 +435,7 @@ class GraphView(urwid.WidgetPlaceholder):
             try:
                 graphs_available_state[g.get_graph_name()] = conf.getboolean(
                     'GraphControll', g.get_graph_name())
-            except(AttributeError, configparser.NoOptionError,
-                   configparser.NoSectionError):
+            except:
                 graphs_available_state[g.get_graph_name()] = True
 
         graph_checkboxes = [urwid.CheckBox(x.get_graph_name(),
@@ -487,7 +487,7 @@ class GraphView(urwid.WidgetPlaceholder):
         cpu_name = urwid.Text("CPU Name N/A", align="center")
         try:
             cpu_name = urwid.Text(get_processor_name().strip(), align="center")
-        except(OSError):
+        except:
             logging.info("CPU name not available")
         cpu_stats = [cpu_name, urwid.Divider()]
         return cpu_stats
@@ -751,7 +751,10 @@ class GraphController:
     def start_stress(self):
         mode = self.mode
         if mode.get_current_mode() == 'Stress':
-            kill_child_processes(mode.get_stress_process())
+            try:
+                kill_child_processes(mode.get_stress_process())
+            except:
+                logging.debug('Could not kill process')
             # This is not pretty, but this is how we know stress started
             self.view.graphs['Frequency'].source.set_stress_started()
             stress_cmd = [stress_program]
@@ -789,12 +792,15 @@ class GraphController:
                     stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL,
                                                    stderr=DEVNULL, shell=False)
                     mode.set_stress_process(psutil.Process(stress_proc.pid))
-                except(OSError):
+                except:
                     logging.debug("Unable to start stress")
 
         elif mode.get_current_mode() == 'FIRESTARTER':
             logging.debug('Started FIRESTARTER mode')
-            kill_child_processes(mode.get_stress_process())
+            try:
+                kill_child_processes(mode.get_stress_process())
+            except:
+                logging.debug('Could not kill process')
 
             stress_cmd = fire_starter
             self.view.graphs['Frequency'].source.set_stress_started()
@@ -809,23 +815,27 @@ class GraphController:
                     mode.set_stress_process(psutil.Process(stress_proc.pid))
                     logging.debug('Started process' +
                                   str(mode.get_stress_process()))
-                except(OSError):
+                except:
                     logging.debug("Unable to start stress")
 
         else:
             logging.debug('Monitoring')
-            kill_child_processes(mode.get_stress_process())
             try:
+                kill_child_processes(mode.get_stress_process())
                 self.view.graphs['Frequency'].source.set_stress_stopped()
-            except(KeyError, AttributeError):
-                logging.debug('Unalbe to reset performance loss meter')
+            except:
+                try:
+                    logging.debug('Could not kill process' +
+                                  str(mode.get_stress_process()))
+                except:
+                    logging.debug('Could not kill process FIRESTARTER')
 
 
 def main():
     args = get_args()
     # Print version and exit
     if args.version:
-        print(VERSION_MESSAGE)
+        print (VERSION_MESSAGE)
         exit(0)
 
     # Setup logging util
