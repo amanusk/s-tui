@@ -1,9 +1,10 @@
 import unittest
+import sys
 import os
 from s_tui.Sources import UtilSource
 
-
 class TestUtilSource(unittest.TestCase):
+
     def test_util_class(self):
         util_source = UtilSource.UtilSource()
         self.assertIsNotNone(util_source)
@@ -22,3 +23,4 @@ class TestUtilSource(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

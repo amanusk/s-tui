@@ -128,8 +128,8 @@ class FreqSource(Source):
                     if "cpu MHz" in line:
                         core_freq = re.findall('\d+\.\d+', line)
                         cores_freq += core_freq
-            return round(sum(float(x) for x in cores_freq) /
-                         len(cores_freq), 1)
+            return round(sum(float(x) for x in cores_freq)
+                         / len(cores_freq), 1)
 
         try:
             cur_freq = int(psutil.cpu_freq().current)
@@ -137,7 +137,7 @@ class FreqSource(Source):
             cur_freq = 0
             try:
                 cur_freq = get_avarage_cpu_freq()
-            except(OSError, ZeroDivisionError):
+            except(OSError, ZeroDivisionError, FileNotFoundError):
                 cur_freq = 0
                 logging.debug("Frequency unavailable")
 
