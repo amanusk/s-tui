@@ -227,7 +227,7 @@ class GraphView(urwid.WidgetPlaceholder):
             else:
                 self.controller.refresh_rate = new_refresh_rate
         except(ValueError):
-            self.controller.refresh_rate = '1.0'
+            self.controller.refresh_rate = '2.0'
 
     def update_displayed_information(self):
         """ Update all the graphs that are being displayed """
@@ -647,7 +647,7 @@ class GraphController:
             logging.debug("Config file not found")
 
         # Set refresh rate accorrding to user config
-        self.refresh_rate = '1'
+        self.refresh_rate = '2.0'
         try:
             self.refresh_rate = str(self.conf.getfloat(
                 'GraphControll', 'refresh'))
