@@ -99,6 +99,7 @@ class RaplPowerSource(Source):
 
         self.last_measurement_value = current_measurement_value
         self.last_measurement_time = current_measurement_time
+
         if watts_used > 0:
             # The information on joules used elapses every once in a while,
             # this might lead to negative readings.
