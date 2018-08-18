@@ -742,6 +742,9 @@ class GraphController:
         except (AttributeError):
             logging.debug("Catch attribute Error in urwid and restart")
             self.main()
+        except (psutil.NoSuchProcess):
+            logging.debug("No such proccess error")
+            self.main()
 
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
