@@ -99,11 +99,15 @@ class RaplPowerSource(Source):
 
         self.last_measurement_value = current_measurement_value
         self.last_measurement_time = current_measurement_time
-        self.last_watts = watts_used
+        if watts_used > 0:
+            # The information on joules used elapses every once in a while,
+            # this might lead to negative readings.
+            # To prevent this, we keep the last value until the next update
+            self.last_watts = watts_used
+            logging.info("Power reading elapsed")
         if watts_used > self.max_power:
             self.max_power = math.ceil(watts_used)
             logging.info("Max power updated " + str(self.max_power))
-        return watts_used
 
     # Source super class implementation
     def get_is_available(self):
