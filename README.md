@@ -157,7 +157,7 @@ AUR packages of s-tui are available
 `s-tui` is the latest stable release version. Maintined by [@DonOregano](https://github.com/DonOregano)  
 `s-tui-git` follows the master branch. maintained by [@MauroMombelli](https://github.com/MauroMombelli)  
 install with  
-`yaourt -S s-tui`
+`yay -S s-tui`
 
 ## Run source code
 Running s-tui from source  
