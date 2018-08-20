@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/amanusk/s-tui.svg?branch=master)](https://travis-ci.org/amanusk/s-tui)
 [![PyPI version](https://badge.fury.io/py/s-tui.svg)](https://badge.fury.io/py/s-tui)
 [![Downloads](http://pepy.tech/badge/s-tui)](http://pepy.tech/count/s-tui)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/s-tui/Lobby)
 
 ![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/stui_logo.png?raw=true)
 
@@ -125,6 +126,8 @@ sudo apt-get install stress
 
 s-tui is a self-contained application which can run out-of-the-box and doesn't need config files to drive its core features. However, additional features like running scripts when a certain threshold has been exceeded (e.g. CPU temperature) does necessitate creating a config directory. This directory will be made in `~/.config/s-tui` by default.
 
+Selecting \<Save Settings\> will save the current configuration to `~/.config/s-tui/s-tui.conf`. If you would like to restore defaults, simply remove the file.
+
 ### Adding threshold scripts
 
 s-tui gives you the ability to run arbitrary shell scripts when a certain threshold is surpassed, like your CPU temperature. You can define this custom behaviour by adding a shell file to the directory `~/.config/s-tui/hooks.d` with one of the following names, depending on what threshold you're interesting in reacting to:
@@ -142,11 +145,11 @@ The latest stable version of s-tui is available via pip. To install pip on Ubunt
 Once pip is installed, install s-tui from pip:  
 `(sudo) pip install s-tui`  
 
-A *deprecated* ppa is available (tested on Ubuntu 16.04)
+A ppa is available (xenial,bionic)
 ```
 sudo add-apt-repository ppa:amanusk/python-s-tui
 sudo apt-get update
-sudo apt-get install python-s-tui
+sudo apt-get install python3-s-tui
 ```
 ### Arch-Linux
 AUR packages of s-tui are available
@@ -154,7 +157,7 @@ AUR packages of s-tui are available
 `s-tui` is the latest stable release version. Maintined by [@DonOregano](https://github.com/DonOregano)  
 `s-tui-git` follows the master branch. maintained by [@MauroMombelli](https://github.com/MauroMombelli)  
 install with  
-`(sudo) yaourt -S s-tui`
+`yaourt -S s-tui`
 
 ## Run source code
 Running s-tui from source  
@@ -227,7 +230,7 @@ I try to test new versions on as many systems as I can, but I cannot cover them 
 ## Tip
 If you like this work, please star in on GitHub. 
 
-If you realy like it, share it with hour friends and co-workers.
+If you realy like it, share it with your friends and co-workers.
 
 If you really really like this work, leave a tip :)
 

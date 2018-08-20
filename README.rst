@@ -159,6 +159,10 @@ been exceeded (e.g. CPU temperature) does necessitate creating a config
 directory. This directory will be made in ``~/.config/s-tui`` by
 default.
 
+Selecting <Save Settings> will save the current configuration to
+``~/.config/s-tui/s-tui.conf``. If you would like to restore defaults,
+simply remove the file.
+
 Adding threshold scripts
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -190,13 +194,13 @@ Ubuntu
 | Once pip is installed, install s-tui from pip:
 | ``(sudo) pip install s-tui``
 
-A *deprecated* ppa is available (tested on Ubuntu 16.04)
+A ppa is available (xenial,bionic)
 
 ::
 
     sudo add-apt-repository ppa:amanusk/python-s-tui
     sudo apt-get update
-    sudo apt-get install python-s-tui
+    sudo apt-get install python3-s-tui
 
 Arch-Linux
 ~~~~~~~~~~
@@ -208,7 +212,7 @@ AUR packages of s-tui are available
 | ``s-tui-git`` follows the master branch. maintained by
   [@MauroMombelli](https://github.com/MauroMombelli)
 | install with
-| ``(sudo) yaourt -S s-tui``
+| ``yaourt -S s-tui``
 
 Run source code
 ---------------
@@ -318,7 +322,7 @@ Tip
 
 If you like this work, please star in on GitHub.
 
-If you realy like it, share it with hour friends and co-workers.
+If you realy like it, share it with your friends and co-workers.
 
 If you really really like this work, leave a tip :)
 
