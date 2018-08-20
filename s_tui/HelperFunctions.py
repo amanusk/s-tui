@@ -31,7 +31,7 @@ import time
 from collections import OrderedDict
 from sys import exit
 
-__version__ = "0.7.8"
+__version__ = "0.8.0"
 
 
 def get_processor_name():
@@ -163,6 +163,13 @@ def make_user_config_dir():
             return None
 
     return config_path
+
+
+def seconds_to_text(secs):
+    hours = (secs)//3600
+    minutes = (secs - hours*3600)//60
+    seconds = secs - hours*3600 - minutes*60
+    return "%02d:%02d:%02d" % (hours, minutes, seconds)
 
 
 DEFAULT_PALETTE = [

@@ -33,6 +33,7 @@ import psutil
 import urwid
 import signal
 import itertools
+
 try:
     import configparser
 except(ImportError):
@@ -57,6 +58,7 @@ from s_tui.HelperFunctions import get_user_config_file
 from s_tui.HelperFunctions import make_user_config_dir
 from s_tui.HelperFunctions import user_config_dir_exists
 from s_tui.HelperFunctions import user_config_file_exists
+from s_tui.HelperFunctions import seconds_to_text
 from s_tui.UiElements import ViListBox
 from s_tui.UiElements import radio_button
 from s_tui.UiElements import button
@@ -195,6 +197,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.controller = controller
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
+
+        clock_text = seconds_to_text(self.controller.stress_time)
+        self.clock_view = urwid.Text(('bold text', clock_text), align="center")
+
         self.mode_buttons = []
         self.refresh_rate_ctrl = urwid.Edit(('bold text', u'Refresh[s]:'),
                                             self.controller.refresh_rate)
@@ -241,8 +247,12 @@ class GraphView(urwid.WidgetPlaceholder):
         for s in self.available_summaries.values():
             s.update()
 
+        # Only update clock if not is stress mode
         if self.controller.mode.get_current_mode() != 'Monitor':
-            self.controller.stress_time = time.perf_counter() - self.controller.stress_start_time
+            self.controller.stress_time = (time.perf_counter() -
+                                           self.controller.stress_start_time)
+        self.clock_view.set_text(('bold text', seconds_to_text(
+            int(self.controller.stress_time))))
 
     def on_reset_button(self, w):
         """Reset graph data and display empty graph"""
@@ -253,6 +263,9 @@ class GraphView(urwid.WidgetPlaceholder):
                 g.source.reset()
             except (NotImplementedError):
                 pass
+        # Reset clock
+        self.controller.stress_time = 0
+
         self.update_displayed_information()
 
     def on_menu_close(self):
@@ -451,11 +464,10 @@ class GraphView(urwid.WidgetPlaceholder):
                              if x.source.get_is_available() is False]
         graph_checkboxes += unavalable_graphs
 
-
         buttons = [urwid.Text(('bold text', u"Modes"), align="center"),
                    ] + self.mode_buttons + [
             install_stress_message,
-            urwid.Text(('bold text', str(self.controller.stress_time)), align="center"),
+            urwid.LineBox(self.clock_view),
             urwid.Divider(),
             urwid.Text(('bold text', u"Control Options"), align="center"),
             animate_controls,
@@ -706,8 +718,8 @@ class GraphController:
 
         self.handle_mouse = not(args.no_mouse)
 
-        self.stress_start_time = time.perf_counter()
-        self.stress_time = None
+        self.stress_start_time = 0
+        self.stress_time = 0
 
         self.view = GraphView(self)
         # use the first mode (no stress) as the default
@@ -762,8 +774,11 @@ class GraphController:
 
     def start_stress(self):
         mode = self.mode
-        self.stress_start_time = time.perf_counter()
         if mode.get_current_mode() == 'Stress':
+
+            self.stress_start_time = time.perf_counter()
+            self.stress_time = 0
+
             kill_child_processes(mode.get_stress_process())
             # This is not pretty, but this is how we know stress started
             self.view.graphs['Frequency'].source.set_stress_started()
@@ -810,6 +825,10 @@ class GraphController:
             kill_child_processes(mode.get_stress_process())
 
             stress_cmd = fire_starter
+
+            self.stress_start_time = time.perf_counter()
+            self.stress_time = 0
+
             self.view.graphs['Frequency'].source.set_stress_started()
             logging.debug("Firestarter " + str(fire_starter))
             with open(os.devnull, 'w') as DEVNULL:
@@ -832,6 +851,10 @@ class GraphController:
                 self.view.graphs['Frequency'].source.set_stress_stopped()
             except(KeyError, AttributeError):
                 logging.debug('Unalbe to reset performance loss meter')
+
+        # Start a new clock upon starting a new stress test
+        self.view.clock_view.set_text(('bold text', seconds_to_text(
+            int(self.stress_time))))
 
 
 def main():
