@@ -949,6 +949,7 @@ use: -cf thinkpad,0 for fan1
                         default=None,
                         help="Use a custom debug file. Default: " +
                         "_s-tui.log")
+    # This is mainly to be used for testing purposes
     parser.add_argument('-dr', '--debug_run',
                         default=False, action='store_true',
                         help="Run for 5 seconds and quit")
