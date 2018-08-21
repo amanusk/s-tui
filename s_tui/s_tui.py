@@ -29,6 +29,7 @@ import logging
 import os
 import subprocess
 import time
+import timeit
 import psutil
 import urwid
 import signal
@@ -94,6 +95,7 @@ is_admin = None
 stress_installed = False
 graph_controller = None
 stress_program = None
+debug_run_counter = 0
 
 INTRO_MESSAGE = HELP_MESSAGE
 
@@ -249,7 +251,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # Only update clock if not is stress mode
         if self.controller.mode.get_current_mode() != 'Monitor':
-            self.controller.stress_time = (time.perf_counter() -
+            self.controller.stress_time = (timeit.default_timer() -
                                            self.controller.stress_start_time)
         self.clock_view.set_text(('bold text', seconds_to_text(
             int(self.controller.stress_time))))
@@ -771,12 +773,18 @@ class GraphController:
         self.view.update_displayed_information()
         self.animate_alarm = self.loop.set_alarm_in(
             float(self.refresh_rate), self.animate_graph)
+        # Update
+        global debug_run_counter
+        if self.args.debug_run:
+            debug_run_counter += int(float(self.refresh_rate))
+            if debug_run_counter >= 5:
+                self.view.exit_program()
 
     def start_stress(self):
         mode = self.mode
         if mode.get_current_mode() == 'Stress':
 
-            self.stress_start_time = time.perf_counter()
+            self.stress_start_time = timeit.default_timer()
             self.stress_time = 0
 
             kill_child_processes(mode.get_stress_process())
@@ -826,7 +834,7 @@ class GraphController:
 
             stress_cmd = fire_starter
 
-            self.stress_start_time = time.perf_counter()
+            self.stress_start_time = timeit.defalut_time()
             self.stress_time = 0
 
             self.view.graphs['Frequency'].source.set_stress_started()
@@ -868,6 +876,8 @@ def main():
     global log_file
     level = ""
     log_file = DEFAULT_LOG_FILE
+    if args.debug_run:
+        args.debug = True
     if args.debug or args.debug_file is not None:
         level = logging.DEBUG
         if args.debug_file is not None:
@@ -939,6 +949,9 @@ use: -cf thinkpad,0 for fan1
                         default=None,
                         help="Use a custom debug file. Default: " +
                         "_s-tui.log")
+    parser.add_argument('-dr', '--debug_run',
+                        default=False, action='store_true',
+                        help="Run for 5 seconds and quit")
     parser.add_argument('-c', '--csv', action='store_true',
                         default=False, help="Save stats to csv file")
     parser.add_argument('--csv-file',
