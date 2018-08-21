@@ -29,6 +29,7 @@ import logging
 import os
 import subprocess
 import time
+import timeit
 import psutil
 import urwid
 import signal
@@ -249,7 +250,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # Only update clock if not is stress mode
         if self.controller.mode.get_current_mode() != 'Monitor':
-            self.controller.stress_time = (time.perf_counter() -
+            self.controller.stress_time = (timeit.default_timer() -
                                            self.controller.stress_start_time)
         self.clock_view.set_text(('bold text', seconds_to_text(
             int(self.controller.stress_time))))
@@ -776,7 +777,7 @@ class GraphController:
         mode = self.mode
         if mode.get_current_mode() == 'Stress':
 
-            self.stress_start_time = time.perf_counter()
+            self.stress_start_time = timeit.default_timer()
             self.stress_time = 0
 
             kill_child_processes(mode.get_stress_process())
@@ -826,7 +827,7 @@ class GraphController:
 
             stress_cmd = fire_starter
 
-            self.stress_start_time = time.perf_counter()
+            self.stress_start_time = timeit.defalut_time()
             self.stress_time = 0
 
             self.view.graphs['Frequency'].source.set_stress_started()
