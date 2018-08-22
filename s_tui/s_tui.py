@@ -149,6 +149,7 @@ class GraphMode:
 
             if fire_starter is not None:
                 self.modes.append('FIRESTARTER')
+                stress_installed = True
 
         self.current_mode = self.modes[0]
         self.stress_process = None
@@ -418,6 +419,10 @@ class GraphView(urwid.WidgetPlaceholder):
         for m in modes:
             rb = radio_button(group, m, self.on_mode_button)
             self.mode_buttons.append(rb)
+        if not stress_installed:
+            self.mode_buttons.append(urwid.Text(
+                ('button normal', u"(N/A) install stress")))
+            self.mode_buttons.append(urwid.Divider())
 
         # Create list of buttons
         control_options = [button("Reset", self.on_reset_button)]
@@ -444,11 +449,6 @@ class GraphView(urwid.WidgetPlaceholder):
             unicode_checkbox = urwid.Text(
                 "UTF-8 encoding not detected")
 
-        install_stress_message = urwid.Text("")
-        if not stress_installed:
-            install_stress_message = urwid.Text(
-                ('button normal', u"(N/A) install stress"))
-
         # Disable graphs the user selected not to display in config file
         # TODO: Get this from graph state
         graphs_available_state = dict()
@@ -470,21 +470,18 @@ class GraphView(urwid.WidgetPlaceholder):
                              if x.source.get_is_available() is False]
         graph_checkboxes += unavalable_graphs
 
-        buttons = [urwid.Text(('bold text', u"Modes"), align="center"),
-                   ] + self.mode_buttons + [
-            install_stress_message,
-            urwid.LineBox(self.clock_view),
-            urwid.Divider(),
+        buttons = [urwid.Text(('bold text', u"Modes"), align="center")
+                   ] + self.mode_buttons
+        if stress_installed:
+            buttons += [urwid.LineBox(self.clock_view)]
+        buttons += [
             urwid.Text(('bold text', u"Control Options"), align="center"),
             animate_controls,
             urwid.Divider(),
             self.refresh_rate_ctrl,
-            urwid.Divider(),
             urwid.LineBox(urwid.Pile(graph_checkboxes)),
             urwid.LineBox(unicode_checkbox),
-            urwid.Divider(),
             button("Save Settings", self.save_settings),
-            urwid.Divider(),
             button("Quit", self.exit_program),
         ]
 
