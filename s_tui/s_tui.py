@@ -29,10 +29,12 @@ import logging
 import os
 import subprocess
 import time
+import timeit
 import psutil
 import urwid
 import signal
 import itertools
+
 try:
     import configparser
 except(ImportError):
@@ -57,6 +59,7 @@ from s_tui.HelperFunctions import get_user_config_file
 from s_tui.HelperFunctions import make_user_config_dir
 from s_tui.HelperFunctions import user_config_dir_exists
 from s_tui.HelperFunctions import user_config_file_exists
+from s_tui.HelperFunctions import seconds_to_text
 from s_tui.UiElements import ViListBox
 from s_tui.UiElements import radio_button
 from s_tui.UiElements import button
@@ -92,6 +95,7 @@ is_admin = None
 stress_installed = False
 graph_controller = None
 stress_program = None
+debug_run_counter = 0
 
 INTRO_MESSAGE = HELP_MESSAGE
 
@@ -195,6 +199,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.controller = controller
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
+
+        clock_text = seconds_to_text(self.controller.stress_time)
+        self.clock_view = urwid.Text(('bold text', clock_text), align="center")
+
         self.mode_buttons = []
         self.refresh_rate_ctrl = urwid.Edit(('bold text', u'Refresh[s]:'),
                                             self.controller.refresh_rate)
@@ -215,8 +223,6 @@ class GraphView(urwid.WidgetPlaceholder):
         self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
         self.left_margin = 0
         self.top_margin = 0
-        self.v_relative = 50
-        self.h_relative = 50
 
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
         urwid.connect_signal(self.refresh_rate_ctrl, 'change',
@@ -243,6 +249,13 @@ class GraphView(urwid.WidgetPlaceholder):
         for s in self.available_summaries.values():
             s.update()
 
+        # Only update clock if not is stress mode
+        if self.controller.mode.get_current_mode() != 'Monitor':
+            self.controller.stress_time = (timeit.default_timer() -
+                                           self.controller.stress_start_time)
+        self.clock_view.set_text(('bold text', seconds_to_text(
+            int(self.controller.stress_time))))
+
     def on_reset_button(self, w):
         """Reset graph data and display empty graph"""
         for g in self.visible_graphs.values():
@@ -252,6 +265,9 @@ class GraphView(urwid.WidgetPlaceholder):
                 g.source.reset()
             except (NotImplementedError):
                 pass
+        # Reset clock
+        self.controller.stress_time = 0
+
         self.update_displayed_information()
 
     def on_menu_close(self):
@@ -453,6 +469,7 @@ class GraphView(urwid.WidgetPlaceholder):
         buttons = [urwid.Text(('bold text', u"Modes"), align="center"),
                    ] + self.mode_buttons + [
             install_stress_message,
+            urwid.LineBox(self.clock_view),
             urwid.Divider(),
             urwid.Text(('bold text', u"Control Options"), align="center"),
             animate_controls,
@@ -703,6 +720,9 @@ class GraphController:
 
         self.handle_mouse = not(args.no_mouse)
 
+        self.stress_start_time = 0
+        self.stress_time = 0
+
         self.view = GraphView(self)
         # use the first mode (no stress) as the default
         mode = self.get_modes()[0]
@@ -753,10 +773,20 @@ class GraphController:
         self.view.update_displayed_information()
         self.animate_alarm = self.loop.set_alarm_in(
             float(self.refresh_rate), self.animate_graph)
+        # Update
+        global debug_run_counter
+        if self.args.debug_run:
+            debug_run_counter += int(float(self.refresh_rate))
+            if debug_run_counter >= 5:
+                self.view.exit_program()
 
     def start_stress(self):
         mode = self.mode
         if mode.get_current_mode() == 'Stress':
+
+            self.stress_start_time = timeit.default_timer()
+            self.stress_time = 0
+
             kill_child_processes(mode.get_stress_process())
             # This is not pretty, but this is how we know stress started
             self.view.graphs['Frequency'].source.set_stress_started()
@@ -803,6 +833,10 @@ class GraphController:
             kill_child_processes(mode.get_stress_process())
 
             stress_cmd = fire_starter
+
+            self.stress_start_time = timeit.default_timer()
+            self.stress_time = 0
+
             self.view.graphs['Frequency'].source.set_stress_started()
             logging.debug("Firestarter " + str(fire_starter))
             with open(os.devnull, 'w') as DEVNULL:
@@ -826,6 +860,10 @@ class GraphController:
             except(KeyError, AttributeError):
                 logging.debug('Unalbe to reset performance loss meter')
 
+        # Start a new clock upon starting a new stress test
+        self.view.clock_view.set_text(('bold text', seconds_to_text(
+            int(self.stress_time))))
+
 
 def main():
     args = get_args()
@@ -838,6 +876,8 @@ def main():
     global log_file
     level = ""
     log_file = DEFAULT_LOG_FILE
+    if args.debug_run:
+        args.debug = True
     if args.debug or args.debug_file is not None:
         level = logging.DEBUG
         if args.debug_file is not None:
@@ -909,6 +949,10 @@ use: -cf thinkpad,0 for fan1
                         default=None,
                         help="Use a custom debug file. Default: " +
                         "_s-tui.log")
+    # This is mainly to be used for testing purposes
+    parser.add_argument('-dr', '--debug_run',
+                        default=False, action='store_true',
+                        help="Run for 5 seconds and quit")
     parser.add_argument('-c', '--csv', action='store_true',
                         default=False, help="Save stats to csv file")
     parser.add_argument('--csv-file',
