@@ -4,5 +4,6 @@
 4. Commit your change. Include a commit message describing you contribution.
 5. Submit a pull request to the main repository.
 
+This repository follows PEP8 coding conventions (or at least makes an effort to do so)
 
 [GitHub Pull Request Tutorial](https://help.github.com/articles/creating-a-pull-request-from-a-fork)
