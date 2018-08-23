@@ -31,7 +31,7 @@ import time
 from collections import OrderedDict
 from sys import exit
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 
 
 def get_processor_name():
@@ -170,6 +170,23 @@ def seconds_to_text(secs):
     minutes = (secs - hours*3600)//60
     seconds = secs - hours*3600 - minutes*60
     return "%02d:%02d:%02d" % (hours, minutes, seconds)
+
+
+def which(program):
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
 
 
 DEFAULT_PALETTE = [
