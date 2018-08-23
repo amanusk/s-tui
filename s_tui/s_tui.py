@@ -42,7 +42,6 @@ except(ImportError):
 
 from sys import exit
 from collections import OrderedDict
-from distutils.spawn import find_executable
 from s_tui.AboutMenu import AboutMenu
 from s_tui.HelpMenu import HelpMenu
 from s_tui.HelpMenu import HELP_MESSAGE
@@ -60,6 +59,7 @@ from s_tui.HelperFunctions import make_user_config_dir
 from s_tui.HelperFunctions import user_config_dir_exists
 from s_tui.HelperFunctions import user_config_file_exists
 from s_tui.HelperFunctions import seconds_to_text
+from s_tui.HelperFunctions import which
 from s_tui.UiElements import ViListBox
 from s_tui.UiElements import radio_button
 from s_tui.UiElements import button
@@ -137,11 +137,12 @@ class GraphMode:
                 self.modes.append('Stress')
 
             global fire_starter
+            fire_starter_exe = which('FIRESTARTER')
             if os.path.isfile('./FIRESTARTER/FIRESTARTER'):
                 fire_starter = os.path.join(os.getcwd(), 'FIRESTARTER',
                                             'FIRESTARTER')
-            elif find_executable('FIRESTARTER') is not None:
-                fire_starter = 'FIRESTARTER'
+            elif fire_starter_exe is not None:
+                fire_starter = fire_starter_exe
 
             if fire_starter is not None:
                 self.modes.append('FIRESTARTER')
