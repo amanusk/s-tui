@@ -224,9 +224,6 @@ class FreqSource(Source):
                                          '(N/A) run sudo'))
             ])
 
-    # def get_sensor_name(self):
-    #     return "core 0"  #TODO proper per core name
-
     def get_source_name(self):
         return 'Frequency'
 
