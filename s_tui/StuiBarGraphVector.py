@@ -18,13 +18,13 @@
 
 from __future__ import absolute_import
 
-from s_tui.ComplexBarGraphs import LabeledBarGraph
+from s_tui.ComplexBarGraphs import LabeledBarGraphVector
 from s_tui.ComplexBarGraphs import ScalableBarGraph
 import logging
 logger = logging.getLogger(__name__)
 
 
-class StuiBarGraph(LabeledBarGraph):
+class StuiBarGraphVector(LabeledBarGraphVector):
 
     @staticmethod
     def append_latest_value(values, new_val):
@@ -35,7 +35,7 @@ class StuiBarGraph(LabeledBarGraph):
     MAX_SAMPLES = 1000
     SCALE_DENSITY = 5
 
-    def __init__(self, source, color_a, color_b, smooth_a, smooth_b,
+    def __init__(self, source, color_a, color_b, smooth_a, smooth_b, graph_count, visible_graph_list,
                  alert_colors=None, bar_width=1):
         self.source = source
         self.graph_name = self.source.get_source_name()
@@ -43,7 +43,7 @@ class StuiBarGraph(LabeledBarGraph):
         self.measurement_unit = self.source.get_measurement_unit()
 
         self.num_samples = self.MAX_SAMPLES
-        self.graph_data = [0] * self.num_samples
+        self.graph_data = [[0] * self.num_samples] * graph_count
 
         self.color_a = color_a
         self.color_b = color_b
@@ -55,23 +55,24 @@ class StuiBarGraph(LabeledBarGraph):
 
         self.satt = None
 
-
-
-        x_label = []
         y_label = []
 
-        if self.sensor_name is not None:
-            graph_title = self.graph_name + ' [' + self.measurement_unit + '] ' + self.sensor_name
-        else:
-            graph_title = self.graph_name + ' [' + self.measurement_unit + ']'
+        graph_title = self.graph_name + ' [' + self.measurement_unit + ']'
+        sub_title_list = self.source.get_sensor_list()
 
-        w = ScalableBarGraph(['bg background', color_a, color_b])
+        # create several different instances of salable bar graph
+        w = []
+        for i in range(graph_count):
+            graph = ScalableBarGraph(['bg background', color_a, color_b])
+            w.append(graph)
 
-        super(StuiBarGraph, self).__init__(
-            [w, x_label, y_label, graph_title])
-        self.bar_graph.set_bar_width(bar_width)
+        super(StuiBarGraphVector, self).__init__(
+            graph_title, sub_title_list, y_label, w, visible_graph_list)
 
-        self.color_counter = 0
+        for graph in self.bar_graph_vector:
+            graph.set_bar_width(bar_width)
+
+        self.color_counter_vector = [0] * graph_count
 
     def get_current_summary(self):
         pass
@@ -109,8 +110,9 @@ class StuiBarGraph(LabeledBarGraph):
             self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
         else:
             self.satt = None
-        self.bar_graph.set_segment_attributes(
-            ['bg background', self.color_a, self.color_b], satt=self.satt)
+
+        for graph in self.bar_graph_vector:
+            graph.set_segment_attributes(['bg background', self.color_a, self.color_b], satt=self.satt)
 
     def set_regular_colors(self):
         self.color_a = self.regular_colors[0]
@@ -119,8 +121,9 @@ class StuiBarGraph(LabeledBarGraph):
         self.smooth_b = self.regular_colors[3]
         if self.satt:
             self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
-        self.bar_graph.set_segment_attributes(
-            ['bg background', self.color_a, self.color_b], satt=self.satt)
+
+        for graph in self.bar_graph_vector:
+            graph.set_segment_attributes(['bg background', self.color_a, self.color_b], satt=self.satt)
 
     def set_alert_colors(self):
         self.color_a = self.alert_colors[0]
@@ -129,8 +132,9 @@ class StuiBarGraph(LabeledBarGraph):
         self.smooth_b = self.alert_colors[3]
         if self.satt:
             self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
-        self.bar_graph.set_segment_attributes(
-            ['bg background', self.color_a, self.color_b], satt=self.satt)
+
+        for graph in self.bar_graph_vector:
+            graph.set_segment_attributes(['bg background', self.color_a, self.color_b], satt=self.satt)
 
     def update_displayed_graph_data(self):
         if not self.get_is_available():
@@ -145,44 +149,49 @@ class StuiBarGraph(LabeledBarGraph):
         except (NotImplementedError):
             pass
 
-        bars = []
-
-        current_reading = self.source.get_reading()
+        current_reading = self.source.get_reading_list()
         logging.info("Reading " + str(current_reading))
-        data_max = self.source.get_maximum()
-        self.graph_data = self.append_latest_value(
-            self.graph_data, current_reading)
 
-        # Get the graph width (dimension 1)
-        num_displayed_bars = self.bar_graph.get_size()[1]
-        # print num_displayed_bars
-        # Iterage over all the information in the graph
-        if self.color_counter % 2 == 0:
-            for n in range(self.MAX_SAMPLES - num_displayed_bars,
-                           self.MAX_SAMPLES):
-                value = round(self.graph_data[n], 1)
-                # toggle between two bar types
-                if n & 1:
-                    bars.append([0, value])
-                else:
-                    bars.append([value, 0])
-        else:
-            for n in range(self.MAX_SAMPLES - num_displayed_bars,
-                           self.MAX_SAMPLES):
-                value = round(self.graph_data[n], 1)
-                if n & 1:
-                    bars.append([value, 0])
-                else:
-                    bars.append([0, value])
-        self.color_counter += 1
+        y_label_size_max = 0
+        data_max = self.source.get_maximum_list()
 
-        self.bar_graph.set_data(bars, float(data_max))
-        y_label_size = self.bar_graph.get_size()[0]
-        s = self.get_label_scale(0, float(data_max), float(y_label_size))
+        for graph_idx, graph in enumerate(self.bar_graph_vector):
+            bars = []
+            if self.visible_graph_list[graph_idx]:
+                logging.info("regular graph " + str(graph_idx))
+                self.graph_data[graph_idx] = self.append_latest_value(
+                    self.graph_data[graph_idx], current_reading[graph_idx])
+
+                # Get the graph width (dimension 1)
+                num_displayed_bars = graph.get_size()[1]
+                # Iterate over all the information in the graph
+                if self.color_counter_vector[graph_idx] % 2 == 0:
+                    for n in range(self.MAX_SAMPLES - num_displayed_bars,
+                                   self.MAX_SAMPLES):
+                        value = round(self.graph_data[graph_idx][n], 1)
+                        # toggle between two bar types
+                        if n & 1:
+                            bars.append([0, value])
+                        else:
+                            bars.append([value, 0])
+                else:
+                    for n in range(self.MAX_SAMPLES - num_displayed_bars,
+                                   self.MAX_SAMPLES):
+                        value = round(self.graph_data[graph_idx][n], 1)
+                        if n & 1:
+                            bars.append([value, 0])
+                        else:
+                            bars.append([0, value])
+                self.color_counter_vector[graph_idx] += 1
+
+            graph.set_data(bars, float(max(data_max)))
+            y_label_size_max = max(y_label_size_max, graph.get_size()[0])
+        s = self.get_label_scale(0, max(data_max), float(y_label_size_max))
         self.set_y_label(s)
+        self.set_visible_graphs()
 
     def reset(self):
-        self.graph_data = [0] * self.num_samples
+        self.graph_data = [[0] * self.num_samples] * len(self.bar_graph_vector)
 
     def get_summary(self):
         pass

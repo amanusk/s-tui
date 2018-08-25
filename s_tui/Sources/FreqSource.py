@@ -58,11 +58,13 @@ class FreqSource(Source):
 
     def __init__(self, is_admin):
         self.is_admin = is_admin
-        self.is_avaiable = True
+        self.is_available = True
 
         self.top_freq = 0
         self.turbo_freq = False
         self.last_freq = 0
+        self.last_freq_list = [0] * len(psutil.cpu_freq(True))  # TODO compatiabiolty issues?
+        self.top_freq_list = [0] * len(psutil.cpu_freq(True))  # TODO compatiabiolty issues?
         self.samples_taken = 0
         self.WAIT_SAMPLES = 5
         self.perf_lost = 0
@@ -114,12 +116,18 @@ class FreqSource(Source):
 
         self.update()
         # If top freq not available, take the current as top
-        if self.last_freq >= 0 and self.top_freq <= 0:
-            self.top_freq = self.last_freq
-        if self.last_freq <= 0:
-            self.is_avaiable = False
+        if max(self.last_freq_list) >= 0 and self.top_freq <= 0:
+            self.top_freq = max(self.last_freq_list)
+        if max(self.last_freq_list) <= 0:
+            self.is_available = False
 
     def update(self):
+        for core_id, core in enumerate(psutil.cpu_freq(True)):
+            self.last_freq_list[core_id] = core.current  # item '0' is the current frequency
+            self.top_freq_list[core_id] = max(self.top_freq_list[core_id], self.last_freq_list[core_id])
+            self.top_freq = max(self.top_freq, self.last_freq_list[core_id])  # get top freq from the sensors that are viewed only
+
+    def update_deprecated(self):
         """Update CPU frequency data"""
         def get_avarage_cpu_freq():
             with open("/proc/cpuinfo") as cpuinfo:
@@ -160,14 +168,20 @@ class FreqSource(Source):
 
         self.last_freq = cur_freq
 
+    def get_reading_list(self):
+        return self.last_freq_list
+
     def get_reading(self):
         return self.last_freq
+
+    def get_maximum_list(self):
+        return self.top_freq_list
 
     def get_maximum(self):
         return self.top_freq
 
     def get_is_available(self):
-        return self.is_avaiable
+        return self.is_available
 
     def reset(self):
         self.max_perf_lost = 0
@@ -179,24 +193,39 @@ class FreqSource(Source):
         self.stress_started = False
         self.samples_taken = 0
 
+    def get_sensor_list(self):
+        # TODO error handling
+        cpu_list = []
+        for core_id, core in enumerate(psutil.cpu_freq(True)):
+            cpu_list.append("core " + str(core_id))
+
+        return cpu_list
+
     def get_summary(self):
         if self.is_admin:
             return OrderedDict([
                 ('Top Freq', '%d %s' % (self.top_freq,
                                         self.get_measurement_unit())),
-                ('Cur Freq', '%.1f %s' % (
-                    self.last_freq, self.get_measurement_unit())),
+                # # TODO: chage or remove this summery
+                # ('Cur Freq', '%.1f %s' % (
+                #     self.last_freq_list[0], self.get_measurement_unit())),
                 ('Perf Lost', '%d %s' % (self.max_perf_lost, '%'))
             ])
         else:
             return OrderedDict([
                 ('Top Freq', '%d %s' % (self.top_freq,
                                         self.get_measurement_unit())),
-                ('Cur Freq', '%.1f %s' % (
-                    self.last_freq, self.get_measurement_unit())),
+                # #TODO: chage or remove this summery
+                # ('Cur Freq core 0', '%.1f %s' % (
+                #     self.last_freq_list[0], self.get_measurement_unit())),
+                # ('Cur Freq core 1', '%.1f %s' % (
+                #     self.last_freq_list[1], self.get_measurement_unit())),
                 ('Perf Lost', '%d %s' % (self.max_perf_lost,
                                          '(N/A) run sudo'))
             ])
+
+    # def get_sensor_name(self):
+    #     return "core 0"  #TODO proper per core name
 
     def get_source_name(self):
         return 'Frequency'

@@ -30,6 +30,9 @@ class Source:
     def get_maximum(self):
         raise NotImplementedError("Get maximum is not implemented")
 
+    def get_maximum_list(self):
+        raise NotImplementedError("Get maximum is not implemented")
+
     def get_is_available(self):
         raise NotImplementedError("Get is available is not implemented")
 
@@ -50,6 +53,16 @@ class Source:
 
     def get_measurement_unit(self):
         raise NotImplementedError("Get measurement unit is not implemented")
+
+    def get_sensor_name(self):
+        return None
+        # raise NotImplementedError("get_sensor_name is not implemented")
+
+    def get_sensor_list(self):
+        raise NotImplementedError("get_sensor_list is not implemented")
+
+    def get_reading_list(self):
+        raise NotImplementedError("get_reading_list is not implemented")
 
     def add_edge_hook(self, hook):
         """

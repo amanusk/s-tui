@@ -42,6 +42,27 @@ class TemperatureSource(Source):
         self.custom_temp = custom_temp
         self.is_available = True
 
+        self.available_sensors = []
+        sensors_dict = dict()
+        try:
+            sensors_dict = psutil.sensors_temperatures()
+        except (AttributeError, IOError):
+            logging.debug("Unable to create sensors dict")
+        for key, value in sensors_dict.items():
+            sensor_name = key
+            for itr in range(len(value)):
+                sensor_label = ""
+                try:
+                    sensor_label = value[itr].label
+                    logging.debug("Sensor Label")
+                    logging.debug(sensor_label)
+                except (IndexError):
+                    pass
+
+                self.available_sensors.append(sensor_name +
+                                              "," + str(itr) +
+                                              "," + sensor_label)
+
         # Set update function
         self.update = self.init_update()  # Initial update
 
@@ -51,6 +72,7 @@ class TemperatureSource(Source):
                 self.temp_thresh = int(temp_thresh)
                 logging.debug("Updated custom threshold to " +
                               str(self.temp_thresh))
+        self.last_temp_list = []
         self.update()
         logging.debug("Update is updated to " + str(self.update))
 
@@ -180,6 +202,9 @@ class TemperatureSource(Source):
     def get_reading(self):
         return self.last_temp
 
+    def get_reading_list(self):
+        return self.last_temp_list
+
     def get_maximum(self):
         return self.max_temp
 
@@ -200,6 +225,15 @@ class TemperatureSource(Source):
 
     def get_source_name(self):
         return 'Temperature'
+
+    def get_sensor_name(self):
+        sensors_info = self.custom_temp.split(",")
+        sensor_major = sensors_info[0]
+        sensor_minor = sensors_info[1]
+        return sensor_major + " " + sensor_minor
+
+    def get_sensor_list(self):
+        return self.available_sensors
 
     def reset(self):
         self.max_temp = 1

@@ -19,7 +19,6 @@
 # Urwid web site: http://excess.org/urwid/
 
 """An urwid program to stress and monitor you computer"""
-## test comment!
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -65,7 +64,9 @@ from s_tui.UiElements import ViListBox
 from s_tui.UiElements import radio_button
 from s_tui.UiElements import button
 from s_tui.TempSensorsMenu import TempSensorsMenu
+from s_tui.SensorsMenu import SensorsMenu
 from s_tui.StuiBarGraph import StuiBarGraph
+from s_tui.StuiBarGraphVector import StuiBarGraphVector
 from s_tui.SummaryTextList import SummaryTextList
 from s_tui.Sources.UtilSource import UtilSource as UtilSource
 from s_tui.Sources.FreqSource import FreqSource as FreqSource
@@ -175,7 +176,7 @@ class MainLoop(urwid.MainLoop):
         kill_child_processes(graph_controller.mode.get_stress_process())
         raise urwid.ExitMainLoop()
 
-    """ Inherit urwid Mainloop to catch special charachter inputs"""
+    """ Inherit urwid Mainloop to catch special character inputs"""
     def unhandled_input(self, input):
         logging.debug('Caught ' + str(input))
         if input == 'q':
@@ -215,10 +216,15 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.main_window_w = []
 
+        # construct temprature graph and source
+        self.temp_source = TempSource(self.controller.custom_temp,
+                                      self.controller.temp_thresh)
+        self.freq_source = FreqSource(is_admin)
+
         self.stress_menu = StressMenu(self.on_menu_close)
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
-        self.temp_sensors_menu = TempSensorsMenu(self.on_sensors_menu_close)
+        self.sensors_menu = SensorsMenu(self.on_sensors_menu_close, self.temp_source, self.freq_source)
         self.global_data = GlobalData(is_admin)
 
         self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
@@ -275,17 +281,13 @@ class GraphView(urwid.WidgetPlaceholder):
         """Return to main screen"""
         self.original_widget = self.main_window_w
 
-    def on_sensors_menu_close(self):
-        """Return to main screen and update sensor"""
-        if self.temp_sensors_menu.current_active_mode:
-            logging.info("State is not None")
-            self.controller.custom_temp = (self.temp_sensors_menu.
-                                           current_active_mode)
-            self.__init__(self.controller)
-            logging.info("Temp sensor updated to " +
-                         self.controller.custom_temp)
-        else:
-            logging.info("Temp sensor is None")
+    def on_sensors_menu_close(self, update):
+        """Return to main screen and update sensor that are active in the view"""
+
+        logging.info("sensor update is: " + str(update))
+        if update:
+            freq_src_name = self.freq_source.get_source_name()
+            self.graphs[freq_src_name].set_visible_graphs(self.sensors_menu.current_active_freq_mode)
 
         self.original_widget = self.main_window_w
 
@@ -325,6 +327,16 @@ class GraphView(urwid.WidgetPlaceholder):
             self.temp_sensors_menu.get_size()[1],
             ('relative', self.top_margin),
             self.temp_sensors_menu.get_size()[0])
+
+    def on_sensors_menu_open(self, w):
+        """Open Sensor menu on top of existing frame"""
+        self.original_widget = urwid.Overlay(
+            self.sensors_menu.main_window,
+            self.original_widget,
+            ('relative', self.left_margin),
+            self.sensors_menu.get_size()[1],
+            ('relative', self.top_margin),
+            self.sensors_menu.get_size()[0])
 
     def on_mode_button(self, button, state):
         """Notify the controller of a new mode setting."""
@@ -423,6 +435,8 @@ class GraphView(urwid.WidgetPlaceholder):
                                           self.on_stress_menu_open))
         control_options.append(button('Temp Sensors',
                                       self.on_temp_sensors_menu_open))
+        control_options.append(button('Sensors',
+                                      self.on_sensors_menu_open))
         control_options.append(button('Help', self.on_help_menu_open))
         control_options.append(button('About', self.on_about_menu_open))
 
@@ -527,16 +541,20 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # TODO: Update to find sensors automatically
 
+        # construct frequency graph and source
         freq_source = FreqSource(is_admin)
-        self.graphs[freq_source.get_source_name()] = StuiBarGraph(
+        self.graphs[freq_source.get_source_name()] = StuiBarGraphVector(
             freq_source, 'freq light', 'freq dark',
-            'freq light smooth', 'freq dark smooth'
+            'freq light smooth', 'freq dark smooth',
+            len(self.freq_source.get_sensor_list()),
+            self.sensors_menu.current_active_freq_mode
         )
 
         self.summaries[freq_source.get_source_name()] = SummaryTextList(
             freq_source
         )
 
+        # construct utilization graph and source
         util_source = UtilSource()
         self.graphs[util_source.get_source_name()] = StuiBarGraph(
             util_source, 'util light', 'util dark',
@@ -547,6 +565,7 @@ class GraphView(urwid.WidgetPlaceholder):
             util_source
         )
 
+        # construct temprature graph and source
         temp_source = TempSource(self.controller.custom_temp,
                                  self.controller.temp_thresh)
 
@@ -564,6 +583,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graphs[temp_source.get_source_name()] = StuiBarGraph(
             temp_source, 'temp light', 'temp dark',
             'temp light smooth', 'temp dark smooth',
+            # len(self.temp_source.get_sensor_list()),
+            # self.sensors_menu.current_active_temp_mode,
             alert_colors=alert_colors
         )
 
@@ -593,7 +614,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.visible_graphs = self.available_graphs.copy()
 
-        # Remove graphs from shown graphs if user configed them out
+        # Remove graphs from shown graphs if user configured them out
         # TODO: get this information from the state
         conf = self.controller.conf
         for graph_name in self.available_graphs.keys():
