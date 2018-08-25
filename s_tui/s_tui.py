@@ -318,16 +318,6 @@ class GraphView(urwid.WidgetPlaceholder):
                                              ('relative', self.top_margin),
                                              self.about_menu.get_size()[0])
 
-    def on_temp_sensors_menu_open(self, w):
-        """Open About menu"""
-        self.original_widget = urwid.Overlay(
-            self.temp_sensors_menu.main_window,
-            self.original_widget,
-            ('relative', self.left_margin),
-            self.temp_sensors_menu.get_size()[1],
-            ('relative', self.top_margin),
-            self.temp_sensors_menu.get_size()[0])
-
     def on_sensors_menu_open(self, w):
         """Open Sensor menu on top of existing frame"""
         self.original_widget = urwid.Overlay(
@@ -433,8 +423,6 @@ class GraphView(urwid.WidgetPlaceholder):
         if stress_installed:
             control_options.append(button('Stress Options',
                                           self.on_stress_menu_open))
-        control_options.append(button('Temp Sensors',
-                                      self.on_temp_sensors_menu_open))
         control_options.append(button('Sensors',
                                       self.on_sensors_menu_open))
         control_options.append(button('Help', self.on_help_menu_open))
