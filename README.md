@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/amanusk/s-tui.svg?branch=master)](https://travis-ci.org/amanusk/s-tui)
 [![PyPI version](https://badge.fury.io/py/s-tui.svg)](https://badge.fury.io/py/s-tui)
-[![Downloads](http://pepy.tech/badge/s-tui)](http://pepy.tech/count/s-tui)
+[![Downloads](https://pepy.tech/badge/s-tui)](http://pepy.tech/count/s-tui)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/s-tui/Lobby)
 
 ![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/stui_logo.png?raw=true)
@@ -223,9 +223,16 @@ __A__: A default sensor is selected for temperature reads. On some systems this 
 __Q__: I am using the TTY with no X server and s-tui crashes on start  
 __A__: By default, s-tui is handles mouse inputs. This causes some systems to crash. Try running `s-tui --no-mouse` 
 
+__Q__: I am not seeing all the stats in the sidebar.
+__A__: The sidebar is scrollable, you can scroll down with `DOWN` or `j` or scroll to the bottom with `PG-DN` or `G`. You can also decrees the font of you terminal, to view more at once.
+
 ## Contributing
-New issues and PRs are welcome :) Please look at the issues that need help in the issues section.
-I try to test new versions on as many systems as I can, but I cannot cover them all. 
+
+New issues and Pull Requests are welcome :)
+
+If you notice a bug, please report it as a new issue, using the provided template.
+
+To open a Pull Request, please see [CONTRIBUTING](https://github.com/amanusk/s-tui/blob/master/CONTRIBUTING.md) for more information.
 
 ## Tip
 If you like this work, please star in on GitHub. 
