@@ -759,15 +759,21 @@ class GraphController:
         try:
             self.loop.run()
         except (ZeroDivisionError) as e:
+            # In case of Zero division, we want an error to return, and
+            # get a clue where this happens
             logging.debug("Some stat caused divide by zero exception. Exiting")
             logging.error(e, exc_info=True)
             print(ERROR_MESSAGE)
         except (AttributeError) as e:
+            # In this case we restart the loop, to address bug #50, where
+            # urwid crashes on multiple presses on 'esc'
             logging.debug("Catch attribute Error in urwid and restart")
             logging.debug(e, exc_info=True)
             self.main()
         except (psutil.NoSuchProcess) as e:
-            logging.error("No such proccess error")
+            # This might happen if the stress process is not found, in this
+            # case, we want to know why
+            logging.error("No such process error")
             logging.error(e, exc_info=True)
             print(ERROR_MESSAGE)
 
