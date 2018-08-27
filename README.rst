@@ -1,7 +1,7 @@
 The Stress Terminal UI: s-tui
 =============================
 
-|Build Status| |PyPI version| |Downloads|
+|Build Status| |PyPI version| |Downloads| |Gitter|
 
 .. figure:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/stui_logo.png?raw=true
    :alt: 
@@ -212,7 +212,7 @@ AUR packages of s-tui are available
 | ``s-tui-git`` follows the master branch. maintained by
   [@MauroMombelli](https://github.com/MauroMombelli)
 | install with
-| ``yaourt -S s-tui``
+| ``yay -S s-tui``
 
 Run source code
 ---------------
@@ -310,12 +310,22 @@ Q&A
 | **A**: By default, s-tui is handles mouse inputs. This causes some
   systems to crash. Try running ``s-tui --no-mouse``
 
+**Q**: I am not seeing all the stats in the sidebar. **A**: The sidebar
+is scrollable, you can scroll down with ``DOWN`` or ``j`` or scroll to
+the bottom with ``PG-DN`` or ``G``. You can also decrees the font of you
+terminal, to view more at once.
+
 Contributing
 ------------
 
-New issues and PRs are welcome :) Please look at the issues that need
-help in the issues section. I try to test new versions on as many
-systems as I can, but I cannot cover them all.
+New issues and Pull Requests are welcome :)
+
+If you notice a bug, please report it as a new issue, using the provided
+template.
+
+To open a Pull Request, please see
+`CONTRIBUTING <https://github.com/amanusk/s-tui/blob/master/CONTRIBUTING.md>`__
+for more information.
 
 Tip
 ---
@@ -332,5 +342,7 @@ ETH: ``0xc169699A825066f2F07E0b29C4082094b32A3F3e``
    :target: https://travis-ci.org/amanusk/s-tui
 .. |PyPI version| image:: https://badge.fury.io/py/s-tui.svg
    :target: https://badge.fury.io/py/s-tui
-.. |Downloads| image:: http://pepy.tech/badge/s-tui
+.. |Downloads| image:: https://pepy.tech/badge/s-tui
    :target: http://pepy.tech/count/s-tui
+.. |Gitter| image:: https://badges.gitter.im/Join%20Chat.svg
+   :target: https://gitter.im/s-tui/Lobby

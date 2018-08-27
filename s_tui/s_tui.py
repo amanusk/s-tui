@@ -101,6 +101,10 @@ debug_run_counter = 0
 
 INTRO_MESSAGE = HELP_MESSAGE
 
+ERROR_MESSAGE = "\n\
+        Ooop! s-tui has encountered a fatal error\n\
+        Plase report this bug here: https://github.com/amanusk/s-tui"
+
 
 class GraphMode:
     """
@@ -766,15 +770,18 @@ class GraphController:
         self.animate_graph()
         try:
             self.loop.run()
-        except (ZeroDivisionError):
+        except (ZeroDivisionError) as e:
             logging.debug("Some stat caused divide by zero exception. Exiting")
-            self.view.exit_program()
-        except (AttributeError):
-            logging.debug("Catch attribute Error in urwid and restart")
-            self.main()
-        except (psutil.NoSuchProcess):
-            logging.debug("No such proccess error")
-            self.main()
+            logging.error(e, exc_info=True)
+            print(ERROR_MESSAGE)
+        except (AttributeError) as e:
+            logging.error("Catch attribute Error in urwid and restart")
+            logging.error(e, exc_info=True)
+            print(ERROR_MESSAGE)
+        except (psutil.NoSuchProcess) as e:
+            logging.error("No such proccess error")
+            logging.error(e, exc_info=True)
+            print(ERROR_MESSAGE)
 
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
@@ -798,6 +805,7 @@ class GraphController:
             self.stress_time = 0
 
             kill_child_processes(mode.get_stress_process())
+            mode.set_stress_process(None)
             # This is not pretty, but this is how we know stress started
             self.view.graphs['Frequency'].source.set_stress_started()
             stress_cmd = [stress_program]
@@ -841,6 +849,7 @@ class GraphController:
         elif mode.get_current_mode() == 'FIRESTARTER':
             logging.debug('Started FIRESTARTER mode')
             kill_child_processes(mode.get_stress_process())
+            mode.set_stress_process(None)
 
             stress_cmd = fire_starter
 
@@ -865,6 +874,7 @@ class GraphController:
         else:
             logging.debug('Monitoring')
             kill_child_processes(mode.get_stress_process())
+            mode.set_stress_process(None)
             try:
                 self.view.graphs['Frequency'].source.set_stress_stopped()
             except(KeyError, AttributeError):
