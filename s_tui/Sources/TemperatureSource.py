@@ -19,7 +19,6 @@
 from __future__ import absolute_import
 
 import psutil
-import os
 from s_tui.Sources.Source import Source
 
 import logging
@@ -150,12 +149,10 @@ class TemperatureSource(Source):
                 logging.debug("Unable to set sensors with psutil")
                 try:
                     thermal_file = '/sys/class/thermal/thermal_zone0/temp'
-                    cmd = 'cat ' + thermal_file + ' 2> /dev/null'
-                    os.popen(cmd).read()
 
                     def update():
-                        with os.popen(cmd) as temp_file:
-                            last_value = temp_file.read()
+                        with open(thermal_file, 'rb') as fh:
+                            last_value = next(fh).decode()
                             logging.info("Recorded temp " + last_value)
                             try:
                                 last_value = int(last_value) / 1000
