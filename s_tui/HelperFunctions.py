@@ -46,6 +46,13 @@ def get_processor_name():
         for line in all_info.split(b'\n'):
             if b'model name' in line:
                 return re.sub(b'.*model name.*:', b'', line, 1)
+    elif platform.system() == "FreeBSD":
+        cmd = ["sysctl", "-n", "hw.model"]
+        process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+        str_value = process.stdout.read()
+        return str_value
     return ""
 
 

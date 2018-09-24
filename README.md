@@ -159,6 +159,21 @@ AUR packages of s-tui are available
 install with  
 `yay -S s-tui`
 
+### FreeBSD
+s-tui uses sysctl to obtain some of the metrics in FreeBSD. For s-tui to work as expected,
+these modules need to be loaded:
+
+* __Temperature__:
+Execute `kldload coretemp` on Intel systems or `kldload amdtemp` on AMD systems.
+Or add `coretemp_load="YES"`/`amdtemp_load="YES"` to your `/boot/loader.conf` file
+
+* __Frequancy__:
+Add `powerd_enable="YES"` to your `/etc/rc.conf` file
+
+* __Fan__ (Thinkpad):
+Execute `kldload acpi_ibm.ko` or add `acpi_ibm_load="YES"` to `/boot/loader.conf`
+
+
 ## Run source code
 Running s-tui from source  
 Clone 

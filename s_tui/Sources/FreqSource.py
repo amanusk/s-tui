@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import psutil
 import os
 import re
+import platform
 import subprocess
 from s_tui.Sources.Source import Source
 from collections import OrderedDict
@@ -87,12 +88,12 @@ class FreqSource(Source):
                 logging.debug(e)
 
         if self.turbo_freq is False:
-            try:
+            if hasattr(psutil, 'cpu_freqy'):
                 self.top_freq = psutil.cpu_freq().max
-
-            except(AttributeError):
+            else:
                 logging.debug("Max freq from psutil not available")
                 try:
+                    # This should be removed
                     cmd = "lscpu | grep 'CPU max MHz'"
                     ps = subprocess.Popen(cmd, shell=True,
                                           stdout=subprocess.PIPE,
@@ -131,13 +132,27 @@ class FreqSource(Source):
             return round(sum(float(x) for x in cores_freq) /
                          len(cores_freq), 1)
 
-        try:
-            cur_freq = int(psutil.cpu_freq().current)
-        except (AttributeError):
-            cur_freq = 0
+        if hasattr(psutil, 'cpu_freq'):
             try:
-                cur_freq = get_avarage_cpu_freq()
-            except(OSError, ZeroDivisionError):
+                cur_freq = int(psutil.cpu_freq().current)
+            except(AttributeError):
+                cur_freq = 0
+                logging.debug("Frequency unavailable")
+                try:
+                    cur_freq = get_avarage_cpu_freq()
+                except(OSError):
+                    cur_freq = 0
+                    logging.debug("Frequancy not avialble from /proc/cpuinfo")
+        # For freeBSD systems
+        elif platform.system() == "FreeBSD":
+            try:
+                cmd = ["sysctl", "-n", "dev.cpu.0.freq"]
+                process = subprocess.Popen(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                )
+                cur_freq = float(process.stdout.read())
+                logging.debug("Frequancy " + str(cur_freq))
+            except(ValueError):
                 cur_freq = 0
                 logging.debug("Frequency unavailable")
 

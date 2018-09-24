@@ -19,6 +19,8 @@
 from __future__ import absolute_import
 
 import time
+import subprocess
+import platform
 import psutil
 from s_tui.Sources.Source import Source
 
@@ -37,30 +39,45 @@ class FanSource(Source):
 
     def update(self):
         result = 0
-        if self.custom_fan is not None:
+        if hasattr(psutil, 'sensors_fans'):
+            if self.custom_fan is not None:
+                try:
+                    sensors_info = self.custom_fan.split(",")
+                    sensor_major = sensors_info[0]
+                    sensor_minor = sensors_info[1]
+                    logging.debug("Fan Major " + str(sensor_major) +
+                                  " Fan Minor " + str(sensor_minor))
+                    result = psutil.sensors_fans()[sensor_major][
+                        int(sensor_minor)].current
+                except (KeyError, IndexError, ValueError):
+                    result = 0
+                    logging.debug("Fan Speend Not Available")
+                    self.is_available = False
+            else:
+                try:
+                    fans = psutil.sensors_fans()
+                    fan_list = list(fans.keys())
+                    # Take the first fan by default
+                    result = fans[fan_list[0]][0].current
+                except (KeyError, IndexError, ValueError):
+                    result = 0
+                    logging.debug("Fan Speend Not Available")
+                    self.is_available = False
+        # For freeBSD systems
+        elif platform.system() == "FreeBSD":
             try:
-                sensors_info = self.custom_fan.split(",")
-                sensor_major = sensors_info[0]
-                sensor_minor = sensors_info[1]
-                logging.debug("Fan Major " + str(sensor_major) +
-                              " Fan Minor " + str(sensor_minor))
-                result = psutil.sensors_fans()[sensor_major][
-                    int(sensor_minor)].current
-            except (KeyError, IndexError, ValueError, AttributeError):
-                result = 0
-                logging.debug("Fan Speend Not Available")
-                self.is_available = False
-        else:
-            try:
-                fans = psutil.sensors_fans()
-                fan_list = list(fans.keys())
-                result = fans[fan_list[0]][0].current
-            except (KeyError, IndexError, ValueError, AttributeError):
+                cmd = ["sysctl", "-n", "dev.acpi_ibm.0.fan_speed"]
+                process = subprocess.Popen(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                )
+                result = float(process.stdout.read())
+                logging.debug("Fan " + str(result))
+            except(ValueError):
                 result = 0
                 logging.debug("Fan Speend Not Available")
                 self.is_available = False
 
-        self.fan_speed = float(result)
+        self.fan_speed = result
         if self.fan_speed > self.max_speed:
             self.max_speed = self.fan_speed
         logging.info("Fan speed recorded" + str(self.fan_speed))

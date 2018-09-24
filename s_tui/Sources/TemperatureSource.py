@@ -22,6 +22,10 @@ import psutil
 from s_tui.Sources.Source import Source
 
 import logging
+import subprocess
+import os
+import re
+import platform
 logger = logging.getLogger(__name__)
 
 count = -3
@@ -50,7 +54,11 @@ class TemperatureSource(Source):
                 self.temp_thresh = int(temp_thresh)
                 logging.debug("Updated custom threshold to " +
                               str(self.temp_thresh))
-        self.update()
+
+        if self.update is not None:
+            self.update()
+        else:
+            self.is_available = False
         logging.debug("Update is updated to " + str(self.update))
 
     # Replace with a function that does the update
@@ -93,26 +101,27 @@ class TemperatureSource(Source):
 
         logging.debug("custom temp is " + str(self.custom_temp))
         # Use the manual sensor
-        if self.custom_temp is not None:
-            logging.debug("Selected custom temp")
-            try:
-                sensors_info = self.custom_temp.split(",")
-                sensor_major = sensors_info[0]
-                sensor_minor = sensors_info[1]
-                logging.debug("Major " + str(sensor_major) + " Minor " +
-                              str(sensor_minor))
-
-                def update():
-                    update_func(sensor_major, int(sensor_minor))
-                set_threshold(sensor_major, int(sensor_minor))
-                return update
-            except (KeyError, IndexError, AttributeError):
-                self.is_available = False
-                logging.debug("Illegal sensor")
-                return empty_func
 
         # Select from possible known sensors
-        try:
+        if hasattr(psutil, 'sensors_temperatures'):
+            if self.custom_temp is not None:
+                logging.debug("Selected custom temp")
+                try:
+                    sensors_info = self.custom_temp.split(",")
+                    sensor_major = sensors_info[0]
+                    sensor_minor = sensors_info[1]
+                    logging.debug("Major " + str(sensor_major) + " Minor " +
+                                  str(sensor_minor))
+
+                    def update():
+                        update_func(sensor_major, int(sensor_minor))
+                    set_threshold(sensor_major, int(sensor_minor))
+                    return update
+                except (KeyError, IndexError, AttributeError):
+                    self.is_available = False
+                    logging.debug("Illegal sensor")
+                    return empty_func
+
             sensors = psutil.sensors_temperatures()
             sensor = None
             if 'coretemp' in sensors:
@@ -147,32 +156,71 @@ class TemperatureSource(Source):
             # If sensors was not found using psutil, try reading file
             else:
                 logging.debug("Unable to set sensors with psutil")
-                try:
-                    thermal_file = '/sys/class/thermal/thermal_zone0/temp'
+                # For raspberry pi systems
+                thermal_file = '/sys/class/thermal/thermal_zone0/temp'
+                if os.path.isfile(thermal_file):
+                    try:
+                        with open(thermal_file, 'rb') as fh:
+                            last_value = next(fh).decode()
+                            last_value = int(last_value) / 1000
+                    except(ValueError):
+                        logging.debug("Thermal zone contains no data")
+                        self.is_available = False
+                        return empty_func
 
                     def update():
                         with open(thermal_file, 'rb') as fh:
                             last_value = next(fh).decode()
-                            logging.info("Recorded temp " + last_value)
-                            try:
-                                last_value = int(last_value) / 1000
-                            except(ValueError):
-                                logging.debug("Thermal zone contains no data")
-                                self.is_available = False
-                                return empty_func
+                            last_value = int(last_value) / 1000
+                            logging.info("Recorded temp " + str(last_value))
                             update_max_temp(last_value)
                             self.last_temp = last_value
                             Source.update(self)
                     self.temp_thresh = self.THRESHOLD_TEMP
                     logging.debug("Used thermal zone as file")
                     return update
-                except (KeyError):
-                    self.is_available = False
-                    return empty_func
 
-        except(AttributeError):
-            self.is_available = False
-            return empty_func
+        # For FreeBSD systems
+        elif platform.system() == "FreeBSD":
+            logging.debug("temp_sensors not supported")
+            logging.debug("Try get temp of freeBSD")
+            try:
+                cmd = ["sysctl", "-n", "dev.cpu.0.temperature"]
+                process = subprocess.Popen(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                )
+                str_value = process.stdout.read().decode('utf-8')
+                last_value = int(re.findall('\d+', str_value)[0])
+            except(ValueError, IndexError):
+                self.is_available = False
+                return empty_func
+
+            try:
+                cmd = ["sysctl", "-n", "dev.cpu.0.coretemp.tjmax"]
+                process = subprocess.Popen(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                )
+                str_value = process.stdout.read().decode('utf-8')
+                temp_max = int(re.findall('\d+', str_value)[0])
+                logging.debug("Temperature max " + str(temp_max))
+                self.temp_thresh = temp_max
+            except(ValueError, IndexError):
+                self.temp_thresh = self.THRESHOLD_TEMP
+
+            def update():
+                cmd = ["sysctl", "-n", "dev.cpu.0.temperature"]
+                process = subprocess.Popen(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                )
+                str_value = process.stdout.read().decode('utf-8')
+                last_value = int(re.findall('\d+', str_value)[0])
+                self.last_temp = last_value
+                update_max_temp(last_value)
+                Source.update(self)
+                logging.debug("Temperature " + str(last_value))
+
+            logging.debug("Used thermal zone as file")
+            return update
 
     def get_reading(self):
         return self.last_temp
