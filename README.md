@@ -154,7 +154,7 @@ sudo apt-get install python3-s-tui
 ### Arch-Linux
 AUR packages of s-tui are available
 
-`s-tui` is the latest stable release version. Maintined by [@DonOregano](https://github.com/DonOregano)  
+`s-tui` is the latest stable release version. Maintained by [@DonOregano](https://github.com/DonOregano)  
 `s-tui-git` follows the master branch. maintained by [@MauroMombelli](https://github.com/MauroMombelli)  
 install with  
 `yay -S s-tui`
