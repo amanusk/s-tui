@@ -187,10 +187,16 @@ class TemperatureSource(Source):
         return self.is_available
 
     def get_edge_triggered(self):
-        return self.last_temp > self.temp_thresh
+        if self.temp_thresh is not None:
+            return self.last_temp > self.temp_thresh
+        else:
+            return True
 
     def get_max_triggered(self):
-        return self.max_temp > self.temp_thresh
+        if self.temp_thresh is not None:
+            return self.max_temp > self.temp_thresh
+        else:
+            return True
 
     def get_summary(self):
         return {'Cur Temp': '%.1f %s' %
