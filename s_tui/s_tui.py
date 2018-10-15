@@ -63,7 +63,7 @@ from s_tui.HelperFunctions import seconds_to_text
 from s_tui.UiElements import ViListBox
 from s_tui.UiElements import radio_button
 from s_tui.UiElements import button
-from s_tui.TempSensorsMenu import TempSensorsMenu
+# from s_tui.TempSensorsMenu import TempSensorsMenu
 from s_tui.SensorsMenu import SensorsMenu
 from s_tui.StuiBarGraph import StuiBarGraph
 from s_tui.StuiBarGraphVector import StuiBarGraphVector
@@ -118,7 +118,7 @@ class GraphMode:
                 p = subprocess.Popen("stress", stdout=DEVNULL,
                                      stderr=DEVNULL, shell=False)
                 p.kill()
-            except (OSError):
+            except OSError:
                 logging.debug("stress is not installed")
             else:
                 stress_installed = True
@@ -129,7 +129,7 @@ class GraphMode:
                 p = subprocess.Popen("stress-ng", stdout=DEVNULL,
                                      stderr=DEVNULL, shell=False)
                 p.kill()
-            except (OSError):
+            except OSError:
                 logging.debug("stress-ng is not installed")
             else:
                 stress_installed = True
@@ -216,15 +216,22 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.main_window_w = []
 
-        # construct temprature graph and source
+        self.graphs = []
+        self.summaries = []
+        # construct temperature graph and source
+        self.source_list = []
+
         self.temp_source = TempSource(self.controller.custom_temp,
                                       self.controller.temp_thresh)
+
         self.freq_source = FreqSource(is_admin)
+        # self.source_list.append(self.temp_source)
+        self.source_list.append(self.freq_source)
 
         self.stress_menu = StressMenu(self.on_menu_close)
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
-        self.sensors_menu = SensorsMenu(self.on_sensors_menu_close, self.temp_source, self.freq_source)
+        self.sensors_menu = SensorsMenu(self.on_sensors_menu_close, self.source_list)
         self.global_data = GlobalData(is_admin)
 
         self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
@@ -241,7 +248,7 @@ class GraphView(urwid.WidgetPlaceholder):
                 pass
             else:
                 self.controller.refresh_rate = new_refresh_rate
-        except(ValueError):
+        except ValueError:
             self.controller.refresh_rate = '2.0'
 
     def update_displayed_information(self):
@@ -270,7 +277,7 @@ class GraphView(urwid.WidgetPlaceholder):
         for g in self.graphs.values():
             try:
                 g.source.reset()
-            except (NotImplementedError):
+            except NotImplementedError:
                 pass
         # Reset clock
         self.controller.stress_time = 0
@@ -283,11 +290,12 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def on_sensors_menu_close(self, update):
         """Return to main screen and update sensor that are active in the view"""
-
+        logging.info("closing sensor menu")
         logging.info("sensor update is: " + str(update))
         if update:
-            freq_src_name = self.freq_source.get_source_name()
-            self.graphs[freq_src_name].set_visible_graphs(self.sensors_menu.current_active_freq_mode)
+            for sensor, visible_sensors in self.sensors_menu.sensor_current_active_dict.items():
+                logging.info(str(visible_sensors))
+                self.graphs[sensor].set_visible_graphs(visible_sensors)
 
         self.original_widget = self.main_window_w
 
@@ -319,6 +327,7 @@ class GraphView(urwid.WidgetPlaceholder):
                                              self.about_menu.get_size()[0])
 
     def on_sensors_menu_open(self, w):
+        logging.info("opening sensor menu")
         """Open Sensor menu on top of existing frame"""
         self.original_widget = urwid.Overlay(
             self.sensors_menu.main_window,
@@ -328,11 +337,11 @@ class GraphView(urwid.WidgetPlaceholder):
             ('relative', self.top_margin),
             self.sensors_menu.get_size()[0])
 
-    def on_mode_button(self, button, state):
+    def on_mode_button(self, my_button, state):
         """Notify the controller of a new mode setting."""
         if state:
             # The new mode is the label of the button
-            self.controller.set_mode(button.get_label())
+            self.controller.set_mode(my_button.get_label())
             self.controller.start_stress()
 
     def on_mode_change(self, m):
@@ -509,7 +518,7 @@ class GraphView(urwid.WidgetPlaceholder):
         cpu_name = urwid.Text("CPU Name N/A", align="center")
         try:
             cpu_name = urwid.Text(get_processor_name().strip(), align="center")
-        except(OSError):
+        except OSError:
             logging.info("CPU name not available")
         cpu_stats = [cpu_name, urwid.Divider()]
         return cpu_stats
@@ -530,17 +539,20 @@ class GraphView(urwid.WidgetPlaceholder):
         # TODO: Update to find sensors automatically
 
         # construct frequency graph and source
-        freq_source = FreqSource(is_admin)
-        self.graphs[freq_source.get_source_name()] = StuiBarGraphVector(
-            freq_source, 'freq light', 'freq dark',
-            'freq light smooth', 'freq dark smooth',
-            len(self.freq_source.get_sensor_list()),
-            self.sensors_menu.current_active_freq_mode
-        )
+        # freq_source = FreqSource(is_admin)
+        for source in self.source_list:
+            source_name = source.get_source_name()
 
-        self.summaries[freq_source.get_source_name()] = SummaryTextList(
-            freq_source
-        )
+            self.graphs[source_name] = StuiBarGraphVector(
+                source, 'freq light', 'freq dark',
+                'freq light smooth', 'freq dark smooth',
+                len(source.get_sensor_list()),
+                self.sensors_menu.sensor_current_active_dict[source_name]
+            )
+
+            self.summaries[source_name] = SummaryTextList(
+                source
+            )
 
         # construct utilization graph and source
         util_source = UtilSource()
@@ -728,7 +740,7 @@ class GraphController:
         self.json = args.json
         self.mode = GraphMode()
 
-        self.handle_mouse = not(args.no_mouse)
+        self.handle_mouse = not args.no_mouse
 
         self.stress_start_time = 0
         self.stress_time = 0
@@ -766,13 +778,13 @@ class GraphController:
         self.animate_graph()
         try:
             self.loop.run()
-        except (ZeroDivisionError):
+        except ZeroDivisionError:
             logging.debug("Some stat caused divide by zero exception. Exiting")
             self.view.exit_program()
-        except (AttributeError):
+        except AttributeError:
             logging.debug("Catch attribute Error in urwid and restart")
             self.main()
-        except (psutil.NoSuchProcess):
+        except psutil.NoSuchProcess:
             logging.debug("No such proccess error")
             self.main()
 
