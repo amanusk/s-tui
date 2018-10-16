@@ -101,8 +101,8 @@ class StuiBarGraphVector(LabeledBarGraphVector):
                                 (max_val - min_val) / label_cnt), 1)
                          for i in range(label_cnt + 1)]
             return label
-        except (ZeroDivisionError):
-            logging.debug("Side lable creation divided by 0")
+        except ZeroDivisionError:
+            logging.debug("Side label creation divided by 0")
             return ""
 
     def set_smooth_colors(self, smooth):
@@ -146,7 +146,7 @@ class StuiBarGraphVector(LabeledBarGraphVector):
                 self.set_alert_colors()
             else:
                 self.set_regular_colors()
-        except (NotImplementedError):
+        except NotImplementedError:
             pass
 
         current_reading = self.source.get_reading_list()

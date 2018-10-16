@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 """
-A class displaying all available Temperature sensors
+A class displaying all available sensors
 """
 
 from __future__ import print_function
@@ -48,7 +48,6 @@ class SensorsMenu:
 
         if_buttons = urwid.Columns([apply_button, cancel_button])
 
-        # self.available_sensors = []
         self.sensor_status_dict = {}
         sensor_column_list = []
         self.sensor_button_dict = {}
@@ -63,10 +62,9 @@ class SensorsMenu:
             self.sensor_current_active_dict[source_name] = []
 
             # add the title at the head of the checkbox column
-            sensot_title_str = "  " + source_name + " Sensors  \n"
+            sensor_title_str = "  " + source_name + " Sensors  \n"
             sensor_title = urwid.Text(
-                ('bold text', sensot_title_str), 'center')
-            # self.sensor_button_dict[source_name].append(sensor_title)
+                ('bold text', sensor_title_str), 'center')
 
             # create the checkbox buttons with the saved visibility
             for sensor, sensor_visibility in zip(source.get_sensor_list(), self.sensor_status_dict[source_name]):

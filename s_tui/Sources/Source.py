@@ -54,6 +54,12 @@ class Source:
     def get_measurement_unit(self):
         raise NotImplementedError("Get measurement unit is not implemented")
 
+    def get_pallet(self):
+        raise NotImplementedError("Get pallet is not implemented")
+
+    def get_alert_pallet(self):
+        raise None
+
     def get_sensor_name(self):
         return None
         # raise NotImplementedError("get_sensor_name is not implemented")

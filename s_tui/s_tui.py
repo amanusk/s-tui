@@ -198,6 +198,8 @@ class GraphView(urwid.WidgetPlaceholder):
     The change is state should be reflected in the GraphController
     """
     def __init__(self, controller):
+        self.TEMP_SOURCE = 0
+        self.FREQ_SOURCE = 1
 
         self.controller = controller
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
@@ -221,12 +223,12 @@ class GraphView(urwid.WidgetPlaceholder):
         # construct temperature graph and source
         self.source_list = []
 
-        self.temp_source = TempSource(self.controller.custom_temp,
-                                      self.controller.temp_thresh)
+        # self.temp_source = TempSource(self.controller.custom_temp,
+        #                               self.controller.temp_thresh)
 
-        self.freq_source = FreqSource(is_admin)
-        # self.source_list.append(self.temp_source)
-        self.source_list.append(self.freq_source)
+        self.source_list.append(TempSource(self.controller.custom_temp,
+                                           self.controller.temp_thresh))
+        self.source_list.append(FreqSource(is_admin))
 
         self.stress_menu = StressMenu(self.on_menu_close)
         self.help_menu = HelpMenu(self.on_menu_close)
@@ -327,7 +329,6 @@ class GraphView(urwid.WidgetPlaceholder):
                                              self.about_menu.get_size()[0])
 
     def on_sensors_menu_open(self, w):
-        logging.info("opening sensor menu")
         """Open Sensor menu on top of existing frame"""
         self.original_widget = urwid.Overlay(
             self.sensors_menu.main_window,
@@ -419,7 +420,7 @@ class GraphView(urwid.WidgetPlaceholder):
             conf.write(cfgfile)
 
     def graph_controls(self, conf):
-        """ Dislplay sidebar controls. i.e. buttons, and controls"""
+        """ Display sidebar controls. i.e. buttons, and controls"""
         modes = self.controller.get_modes()
         # setup mode radio buttons
         group = []
@@ -513,6 +514,7 @@ class GraphView(urwid.WidgetPlaceholder):
                 for graph in self.visible_graphs.values()))
         self.graph_place_holder.original_widget = urwid.Pile(elements)
 
+    @staticmethod
     def cpu_stats(self):
         """Read and display processor name """
         cpu_name = urwid.Text("CPU Name N/A", align="center")
@@ -536,18 +538,17 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graphs = OrderedDict()
         self.summaries = OrderedDict()
 
-        # TODO: Update to find sensors automatically
-
         # construct frequency graph and source
-        # freq_source = FreqSource(is_admin)
         for source in self.source_list:
             source_name = source.get_source_name()
-
+            color_pallet = source.get_pallet()
+            alert_pallet = source.get_alert_pallet()
             self.graphs[source_name] = StuiBarGraphVector(
-                source, 'freq light', 'freq dark',
-                'freq light smooth', 'freq dark smooth',
+                source, color_pallet[0], color_pallet[1],
+                color_pallet[2], color_pallet[3],
                 len(source.get_sensor_list()),
-                self.sensors_menu.sensor_current_active_dict[source_name]
+                self.sensors_menu.sensor_current_active_dict[source_name],
+                alert_colors=alert_pallet
             )
 
             self.summaries[source_name] = SummaryTextList(
@@ -565,9 +566,8 @@ class GraphView(urwid.WidgetPlaceholder):
             util_source
         )
 
-        # construct temprature graph and source
-        temp_source = TempSource(self.controller.custom_temp,
-                                 self.controller.temp_thresh)
+        # construct temperature graph and source
+        temp_source = self.source_list[self.TEMP_SOURCE]
 
         if self.controller.script_hooks_enabled:
             temp_source.add_edge_hook(
@@ -575,21 +575,19 @@ class GraphView(urwid.WidgetPlaceholder):
                     temp_source.__class__.__name__, 30000)
             )  # Invoke threshold script every 30s while threshold is exceeded.
 
-        alert_colors = ['high temp light',
-                        'high temp dark',
-                        'high temp light smooth',
-                        'high temp dark smooth']
+        # alert_colors = ['high temp light',
+        #                 'high temp dark',
+        #                 'high temp light smooth',
+        #                 'high temp dark smooth']
 
-        self.graphs[temp_source.get_source_name()] = StuiBarGraph(
-            temp_source, 'temp light', 'temp dark',
-            'temp light smooth', 'temp dark smooth',
-            # len(self.temp_source.get_sensor_list()),
-            # self.sensors_menu.current_active_temp_mode,
-            alert_colors=alert_colors
-        )
+        # self.graphs[temp_source.get_source_name()] = StuiBarGraph(
+        #     temp_source, 'temp light', 'temp dark',
+        #     'temp light smooth', 'temp dark smooth',
+        #     alert_colors=alert_colors
+        # )
 
-        self.summaries[temp_source.get_source_name()] = SummaryTextList(
-            temp_source, 'high temp txt')
+        # self.summaries[temp_source.get_source_name()] = SummaryTextList(
+        #     temp_source, 'high temp txt')
 
         rapl_power_source = RaplPowerSource()
 

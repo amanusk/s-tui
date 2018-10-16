@@ -56,7 +56,7 @@ class TemperatureSource(Source):
                     sensor_label = value[itr].label
                     logging.debug("Sensor Label")
                     logging.debug(sensor_label)
-                except (IndexError):
+                except IndexError:
                     pass
 
                 self.available_sensors.append(sensor_name +
@@ -181,7 +181,7 @@ class TemperatureSource(Source):
                             logging.info("Recorded temp " + last_value)
                             try:
                                 last_value = int(last_value) / 1000
-                            except(ValueError):
+                            except ValueError:
                                 logging.debug("Thermal zone contains no data")
                                 self.is_available = False
                                 return empty_func
@@ -191,11 +191,11 @@ class TemperatureSource(Source):
                     self.temp_thresh = self.THRESHOLD_TEMP
                     logging.debug("Used thermal zone as file")
                     return update
-                except (KeyError):
+                except KeyError:
                     self.is_available = False
                     return empty_func
 
-        except(AttributeError):
+        except AttributeError:
             self.is_available = False
             return empty_func
 
@@ -237,7 +237,7 @@ class TemperatureSource(Source):
 
     def reset(self):
         self.max_temp = 1
-        self.cur_temp = 1
+        # self.cur_temp = 1
 
     def get_measurement_unit(self):
         return self.measurement_unit
@@ -245,3 +245,10 @@ class TemperatureSource(Source):
     def set_source(self, source):
         self.custom_temp = source
         return
+
+    def get_pallet(self):
+        return 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth'
+
+    def get_alert_pallet(self):
+        return 'high temp light', 'high temp dark', \
+               'high temp light smooth', 'high temp dark smooth'

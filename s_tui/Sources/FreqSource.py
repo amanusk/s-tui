@@ -229,3 +229,6 @@ class FreqSource(Source):
 
     def get_measurement_unit(self):
         return 'MHz'
+
+    def get_pallet(self):
+        return 'freq light', 'freq dark', 'freq light smooth', 'freq dark smooth'
