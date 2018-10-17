@@ -515,7 +515,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_place_holder.original_widget = urwid.Pile(elements)
 
     @staticmethod
-    def cpu_stats(self):
+    def cpu_stats():
         """Read and display processor name """
         cpu_name = urwid.Text("CPU Name N/A", align="center")
         try:

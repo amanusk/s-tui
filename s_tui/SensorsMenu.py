@@ -112,5 +112,8 @@ class SensorsMenu:
                 (cb_sensor_visibility != self.sensor_current_active_dict[sensor_name])
             self.sensor_current_active_dict[sensor_name] = cb_sensor_visibility
 
+            if update_sensor_visibility:
+                break
+
         self.set_checkbox_value()
         self.return_fn(update=update_sensor_visibility)
