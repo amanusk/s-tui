@@ -540,7 +540,6 @@ class GraphView(urwid.WidgetPlaceholder):
         # initiating the graphs
         self.graphs = OrderedDict()
         self.summaries = OrderedDict()
-
         # construct frequency graph and source
         for source in self.source_list:
             source_name = source.get_source_name()
@@ -568,7 +567,6 @@ class GraphView(urwid.WidgetPlaceholder):
         self.summaries[util_source.get_source_name()] = SummaryTextList(
             util_source
         )
-
         # construct temperature graph and source
         temp_source = self.source_list[self.TEMP_SOURCE]
 
@@ -582,13 +580,11 @@ class GraphView(urwid.WidgetPlaceholder):
         #                 'high temp dark',
         #                 'high temp light smooth',
         #                 'high temp dark smooth']
-
         # self.graphs[temp_source.get_source_name()] = StuiBarGraph(
         #     temp_source, 'temp light', 'temp dark',
         #     'temp light smooth', 'temp dark smooth',
         #     alert_colors=alert_colors
         # )
-
         # self.summaries[temp_source.get_source_name()] = SummaryTextList(
         #     temp_source, 'high temp txt')
 
