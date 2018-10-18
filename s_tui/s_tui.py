@@ -292,7 +292,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.original_widget = self.main_window_w
 
     def on_sensors_menu_close(self, update):
-        """Return to main screen and update sensor that 
+        """Return to main screen and update sensor that
         are active in the view"""
         logging.info("closing sensor menu")
         logging.info("sensor update is: " + str(update))

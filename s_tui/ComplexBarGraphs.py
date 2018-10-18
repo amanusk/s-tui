@@ -240,7 +240,8 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
             if state:
                 text_w = urwid.Text(sub_title, align='center')
                 sub_title_widget = urwid.ListBox([text_w])
-                graph_a = [('fixed', 1, sub_title_widget), ('weight', 1, graph)]
+                graph_a = [('fixed', 1, sub_title_widget),
+                           ('weight', 1, graph)]
                 graph_and_title = urwid.Pile(graph_a)
                 graph_vector_column_list.append(('weight', 1, graph_and_title))
                 graph_vector_column_list.append(('fixed', 1, vline))

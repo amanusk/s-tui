@@ -234,4 +234,7 @@ class FreqSource(Source):
         return 'MHz'
 
     def get_pallet(self):
-        return 'freq light', 'freq dark', 'freq light smooth', 'freq dark smooth'
+        return 'freq light', \
+               'freq dark', \
+               'freq light smooth', \
+               'freq dark smooth'

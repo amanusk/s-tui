@@ -55,13 +55,13 @@ class StuiBarGraph(LabeledBarGraph):
 
         self.satt = None
 
-
-
         x_label = []
         y_label = []
 
         if self.sensor_name is not None:
-            graph_title = self.graph_name + ' [' + self.measurement_unit + '] ' + self.sensor_name
+            graph_title = self.graph_name + \
+                          ' [' + self.measurement_unit + '] ' + \
+                          self.sensor_name
         else:
             graph_title = self.graph_name + ' [' + self.measurement_unit + ']'
 
