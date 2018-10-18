@@ -35,8 +35,16 @@ class StuiBarGraphVector(LabeledBarGraphVector):
     MAX_SAMPLES = 1000
     SCALE_DENSITY = 5
 
-    def __init__(self, source, color_a, color_b, smooth_a, smooth_b, graph_count, visible_graph_list,
-                 alert_colors=None, bar_width=1):
+    def __init__(self,
+                 source,
+                 color_a,
+                 color_b,
+                 smooth_a,
+                 smooth_b,
+                 graph_count,
+                 visible_graph_list,
+                 alert_colors=None,
+                 bar_width=1):
         self.source = source
         self.graph_name = self.source.get_source_name()
         self.sensor_name = source.get_sensor_name()
@@ -112,7 +120,8 @@ class StuiBarGraphVector(LabeledBarGraphVector):
             self.satt = None
 
         for graph in self.bar_graph_vector:
-            graph.set_segment_attributes(['bg background', self.color_a, self.color_b], satt=self.satt)
+            graph.set_segment_attributes(
+                ['bg background', self.color_a, self.color_b], satt=self.satt)
 
     def set_regular_colors(self):
         self.color_a = self.regular_colors[0]
@@ -123,7 +132,8 @@ class StuiBarGraphVector(LabeledBarGraphVector):
             self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
 
         for graph in self.bar_graph_vector:
-            graph.set_segment_attributes(['bg background', self.color_a, self.color_b], satt=self.satt)
+            graph.set_segment_attributes(
+                ['bg background', self.color_a, self.color_b], satt=self.satt)
 
     def set_alert_colors(self):
         self.color_a = self.alert_colors[0]
@@ -134,7 +144,8 @@ class StuiBarGraphVector(LabeledBarGraphVector):
             self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
 
         for graph in self.bar_graph_vector:
-            graph.set_segment_attributes(['bg background', self.color_a, self.color_b], satt=self.satt)
+            graph.set_segment_attributes(
+                ['bg background', self.color_a, self.color_b], satt=self.satt)
 
     def update_displayed_graph_data(self):
         if not self.get_is_available():

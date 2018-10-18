@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 
 import psutil
-import os
+# import os
 from s_tui.Sources.Source import Source
 
 import logging
@@ -84,7 +84,8 @@ class TemperatureSource(Source):
                 sensor_stui_id = sensor_id + minor_sensor_id
                 self.last_temp_list[sensor_stui_id] = minor_sensor.current
                 self.max_temp_list[sensor_stui_id] = \
-                    max(self.max_temp_list[sensor_stui_id], minor_sensor.current)
+                    max(self.max_temp_list[sensor_stui_id],
+                        minor_sensor.current)
 
     def get_reading_list(self):
         return self.last_temp_list
@@ -131,7 +132,10 @@ class TemperatureSource(Source):
         return
 
     def get_pallet(self):
-        return 'temp light', 'temp dark', 'temp light smooth', 'temp dark smooth'
+        return 'temp light', \
+               'temp dark', \
+               'temp light smooth', \
+               'temp dark smooth'
 
     def get_alert_pallet(self):
         return 'high temp light', 'high temp dark', \

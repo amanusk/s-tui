@@ -233,7 +233,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.stress_menu = StressMenu(self.on_menu_close)
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
-        self.sensors_menu = SensorsMenu(self.on_sensors_menu_close, self.source_list)
+        self.sensors_menu = \
+            SensorsMenu(self.on_sensors_menu_close, self.source_list)
         self.global_data = GlobalData(is_admin)
 
         self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
@@ -291,11 +292,13 @@ class GraphView(urwid.WidgetPlaceholder):
         self.original_widget = self.main_window_w
 
     def on_sensors_menu_close(self, update):
-        """Return to main screen and update sensor that are active in the view"""
+        """Return to main screen and update sensor that 
+        are active in the view"""
         logging.info("closing sensor menu")
         logging.info("sensor update is: " + str(update))
         if update:
-            for sensor, visible_sensors in self.sensors_menu.sensor_current_active_dict.items():
+            for sensor, visible_sensors in \
+                    self.sensors_menu.sensor_current_active_dict.items():
                 logging.info(str(visible_sensors))
                 self.graphs[sensor].set_visible_graphs(visible_sensors)
 

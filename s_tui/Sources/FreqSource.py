@@ -63,8 +63,8 @@ class FreqSource(Source):
         self.top_freq = 0
         self.turbo_freq = False
         self.last_freq = 0
-        self.last_freq_list = [0] * len(psutil.cpu_freq(True))  # TODO compatiabiolty issues?
-        self.top_freq_list = [0] * len(psutil.cpu_freq(True))  # TODO compatiabiolty issues?
+        self.last_freq_list = [0] * len(psutil.cpu_freq(True))
+        self.top_freq_list = [0] * len(psutil.cpu_freq(True))
         self.samples_taken = 0
         self.WAIT_SAMPLES = 5
         self.perf_lost = 0
@@ -123,9 +123,12 @@ class FreqSource(Source):
 
     def update(self):
         for core_id, core in enumerate(psutil.cpu_freq(True)):
-            self.last_freq_list[core_id] = core.current  # item '0' is the current frequency
-            self.top_freq_list[core_id] = max(self.top_freq_list[core_id], self.last_freq_list[core_id])
-            self.top_freq = max(self.top_freq, self.last_freq_list[core_id])  # get top freq from the sensors that are viewed only
+            # item '0' is the current frequency
+            self.last_freq_list[core_id] = core.current
+            self.top_freq_list[core_id] = max(self.top_freq_list[core_id],
+                                              self.last_freq_list[core_id])
+            # get top freq from the sensors that are viewed only
+            self.top_freq = max(self.top_freq, self.last_freq_list[core_id])
 
     def update_deprecated(self):
         """Update CPU frequency data"""

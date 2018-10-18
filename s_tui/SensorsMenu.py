@@ -57,7 +57,8 @@ class SensorsMenu:
             source_name = source.get_source_name()
 
             # get the saves sensor visibility list
-            self.sensor_status_dict[source_name] = [True] * len(source.get_sensor_list())
+            self.sensor_status_dict[source_name] =\
+                [True] * len(source.get_sensor_list())
             self.sensor_button_dict[source_name] = []
             self.sensor_current_active_dict[source_name] = []
 
@@ -67,12 +68,15 @@ class SensorsMenu:
                 ('bold text', sensor_title_str), 'center')
 
             # create the checkbox buttons with the saved visibility
-            for sensor, sensor_visibility in zip(source.get_sensor_list(), self.sensor_status_dict[source_name]):
-                cb = urwid.CheckBox(sensor, sensor_visibility)
+            for sensor, s_tatus in \
+                    zip(source.get_sensor_list(),
+                        self.sensor_status_dict[source_name]):
+                cb = urwid.CheckBox(sensor, s_tatus)
                 self.sensor_button_dict[source_name].append(cb)
-                self.sensor_current_active_dict[source_name].append(sensor_visibility)
+                self.sensor_current_active_dict[source_name].append(s_tatus)
 
-            sensor_title_and_buttons = [sensor_title] + self.sensor_button_dict[source_name]
+            sensor_title_and_buttons = \
+                [sensor_title] + self.sensor_button_dict[source_name]
             listw = urwid.SimpleFocusListWalker(sensor_title_and_buttons)
 
             sensor_column_list.append(urwid.Pile(listw))
@@ -83,8 +87,8 @@ class SensorsMenu:
         self.main_window = urwid.LineBox(ViListBox(listw))
 
         max_height = 6
-        for sensor, sensor_visibility in self.sensor_current_active_dict.items():
-            max_height = max(max_height, len(sensor_visibility) + 6)
+        for sensor, s_tatus in self.sensor_current_active_dict.items():
+            max_height = max(max_height, len(s_tatus) + 6)
 
         self.size = max_height, self.MAX_TITLE_LEN
 
@@ -103,14 +107,16 @@ class SensorsMenu:
 
     def on_apply(self, w):
         update_sensor_visibility = False
-        for sensor_name, sensor_buttons in self.sensor_button_dict.items():
+        for s_name, sensor_buttons in self.sensor_button_dict.items():
             cb_sensor_visibility = []
             for sensor_cb in sensor_buttons:
                 cb_sensor_visibility.append(sensor_cb.get_state())
 
             update_sensor_visibility = \
-                (cb_sensor_visibility != self.sensor_current_active_dict[sensor_name])
-            self.sensor_current_active_dict[sensor_name] = cb_sensor_visibility
+                (cb_sensor_visibility !=
+                 self.sensor_current_active_dict[s_name])
+
+            self.sensor_current_active_dict[s_name] = cb_sensor_visibility
 
             if update_sensor_visibility:
                 break
