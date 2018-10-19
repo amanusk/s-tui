@@ -37,7 +37,9 @@ import itertools
 
 try:
     import configparser
-except(ImportError):
+except ImportError:
+    # pycharm warning suppression
+    # noinspection PyPep8Naming,SpellCheckingInspection
     import ConfigParser as configparser
 
 from sys import exit
@@ -96,7 +98,7 @@ fire_starter = None
 is_admin = None
 stress_installed = False
 graph_controller = None
-stress_program = None
+stress_program = ''
 debug_run_counter = 0
 
 INTRO_MESSAGE = HELP_MESSAGE
@@ -170,21 +172,26 @@ class GraphMode:
 
 
 class MainLoop(urwid.MainLoop):
-    def signal_handler(signal, frame):
-        """singnal handler for properly exiting Ctrl+C"""
+
+    # pycharm warning suppression for unused variables that are part of
+    # function signature
+    # noinspection PyUnusedLocal
+    @staticmethod
+    def signal_handler(signal_in, frame):
+        """signal handler for properly exiting Ctrl+C"""
         logging.debug(graph_controller.mode.get_stress_process())
         kill_child_processes(graph_controller.mode.get_stress_process())
         raise urwid.ExitMainLoop()
 
     """ Inherit urwid Mainloop to catch special character inputs"""
-    def unhandled_input(self, input):
-        logging.debug('Caught ' + str(input))
-        if input == 'q':
+    def unhandled_input(self, stui_input):
+        logging.debug('Caught ' + str(stui_input))
+        if stui_input == 'q':
             logging.debug(graph_controller.mode.get_stress_process())
             kill_child_processes(graph_controller.mode.get_stress_process())
             raise urwid.ExitMainLoop()
 
-        if input == 'esc':
+        if stui_input == 'esc':
             graph_controller.view.on_menu_close()
 
     signal.signal(signal.SIGINT, signal_handler)
@@ -198,53 +205,56 @@ class GraphView(urwid.WidgetPlaceholder):
     The change is state should be reflected in the GraphController
     """
     def __init__(self, controller):
+        # constants
         self.TEMP_SOURCE = 0
         self.FREQ_SOURCE = 1
+        self.left_margin = 0
+        self.top_margin = 0
 
+        # main control
         self.controller = controller
-        self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
+        self.main_window_w = []
 
+        # general urwid items
         clock_text = seconds_to_text(self.controller.stress_time)
         self.clock_view = urwid.Text(('bold text', clock_text), align="center")
-
-        self.mode_buttons = []
         self.refresh_rate_ctrl = urwid.Edit(('bold text', u'Refresh[s]:'),
                                             self.controller.refresh_rate)
+        self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
+
+        self.mode_buttons = []
 
         # Visible graphs are the graphs currently displayed, this is a
         # subset of the available graphs for display
         self.visible_graphs = {}
+        self.graphs = {}
+        self.available_graphs = {}
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
-
-        self.main_window_w = []
-
-        self.graphs = []
         self.summaries = []
+        self.available_summaries = []
+
         # construct temperature graph and source
         self.source_list = []
-
-        # self.temp_source = TempSource(self.controller.custom_temp,
-        #                               self.controller.temp_thresh)
-
         self.source_list.append(TempSource(self.controller.custom_temp,
                                            self.controller.temp_thresh))
         self.source_list.append(FreqSource(is_admin))
 
+        # construct the variouse menus during init phase
         self.stress_menu = StressMenu(self.on_menu_close)
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
         self.sensors_menu = \
             SensorsMenu(self.on_sensors_menu_close, self.source_list)
         self.global_data = GlobalData(is_admin)
-
         self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
-        self.left_margin = 0
-        self.top_margin = 0
 
+        # call super
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
         urwid.connect_signal(self.refresh_rate_ctrl, 'change',
                              self.update_refresh_rate)
 
+    # pycharm warning suppression for unused vars in function
+    # noinspection PyUnusedLocal
     def update_refresh_rate(self, edit, new_refresh_rate):
         try:
             if float(new_refresh_rate) <= 0.001:
@@ -273,6 +283,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.clock_view.set_text(('bold text', seconds_to_text(
             int(self.controller.stress_time))))
 
+    # pycharm warning suppression for unused vars in function
+    # noinspection PyUnusedLocal
     def on_reset_button(self, w):
         """Reset graph data and display empty graph"""
         for g in self.visible_graphs.values():
@@ -304,8 +316,13 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.original_widget = self.main_window_w
 
+    # pycharm warning suppression for unused vars in function
+    # noinspection PyUnusedLocal
     def on_stress_menu_open(self, w):
         """Open stress options"""
+        # pycharm warning supression for funtion type input check, urwid
+        # did not specify all the allowed input types for 3rd arg
+        # noinspection PyTypeChecker
         self.original_widget = urwid.Overlay(self.stress_menu.main_window,
                                              self.original_widget,
                                              ('relative', self.left_margin),
@@ -313,8 +330,13 @@ class GraphView(urwid.WidgetPlaceholder):
                                              ('relative', self.top_margin),
                                              self.stress_menu.get_size()[0])
 
+    # pycharm warning suppression for unused vars in function
+    # noinspection PyUnusedLocal
     def on_help_menu_open(self, w):
         """Open Help menu"""
+        # pycharm warning supression for funtion type input check, urwid
+        # did not specify all the allowed input types for 3rd arg
+        # noinspection PyTypeChecker
         self.original_widget = urwid.Overlay(self.help_menu.main_window,
                                              self.original_widget,
                                              ('relative', self.left_margin),
@@ -322,8 +344,13 @@ class GraphView(urwid.WidgetPlaceholder):
                                              ('relative', self.top_margin),
                                              self.help_menu.get_size()[0])
 
+    # pycharm warning suppression for unused vars in function
+    # noinspection PyUnusedLocal
     def on_about_menu_open(self, w):
         """Open About menu"""
+        # pycharm warning supression for funtion type input check, urwid
+        # did not specify all the allowed input types for 3rd arg
+        # noinspection PyTypeChecker
         self.original_widget = urwid.Overlay(self.about_menu.main_window,
                                              self.original_widget,
                                              ('relative', self.left_margin),
@@ -331,8 +358,13 @@ class GraphView(urwid.WidgetPlaceholder):
                                              ('relative', self.top_margin),
                                              self.about_menu.get_size()[0])
 
+    # pycharm warning suppression for unused vars in function
+    # noinspection PyUnusedLocal
     def on_sensors_menu_open(self, w):
         """Open Sensor menu on top of existing frame"""
+        # pycharm warning supression for funtion type input check, urwid
+        # did not specify all the allowed input types for 3rd arg
+        # noinspection PyTypeChecker
         self.original_widget = urwid.Overlay(
             self.sensors_menu.main_window,
             self.original_widget,
@@ -355,6 +387,8 @@ class GraphView(urwid.WidgetPlaceholder):
                 rb.set_state(True, do_callback=False)
                 break
 
+    # pycharm warning suppression for unused vars in function
+    # noinspection PyUnusedLocal
     def on_unicode_checkbox(self, w=None, state=False):
         """Enable smooth edges if utf-8 is supported"""
         logging.debug("unicode State is " + str(state))
@@ -372,11 +406,15 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.show_graphs()
 
+    # pycharm warning suppression for unused vars in function
+    # noinspection PyUnusedLocal
     def exit_program(self, w=None):
         """ Kill all stress operations upon exit"""
         kill_child_processes(self.controller.mode.get_stress_process())
         raise urwid.ExitMainLoop()
 
+    # pycharm warning suppression for unused vars in function
+    # noinspection PyUnusedLocal
     def save_settings(self, w=None):
         """ Save the current configuration to a user config file """
 
@@ -576,18 +614,6 @@ class GraphView(urwid.WidgetPlaceholder):
                     temp_source.__class__.__name__, 30000)
             )  # Invoke threshold script every 30s while threshold is exceeded.
 
-        # alert_colors = ['high temp light',
-        #                 'high temp dark',
-        #                 'high temp light smooth',
-        #                 'high temp dark smooth']
-        # self.graphs[temp_source.get_source_name()] = StuiBarGraph(
-        #     temp_source, 'temp light', 'temp dark',
-        #     'temp light smooth', 'temp dark smooth',
-        #     alert_colors=alert_colors
-        # )
-        # self.summaries[temp_source.get_source_name()] = SummaryTextList(
-        #     temp_source, 'high temp txt')
-
         rapl_power_source = RaplPowerSource()
 
         self.graphs[rapl_power_source.get_source_name()] = StuiBarGraph(
@@ -657,12 +683,11 @@ class GraphController:
     * The state of the radio and selector buttons
     * The current graphs refresh rate
 
-    The controller is generated once, and is updated accroding to inputs
+    The controller is generated once, and is updated according to inputs
     """
     def __init__(self, args):
 
-        # Load and configure user config dir when contoller starts
-        user_config_dir = None
+        # Load and configure user config dir when controller starts
         if not user_config_dir_exists():
             user_config_dir = make_user_config_dir()
         else:
@@ -670,7 +695,7 @@ class GraphController:
 
         self.script_hooks_enabled = True
         if user_config_dir is None:
-            logging.warn("Failed to find or create scripts directory,\
+            logging.warning("Failed to find or create scripts directory,\
                              proceeding without scripting support")
             self.script_hooks_enabled = False
         else:
@@ -731,6 +756,7 @@ class GraphController:
 
         # Needed for use in view
         self.args = args
+        self.loop = []
 
         self.animate_alarm = None
         self.terminal = args.terminal
@@ -785,6 +811,8 @@ class GraphController:
             logging.debug("No such proccess error")
             self.main()
 
+    # pycharm warning suppression for unused vars in function
+    # noinspection PyUnusedLocal
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
         if self.save_csv or self.csv_file is not None:
@@ -844,7 +872,7 @@ class GraphController:
                     stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL,
                                                    stderr=DEVNULL, shell=False)
                     mode.set_stress_process(psutil.Process(stress_proc.pid))
-                except(OSError):
+                except OSError:
                     logging.debug("Unable to start stress")
 
         elif mode.get_current_mode() == 'FIRESTARTER':
@@ -860,6 +888,8 @@ class GraphController:
             logging.debug("Firestarter " + str(fire_starter))
             with open(os.devnull, 'w') as DEVNULL:
                 try:
+                    # pycharm warning suppression for unexpected type
+                    # noinspection PyTypeChecker
                     stress_proc = subprocess.Popen(
                         stress_cmd,
                         stdout=DEVNULL,
@@ -868,7 +898,7 @@ class GraphController:
                     mode.set_stress_process(psutil.Process(stress_proc.pid))
                     logging.debug('Started process' +
                                   str(mode.get_stress_process()))
-                except(OSError):
+                except OSError:
                     logging.debug("Unable to start stress")
 
         else:
@@ -893,7 +923,6 @@ def main():
 
     # Setup logging util
     global log_file
-    level = ""
     log_file = DEFAULT_LOG_FILE
     if args.debug_run:
         args.debug = True
@@ -912,7 +941,7 @@ def main():
     global is_admin
     try:
         is_admin = os.getuid() == 0
-    except (AttributeError):
+    except AttributeError:
         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
     if not is_admin:
         logging.info("Started without root permissions")
