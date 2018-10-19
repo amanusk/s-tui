@@ -49,7 +49,6 @@ class TemperatureSource(Source):
             sensors_dict = psutil.sensors_temperatures()
         except (AttributeError, IOError):
             logging.debug("Unable to create sensors dict")
-            self.is_available = False
         for key, value in sensors_dict.items():
             sensor_name = key
             for itr in range(len(value)):
