@@ -174,10 +174,10 @@ class GraphMode:
 class MainLoop(urwid.MainLoop):
 
     # pycharm warning suppression for unused variables that are part of
-    # function signature
-    # noinspection PyUnusedLocal
-    @staticmethod
-    def signal_handler(signal_in, frame):
+    # function signature and for static function check since this function
+    # catches signals and can not be static
+    # noinspection PyUnusedLocal,PyMethodMayBeStatic
+    def signal_handler(self, frame):
         """signal handler for properly exiting Ctrl+C"""
         logging.debug(graph_controller.mode.get_stress_process())
         kill_child_processes(graph_controller.mode.get_stress_process())

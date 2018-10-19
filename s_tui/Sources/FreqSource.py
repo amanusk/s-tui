@@ -39,7 +39,7 @@ def read_msr(msr, cpu=0):
         try:
             if os.system("/sbin/modprobe msr 2> /dev/null") == 0:
                 logging.debug("Ran modprobe sucessfully")
-        except(OSError):
+        except OSError:
             return None
     msr_file = '/dev/cpu/%d/msr' % (cpu,)
     try:
@@ -48,9 +48,9 @@ def read_msr(msr, cpu=0):
             read_res = f.read(8)
         s_decoded = [ord(c) for c in read_res]
         return s_decoded
-    except (IOError) as e:
+    except IOError as e:
         raise IOError(str(e) + " Unable to read file " + msr_file)
-    except (OSError) as e:
+    except OSError as e:
         raise OSError(str(e) + " File " + msr_file + " does not exist")
 
 
@@ -60,7 +60,7 @@ class FreqSource(Source):
         self.is_admin = is_admin
         self.is_available = True
 
-        self.top_freq = 0
+        self.top_freq = -1
         self.turbo_freq = False
         self.last_freq = 0
         self.last_freq_list = [0] * len(psutil.cpu_freq(True))
@@ -85,14 +85,14 @@ class FreqSource(Source):
                 if freq > 0:
                     self.top_freq = freq
                     self.turbo_freq = True
-            except (Exception) as e:
+            except Exception as e:
                 logging.debug(e)
 
         if self.turbo_freq is False:
             try:
                 self.top_freq = psutil.cpu_freq().max
 
-            except(AttributeError):
+            except AttributeError:
                 logging.debug("Max freq from psutil not available")
                 try:
                     cmd = "lscpu | grep 'CPU max MHz'"
@@ -112,14 +112,19 @@ class FreqSource(Source):
                                                          output)[0])
                 except(IndexError, OSError):
                     logging.debug("Max frequency from lscpu not available")
-                    logging.debug("CPU top freqency N/A")
+                    logging.debug("CPU top frequency N/A")
 
         self.update()
-        # If top freq not available, take the current as top
-        if max(self.last_freq_list) >= 0 and self.top_freq <= 0:
-            self.top_freq = max(self.last_freq_list)
-        if max(self.last_freq_list) <= 0:
-            self.is_available = False
+
+        try:
+            # If top freq not available, take the current as top
+            if max(self.last_freq_list) >= 0 and self.top_freq == -1:
+                self.top_freq = max(self.last_freq_list)
+        except ValueError:
+            if max(self.last_freq_list) <= 0:
+                self.is_available = False
+
+        Source.__init__(self)
 
     def update(self):
         for core_id, core in enumerate(psutil.cpu_freq(True)):
@@ -132,7 +137,7 @@ class FreqSource(Source):
 
     def update_deprecated(self):
         """Update CPU frequency data"""
-        def get_avarage_cpu_freq():
+        def get_average_cpu_freq():
             with open("/proc/cpuinfo") as cpuinfo:
                 cores_freq = []
                 for line in cpuinfo:
@@ -144,11 +149,10 @@ class FreqSource(Source):
 
         try:
             cur_freq = int(psutil.cpu_freq().current)
-        except (AttributeError):
-            cur_freq = 0
+        except AttributeError:
             try:
-                cur_freq = get_avarage_cpu_freq()
-            except(OSError, ZeroDivisionError):
+                cur_freq = get_average_cpu_freq()
+            except (OSError, ZeroDivisionError):
                 cur_freq = 0
                 logging.debug("Frequency unavailable")
 
@@ -197,7 +201,6 @@ class FreqSource(Source):
         self.samples_taken = 0
 
     def get_sensor_list(self):
-        # TODO error handling
         cpu_list = []
         for core_id, core in enumerate(psutil.cpu_freq(True)):
             cpu_list.append("core " + str(core_id))
@@ -209,20 +212,12 @@ class FreqSource(Source):
             return OrderedDict([
                 ('Top Freq', '%d %s' % (self.top_freq,
                                         self.get_measurement_unit())),
-                # # TODO: chage or remove this summery
-                # ('Cur Freq', '%.1f %s' % (
-                #     self.last_freq_list[0], self.get_measurement_unit())),
                 ('Perf Lost', '%d %s' % (self.max_perf_lost, '%'))
             ])
         else:
             return OrderedDict([
                 ('Top Freq', '%d %s' % (self.top_freq,
                                         self.get_measurement_unit())),
-                # #TODO: chage or remove this summery
-                # ('Cur Freq core 0', '%.1f %s' % (
-                #     self.last_freq_list[0], self.get_measurement_unit())),
-                # ('Cur Freq core 1', '%.1f %s' % (
-                #     self.last_freq_list[1], self.get_measurement_unit())),
                 ('Perf Lost', '%d %s' % (self.max_perf_lost,
                                          '(N/A) run sudo'))
             ])
