@@ -121,8 +121,7 @@ class FreqSource(Source):
             if max(self.last_freq_list) >= 0 and self.top_freq == -1:
                 self.top_freq = max(self.last_freq_list)
         except ValueError:
-            if max(self.last_freq_list) <= 0:
-                self.is_available = False
+            self.is_available = False
 
         Source.__init__(self)
 
