@@ -47,7 +47,6 @@ class StuiBarGraphVector(LabeledBarGraphVector):
                  bar_width=1):
         self.source = source
         self.graph_name = self.source.get_source_name()
-        self.sensor_name = source.get_sensor_name()
         self.measurement_unit = self.source.get_measurement_unit()
 
         self.num_samples = self.MAX_SAMPLES
