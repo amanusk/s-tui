@@ -76,6 +76,8 @@ class TemperatureSource(Source):
                               str(self.temp_thresh))
 
         self.update()
+
+        self.is_available = len(sensors_dict) == 0
         logging.debug("Update is updated to " + str(self.update))
 
     def update(self):
