@@ -79,48 +79,48 @@ class FreqSource(Source):
             self.is_available = False
 
         # Top frequency in case using Intel Turbo Boost
-        if self.is_admin:
-            try:
-                num_cpus = psutil.cpu_count()
-                logging.debug("num cpus " + str(num_cpus))
-                available_freq = read_msr(TURBO_MSR, 0)
-                logging.debug(available_freq)
-                max_turbo_msr = num_cpus
-                # The MSR only holds 8 values. Number of cores could be higher
-                if num_cpus > 8:
-                    max_turbo_msr = 8
-                freq = float(available_freq[max_turbo_msr - 1] * 100)
-                if freq > 0:
-                    self.top_freq = freq
-                    self.turbo_freq = True
-            except Exception as e:
-                logging.debug(e)
-
-        if self.turbo_freq is False:
-            try:
-                self.top_freq = psutil.cpu_freq().max
-
-            except AttributeError:
-                logging.debug("Max freq from psutil not available")
-                try:
-                    cmd = "lscpu | grep 'CPU max MHz'"
-                    ps = subprocess.Popen(cmd, shell=True,
-                                          stdout=subprocess.PIPE,
-                                          stderr=subprocess.STDOUT)
-                    output = ps.communicate()[0]
-                    self.top_freq = float(re.findall(b'\d+\.\d+', output)[0])
-                    logging.debug("Top freq " + str(self.top_freq))
-                    if self.top_freq <= 0:
-                        cmd = "lscpu | grep 'CPU * MHz'"
-                        ps = subprocess.Popen(cmd, shell=True,
-                                              stdout=subprocess.PIPE,
-                                              stderr=subprocess.STDOUT)
-                        output = ps.communicate()[0]
-                        self.top_freq = float(re.findall(b'\d+\.\d+',
-                                                         output)[0])
-                except(IndexError, OSError):
-                    logging.debug("Max frequency from lscpu not available")
-                    logging.debug("CPU top frequency N/A")
+        # if self.is_admin:
+        #     try:
+        #         num_cpus = psutil.cpu_count()
+        #         logging.debug("num cpus " + str(num_cpus))
+        #         available_freq = read_msr(TURBO_MSR, 0)
+        #         logging.debug(available_freq)
+        #         max_turbo_msr = num_cpus
+        #         # The MSR only holds 8 values. Number of cores could be higher
+        #         if num_cpus > 8:
+        #             max_turbo_msr = 8
+        #         freq = float(available_freq[max_turbo_msr - 1] * 100)
+        #         if freq > 0:
+        #             self.top_freq = freq
+        #             self.turbo_freq = True
+        #     except Exception as e:
+        #         logging.debug(e)
+        #
+        # if self.turbo_freq is False:
+        #     try:
+        #         self.top_freq = psutil.cpu_freq().max
+        #
+        #     except AttributeError:
+        #         logging.debug("Max freq from psutil not available")
+        #         try:
+        #             cmd = "lscpu | grep 'CPU max MHz'"
+        #             ps = subprocess.Popen(cmd, shell=True,
+        #                                   stdout=subprocess.PIPE,
+        #                                   stderr=subprocess.STDOUT)
+        #             output = ps.communicate()[0]
+        #             self.top_freq = float(re.findall(b'\d+\.\d+', output)[0])
+        #             logging.debug("Top freq " + str(self.top_freq))
+        #             if self.top_freq <= 0:
+        #                 cmd = "lscpu | grep 'CPU * MHz'"
+        #                 ps = subprocess.Popen(cmd, shell=True,
+        #                                       stdout=subprocess.PIPE,
+        #                                       stderr=subprocess.STDOUT)
+        #                 output = ps.communicate()[0]
+        #                 self.top_freq = float(re.findall(b'\d+\.\d+',
+        #                                                  output)[0])
+        #         except(IndexError, OSError):
+        #             logging.debug("Max frequency from lscpu not available")
+        #             logging.debug("CPU top frequency N/A")
 
         self.update()
 
