@@ -63,7 +63,6 @@ class TemperatureSource(Source):
                                               "," + str(itr) +
                                               "," + sensor_label)
 
-        self.max_temp_list = [0] * len(self.available_sensors)
         self.last_temp_list = [0] * len(self.available_sensors)
 
         # Set temperature threshold if a custom one is set
@@ -84,15 +83,9 @@ class TemperatureSource(Source):
             for minor_sensor_id, minor_sensor in enumerate(sample[sensor]):
                 sensor_stui_id = sensor_id + minor_sensor_id
                 self.last_temp_list[sensor_stui_id] = minor_sensor.current
-                self.max_temp_list[sensor_stui_id] = \
-                    max(self.max_temp_list[sensor_stui_id],
-                        minor_sensor.current)
 
     def get_reading_list(self):
         return self.last_temp_list
-
-    def get_maximum_list(self):
-        return self.max_temp_list
 
     def get_is_available(self):
         return self.is_available
@@ -104,13 +97,11 @@ class TemperatureSource(Source):
         return self.max_temp > self.temp_thresh
 
     def get_summary(self):
-        return {'Cur Temp': '%.1f %s' %
-                (self.last_temp, self.get_measurement_unit()),
-                'Max Temp': '%.1f %s' %
+        return {'Max Temp': '%.1f %s' %
                 (self.max_temp, self.get_measurement_unit())}
 
     def get_source_name(self):
-        return 'Temperature'
+        return 'Temp'
 
     def get_sensor_name(self):
         sensors_info = self.custom_temp.split(",")

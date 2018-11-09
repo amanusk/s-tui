@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 from s_tui.ComplexBarGraphs import LabeledBarGraphVector
 from s_tui.ComplexBarGraphs import ScalableBarGraph
+from collections import OrderedDict
 import logging
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,8 @@ class StuiBarGraphVector(LabeledBarGraphVector):
 
         self.num_samples = self.MAX_SAMPLES
         self.graph_data = [[0] * self.num_samples] * graph_count
+        self.graph_data_list_last = [0] * graph_count
+        self.graph_max = 0
 
         self.color_a = color_a
         self.color_b = color_b
@@ -163,14 +166,31 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         logging.info("Reading " + str(current_reading))
 
         y_label_size_max = 0
-        data_max = self.source.get_maximum_list()
+        local_top_value = []
 
+        # update visible graph data, and maximum
         for graph_idx, graph in enumerate(self.bar_graph_vector):
             bars = []
             if self.visible_graph_list[graph_idx]:
-                logging.info("regular graph " + str(graph_idx))
+                logging.info("regular graph data phase" + str(graph_idx))
                 self.graph_data[graph_idx] = self.append_latest_value(
                     self.graph_data[graph_idx], current_reading[graph_idx])
+
+                # Get the graph width (dimension 1)
+                num_displayed_bars = graph.get_size()[1]
+                visible_id = self.MAX_SAMPLES - num_displayed_bars - 1
+
+                visible_graph_data = self.graph_data[graph_idx][visible_id:]
+                local_top_value.append(max(visible_graph_data))
+
+        if len(local_top_value) > 0:
+            self.graph_max = max(local_top_value)
+
+        # update the graph bars
+        for graph_idx, graph in enumerate(self.bar_graph_vector):
+            bars = []
+            if self.visible_graph_list[graph_idx]:
+                logging.info("regular graph draw phase" + str(graph_idx))
 
                 # Get the graph width (dimension 1)
                 num_displayed_bars = graph.get_size()[1]
@@ -194,10 +214,12 @@ class StuiBarGraphVector(LabeledBarGraphVector):
                             bars.append([0, value])
                 self.color_counter_vector[graph_idx] += 1
 
-            graph.set_data(bars, float(max(data_max)))
-            y_label_size_max = max(y_label_size_max, graph.get_size()[0])
+                graph.set_data(bars, float(self.graph_max))
+                y_label_size_max = max(y_label_size_max, graph.get_size()[0])
 
-        s = self.get_label_scale(0, max(data_max), float(y_label_size_max))
+        s = self.get_label_scale(0,
+                                 self.graph_max,
+                                 float(y_label_size_max))
 
         self.set_y_label(s)
         self.set_visible_graphs()
@@ -206,4 +228,19 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         self.graph_data = [[0] * self.num_samples] * len(self.bar_graph_vector)
 
     def get_summary(self):
-        pass
+        sub_title_list = self.source.get_sensor_list()
+
+        graph_vector_summary = OrderedDict()
+        graph_vector_summary[self.graph_name] = ''
+        for graph_idx, graph_data in enumerate(self.graph_data):
+            if self.visible_graph_list[graph_idx]:
+                val_str = str(int(graph_data[-1])) + \
+                          ' ' + \
+                          self.source.get_measurement_unit()
+                graph_vector_summary[sub_title_list[graph_idx]] = val_str
+
+        return graph_vector_summary
+
+    def update(self):
+        self.source.update()
+

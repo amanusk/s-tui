@@ -208,6 +208,7 @@ class GraphView(urwid.WidgetPlaceholder):
         # constants
         self.TEMP_SOURCE = 0
         self.FREQ_SOURCE = 1
+        self.SUMMERY_TEXT_W = 20
         self.left_margin = 0
         self.top_margin = 0
 
@@ -273,8 +274,9 @@ class GraphView(urwid.WidgetPlaceholder):
         for g in self.visible_graphs.values():
             g.update_displayed_graph_data()
 
-        for s in self.available_summaries.values():
-            s.update()
+        # update graph summery
+        self.main_window_w.base_widget[0].body[self.SUMMERY_TEXT_W] = \
+            self.graph_stats()
 
         # Only update clock if not is stress mode
         if self.controller.mode.get_current_mode() != 'Monitor':
@@ -313,6 +315,8 @@ class GraphView(urwid.WidgetPlaceholder):
                     self.sensors_menu.sensor_current_active_dict.items():
                 logging.info(str(visible_sensors))
                 self.graphs[sensor].set_visible_graphs(visible_sensors)
+                self.main_window_w.base_widget[0].body[self.SUMMERY_TEXT_W] = \
+                    self.graph_stats()
 
         self.original_widget = self.main_window_w
 
@@ -515,10 +519,10 @@ class GraphView(urwid.WidgetPlaceholder):
                             on_state_change=lambda w,
                             state, x=x:  self.change_checkbox_state(x, state))
                             for x in self.available_graphs.values()]
-        unavalable_graphs = [urwid.Text(("[N/A] " + x.get_graph_name()))
-                             for x in self.graphs.values()
-                             if x.source.get_is_available() is False]
-        graph_checkboxes += unavalable_graphs
+        unavailable_graphs = [urwid.Text("[N/A] " + x.get_graph_name())
+                              for x in self.graphs.values()
+                              if x.source.get_is_available() is False]
+        graph_checkboxes += unavailable_graphs
 
         buttons = [urwid.Text(('bold text', u"Modes"), align="center"),
                    ] + self.mode_buttons + [
@@ -571,8 +575,10 @@ class GraphView(urwid.WidgetPlaceholder):
         fixed_stats = []
         for key, val in self.available_summaries.items():
             fixed_stats += val.get_text_item_list()
+            fixed_stats += [urwid.Text('')]
 
-        return fixed_stats
+        # return fixed_stats pile widget
+        return urwid.Pile(fixed_stats)
 
     def main_window(self):
         # initiating the graphs
@@ -592,7 +598,7 @@ class GraphView(urwid.WidgetPlaceholder):
             )
 
             self.summaries[source_name] = SummaryTextList(
-                source
+                self.graphs[source_name]
             )
 
         # construct utilization graph and source
@@ -657,7 +663,7 @@ class GraphView(urwid.WidgetPlaceholder):
         text_col = ViListBox(urwid.SimpleListWalker(cpu_stats +
                                                     graph_controls +
                                                     [urwid.Divider()] +
-                                                    graph_stats))
+                                                    [graph_stats]))
 
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
         w = urwid.Columns([
@@ -672,6 +678,7 @@ class GraphView(urwid.WidgetPlaceholder):
         w = urwid.LineBox(w)
         w = urwid.AttrWrap(w, 'line')
         self.main_window_w = w
+
         return self.main_window_w
 
 

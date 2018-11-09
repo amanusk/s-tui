@@ -64,7 +64,6 @@ class FreqSource(Source):
         self.turbo_freq = False
         self.last_freq = 0
         self.last_freq_list = [0]
-        self.top_freq_list = [0]
         self.samples_taken = 0
         self.WAIT_SAMPLES = 5
         self.perf_lost = 0
@@ -73,54 +72,10 @@ class FreqSource(Source):
 
         try:
             self.last_freq_list = [0] * len(psutil.cpu_freq(True))
-            self.top_freq_list = [0] * len(psutil.cpu_freq(True))
         except AttributeError:
             logging.debug("cpu_freq is not available from psutil")
             self.is_available = False
-
-        # Top frequency in case using Intel Turbo Boost
-        if self.is_admin:
-            try:
-                num_cpus = psutil.cpu_count()
-                logging.debug("num cpus " + str(num_cpus))
-                available_freq = read_msr(TURBO_MSR, 0)
-                logging.debug(available_freq)
-                max_turbo_msr = num_cpus
-                # The MSR only holds 8 values. Number of cores could be higher
-                if num_cpus > 8:
-                    max_turbo_msr = 8
-                freq = float(available_freq[max_turbo_msr - 1] * 100)
-                if freq > 0:
-                    self.top_freq = freq
-                    self.turbo_freq = True
-            except Exception as e:
-                logging.debug(e)
-
-        if self.turbo_freq is False:
-            try:
-                self.top_freq = psutil.cpu_freq().max
-
-            except AttributeError:
-                logging.debug("Max freq from psutil not available")
-                try:
-                    cmd = "lscpu | grep 'CPU max MHz'"
-                    ps = subprocess.Popen(cmd, shell=True,
-                                          stdout=subprocess.PIPE,
-                                          stderr=subprocess.STDOUT)
-                    output = ps.communicate()[0]
-                    self.top_freq = float(re.findall(b'\d+\.\d+', output)[0])
-                    logging.debug("Top freq " + str(self.top_freq))
-                    if self.top_freq <= 0:
-                        cmd = "lscpu | grep 'CPU * MHz'"
-                        ps = subprocess.Popen(cmd, shell=True,
-                                              stdout=subprocess.PIPE,
-                                              stderr=subprocess.STDOUT)
-                        output = ps.communicate()[0]
-                        self.top_freq = float(re.findall(b'\d+\.\d+',
-                                                         output)[0])
-                except(IndexError, OSError):
-                    logging.debug("Max frequency from lscpu not available")
-                    logging.debug("CPU top frequency N/A")
+            return
 
         self.update()
 
@@ -135,61 +90,13 @@ class FreqSource(Source):
 
     def update(self):
         for core_id, core in enumerate(psutil.cpu_freq(True)):
-            # item '0' is the current frequency
             self.last_freq_list[core_id] = core.current
-            self.top_freq_list[core_id] = max(self.top_freq_list[core_id],
-                                              self.last_freq_list[core_id])
-            # get top freq from the sensors that are viewed only
-            self.top_freq = max(self.top_freq, self.last_freq_list[core_id])
-
-    def update_deprecated(self):
-        """Update CPU frequency data"""
-        def get_average_cpu_freq():
-            with open("/proc/cpuinfo") as cpuinfo:
-                cores_freq = []
-                for line in cpuinfo:
-                    if "cpu MHz" in line:
-                        core_freq = re.findall('\d+\.\d+', line)
-                        cores_freq += core_freq
-            return round(sum(float(x) for x in cores_freq) /
-                         len(cores_freq), 1)
-
-        try:
-            cur_freq = int(psutil.cpu_freq().current)
-        except AttributeError:
-            try:
-                cur_freq = get_average_cpu_freq()
-            except (OSError, ZeroDivisionError):
-                cur_freq = 0
-                logging.debug("Frequency unavailable")
-
-        if self.stress_started:
-            self.samples_taken += 1
-
-        # Here is where we need to generate the max frequency lost
-
-        if self.is_admin and self.samples_taken > self.WAIT_SAMPLES:
-            self.perf_lost = int(self.top_freq) - int(cur_freq)
-            if self.top_freq != 0:
-                self.perf_lost = (round(float(self.perf_lost) /
-                                        float(self.top_freq) * 100, 1))
-            else:
-                self.perf_lost = 0
-            if self.perf_lost > self.max_perf_lost:
-                self.max_perf_lost = self.perf_lost
-        elif not self.is_admin:
-            self.max_perf_lost = 0
-
-        self.last_freq = cur_freq
 
     def get_reading_list(self):
         return self.last_freq_list
 
     def get_reading(self):
         return self.last_freq
-
-    def get_maximum_list(self):
-        return self.top_freq_list
 
     def get_maximum(self):
         return self.top_freq
@@ -215,19 +122,10 @@ class FreqSource(Source):
         return cpu_list
 
     def get_summary(self):
-        if self.is_admin:
-            return OrderedDict([
-                ('Top Freq', '%d %s' % (self.top_freq,
-                                        self.get_measurement_unit())),
-                ('Perf Lost', '%d %s' % (self.max_perf_lost, '%'))
-            ])
-        else:
-            return OrderedDict([
-                ('Top Freq', '%d %s' % (self.top_freq,
-                                        self.get_measurement_unit())),
-                ('Perf Lost', '%d %s' % (self.max_perf_lost,
-                                         '(N/A) run sudo'))
-            ])
+        return OrderedDict([
+            ('Cur Freq', '%d %s' % (self.top_freq,
+                                    self.get_measurement_unit()))
+        ])
 
     def get_source_name(self):
         return 'Frequency'
