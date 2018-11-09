@@ -572,7 +572,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def graph_stats(self):
 
-        fixed_stats = []
+        fixed_stats = [urwid.Text('')]
         for key, val in self.available_summaries.items():
             fixed_stats += val.get_text_item_list()
             fixed_stats += [urwid.Text('')]
