@@ -33,7 +33,7 @@ TURBO_MSR = 429
 def read_msr(msr, cpu=0):
     """
     reads the msr number given from the file /dev/cpu/0/msr
-    Reuturns the value
+    returns the value
     """
     if not os.path.exists("/dev/cpu/0/msr"):
         try:
@@ -70,6 +70,13 @@ class FreqSource(Source):
         self.perf_lost = 0
         self.max_perf_lost = 0
         self.stress_started = False
+
+        try:
+            self.last_freq_list = [0] * len(psutil.cpu_freq(True))
+            self.top_freq_list = [0] * len(psutil.cpu_freq(True))
+        except AttributeError:
+            logging.debug("cpu_freq is not available from psutil")
+            self.is_available = False
 
         # Top frequency in case using Intel Turbo Boost
         if self.is_admin:
@@ -114,13 +121,6 @@ class FreqSource(Source):
                 except(IndexError, OSError):
                     logging.debug("Max frequency from lscpu not available")
                     logging.debug("CPU top frequency N/A")
-
-        try:
-            self.last_freq_list = [0] * len(psutil.cpu_freq(True))
-            self.top_freq_list = [0] * len(psutil.cpu_freq(True))
-        except AttributeError:
-            logging.debug("cpu_freq is not available from psutil")
-            self.is_available = False
 
         self.update()
 
