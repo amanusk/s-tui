@@ -243,4 +243,3 @@ class StuiBarGraphVector(LabeledBarGraphVector):
 
     def update(self):
         self.source.update()
-

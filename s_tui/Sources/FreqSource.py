@@ -20,8 +20,6 @@ from __future__ import absolute_import
 
 import psutil
 import os
-import re
-import subprocess
 from s_tui.Sources.Source import Source
 from collections import OrderedDict
 import logging

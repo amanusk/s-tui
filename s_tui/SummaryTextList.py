@@ -1,6 +1,4 @@
 import urwid
-import itertools
-from collections import OrderedDict
 
 
 class SummaryTextList:
