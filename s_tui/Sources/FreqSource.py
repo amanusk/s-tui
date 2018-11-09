@@ -63,13 +63,14 @@ class FreqSource(Source):
         self.top_freq = -1
         self.turbo_freq = False
         self.last_freq = 0
-        self.last_freq_list = [0] * len(psutil.cpu_freq(True))
-        self.top_freq_list = [0] * len(psutil.cpu_freq(True))
+        self.last_freq_list = []
+        self.top_freq_list = []
         self.samples_taken = 0
         self.WAIT_SAMPLES = 5
         self.perf_lost = 0
         self.max_perf_lost = 0
         self.stress_started = False
+
         # Top frequency in case using Intel Turbo Boost
         if self.is_admin:
             try:
@@ -121,6 +122,13 @@ class FreqSource(Source):
             if max(self.last_freq_list) >= 0 and self.top_freq == -1:
                 self.top_freq = max(self.last_freq_list)
         except ValueError:
+            self.is_available = False
+
+        try:
+            self.last_freq_list = [0] * len(psutil.cpu_freq(True))
+            self.top_freq_list = [0] * len(psutil.cpu_freq(True))
+        except AttributeError:
+            logging.debug("cpu_freq is not available from psutil")
             self.is_available = False
 
         Source.__init__(self)

@@ -19,7 +19,6 @@
 from __future__ import absolute_import
 
 import psutil
-# import os
 from s_tui.Sources.Source import Source
 
 import logging

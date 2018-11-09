@@ -196,10 +196,8 @@ class StuiBarGraphVector(LabeledBarGraphVector):
 
             graph.set_data(bars, float(max(data_max)))
             y_label_size_max = max(y_label_size_max, graph.get_size()[0])
-        # try:
+
         s = self.get_label_scale(0, max(data_max), float(y_label_size_max))
-        # except ValueError:
-        #     s = self.get_label_scale(0, 0, 0)
 
         self.set_y_label(s)
         self.set_visible_graphs()

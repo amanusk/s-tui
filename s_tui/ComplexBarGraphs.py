@@ -201,9 +201,8 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
     def set_title(self, title):
         if len(title) == 0:
             return
-
-        list_w = \
-            urwid.SimpleFocusListWalker([urwid.Text(title, align="center")])
+        title_text_w = urwid.Text(title, align="center")
+        list_w = urwid.SimpleFocusListWalker([title_text_w])
         self.title.original_widget = urwid.ListBox(list_w)
 
     def set_y_label(self, y_label):

@@ -243,8 +243,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.stress_menu = StressMenu(self.on_menu_close)
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
-        self.sensors_menu = \
-            SensorsMenu(self.on_sensors_menu_close, self.source_list)
+        self.sensors_menu = SensorsMenu(self.on_sensors_menu_close,
+                                        self.source_list)
         self.global_data = GlobalData(is_admin)
         self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
 
