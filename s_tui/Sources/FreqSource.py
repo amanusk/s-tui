@@ -115,6 +115,13 @@ class FreqSource(Source):
                     logging.debug("Max frequency from lscpu not available")
                     logging.debug("CPU top frequency N/A")
 
+        try:
+            self.last_freq_list = [0] * len(psutil.cpu_freq(True))
+            self.top_freq_list = [0] * len(psutil.cpu_freq(True))
+        except AttributeError:
+            logging.debug("cpu_freq is not available from psutil")
+            self.is_available = False
+
         self.update()
 
         try:
@@ -122,13 +129,6 @@ class FreqSource(Source):
             if max(self.last_freq_list) >= 0 and self.top_freq == -1:
                 self.top_freq = max(self.last_freq_list)
         except ValueError:
-            self.is_available = False
-
-        try:
-            self.last_freq_list = [0] * len(psutil.cpu_freq(True))
-            self.top_freq_list = [0] * len(psutil.cpu_freq(True))
-        except AttributeError:
-            logging.debug("cpu_freq is not available from psutil")
             self.is_available = False
 
         Source.__init__(self)
