@@ -572,7 +572,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def graph_stats(self):
 
-        fixed_stats = [urwid.Text('')]
+        fixed_stats = []
         for key, val in self.available_summaries.items():
             fixed_stats += val.get_text_item_list()
             fixed_stats += [urwid.Text('')]
@@ -678,6 +678,10 @@ class GraphView(urwid.WidgetPlaceholder):
         w = urwid.LineBox(w)
         w = urwid.AttrWrap(w, 'line')
         self.main_window_w = w
+
+        for item_id, item in enumerate(self.main_window_w.base_widget[0].body):
+            if isinstance(item, urwid.Pile):
+                self.SUMMERY_TEXT_W = item_id
 
         return self.main_window_w
 
