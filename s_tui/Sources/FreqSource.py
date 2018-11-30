@@ -126,7 +126,7 @@ class FreqSource(Source):
                 cores_freq = []
                 for line in cpuinfo:
                     if "cpu MHz" in line:
-                        core_freq = re.findall('\d+\.\d+', line)
+                        core_freq = re.findall(r'\d+\.\d+', line)
                         cores_freq += core_freq
             return round(sum(float(x) for x in cores_freq) /
                          len(cores_freq), 1)

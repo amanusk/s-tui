@@ -26,12 +26,12 @@ Screenshot
 
 -  `Options <#options>`__
 -  `Dependencies <#dependencies>`__
--  `Other installation methods <#other-installation-methods>`__
+-  `More installation methods <#more-installation-methods>`__
 
    -  `Ubuntu <#ubuntu>`__
    -  `Arch-Linux <#arch-linux>`__
 
--  `Build <#build>`__
+-  `Run from source <#run-from-source>`__
 -  `Compatibility <#compatibility>`__
 -  `FAQ <#faq>`__
 -  `Contributing <#contributing>`__
@@ -79,6 +79,13 @@ Or if you cannot use sudo:
 
 If you are installing s-tui on a Raspberry-Pi you might need to install
 ``python-dev`` first
+
+Installation in virtualenv with
+`pipsi <https://github.com/mitsuhiko/pipsi>`__:
+
+::
+
+    pipsi install s-tui
 
 Options
 -------
@@ -194,7 +201,10 @@ Ubuntu
 | Once pip is installed, install s-tui from pip:
 | ``(sudo) pip install s-tui``
 
-A ppa is available (xenial,bionic)
+Ubuntu(PPA)
+~~~~~~~~~~~
+
+A ppa is available but is not always up to date(xenial,bionic)
 
 ::
 
@@ -202,19 +212,26 @@ A ppa is available (xenial,bionic)
     sudo apt-get update
     sudo apt-get install python3-s-tui
 
+Ubuntu(18.10)
+~~~~~~~~~~~~~
+
+::
+
+    sudo apt install s-tui
+
 Arch-Linux
 ~~~~~~~~~~
 
 AUR packages of s-tui are available
 
-| ``s-tui`` is the latest stable release version. Maintined by
+| ``s-tui`` is the latest stable release version. Maintained by
   [@DonOregano](https://github.com/DonOregano)
 | ``s-tui-git`` follows the master branch. maintained by
   [@MauroMombelli](https://github.com/MauroMombelli)
 | install with
 | ``yay -S s-tui``
 
-Run source code
+Run from source
 ---------------
 
 | Running s-tui from source
@@ -281,7 +298,7 @@ hardware is not supported, you might not see all the information.
    and newer (Sandy Bridge)
 -  s-tui tested to run on Raspberry-Pi 3,2,1
 
-Q&A
+FAQ
 ---
 
 | **Q**: How is this different from htop?
@@ -310,10 +327,10 @@ Q&A
 | **A**: By default, s-tui is handles mouse inputs. This causes some
   systems to crash. Try running ``s-tui --no-mouse``
 
-**Q**: I am not seeing all the stats in the sidebar. **A**: The sidebar
-is scrollable, you can scroll down with ``DOWN`` or ``j`` or scroll to
-the bottom with ``PG-DN`` or ``G``. You can also decrees the font of you
-terminal, to view more at once.
+| **Q**: I am not seeing all the stats in the sidebar
+| **A**: The sidebar is scrollable, you can scroll down with ``DOWN`` or
+  ``j`` or scroll to the bottom with ``PG-DN`` or ``G``. You can also
+  decrees the font of you terminal, to view more at once.
 
 Contributing
 ------------
@@ -336,7 +353,8 @@ If you realy like it, share it with your friends and co-workers.
 
 If you really really like this work, leave a tip :)
 
-ETH: ``0xc169699A825066f2F07E0b29C4082094b32A3F3e``
+| BTC: ``1PPhYgecwvAN7utN2EotgTfy2mmLqzF8m3``
+| ETH: ``0xc169699A825066f2F07E0b29C4082094b32A3F3e``
 
 .. |Build Status| image:: https://travis-ci.org/amanusk/s-tui.svg?branch=master
    :target: https://travis-ci.org/amanusk/s-tui
