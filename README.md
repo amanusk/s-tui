@@ -20,10 +20,10 @@ s-tui is a terminal UI for monitoring your computer. s-tui allows to monitor CPU
 	 * [pip (x86   ARM)](#pip-x86--arm)
   * [Options](#options)
   * [Dependencies](#dependencies)
-  * [Other installation methods](#other-installation-methods)
+  * [More installation methods](#more-installation-methods)
 	 * [Ubuntu](#ubuntu)
 	 * [Arch-Linux](#arch-linux)
-  * [Build](#build)
+  * [Run from source](#run-from-source)
   * [Compatibility](#compatibility)
   * [FAQ](#faq)
   * [Contributing](#contributing)
@@ -59,6 +59,11 @@ pip install s-tui --user
 ```
 
 If you are installing s-tui on a Raspberry-Pi you might need to install `python-dev` first
+
+Installation in virtualenv with [pipsi](https://github.com/mitsuhiko/pipsi):
+```
+pipsi install s-tui
+```
 
 ## Options
 ```
@@ -145,21 +150,28 @@ The latest stable version of s-tui is available via pip. To install pip on Ubunt
 Once pip is installed, install s-tui from pip:  
 `(sudo) pip install s-tui`  
 
-A ppa is available (xenial,bionic)
+### Ubuntu(PPA)
+A ppa is available but is not always up to date(xenial,bionic)
 ```
 sudo add-apt-repository ppa:amanusk/python-s-tui
 sudo apt-get update
 sudo apt-get install python3-s-tui
 ```
+### Ubuntu(18.10)
+```
+sudo apt install s-tui
+```
+
 ### Arch-Linux
 AUR packages of s-tui are available
 
-`s-tui` is the latest stable release version. Maintined by [@DonOregano](https://github.com/DonOregano)  
+`s-tui` is the latest stable release version. Maintained by [@DonOregano](https://github.com/DonOregano)  
 `s-tui-git` follows the master branch. maintained by [@MauroMombelli](https://github.com/MauroMombelli)  
 install with  
 `yay -S s-tui`
 
 ### FreeBSD
+`pkg install s-tui`
 s-tui uses sysctl to obtain some of the metrics in FreeBSD. For s-tui to work as expected,
 these modules need to be loaded:
 
@@ -167,14 +179,11 @@ these modules need to be loaded:
 Execute `kldload coretemp` on Intel systems or `kldload amdtemp` on AMD systems.
 Or add `coretemp_load="YES"`/`amdtemp_load="YES"` to your `/boot/loader.conf` file
 
-* __Frequancy__:
-Add `powerd_enable="YES"` to your `/etc/rc.conf` file
-
 * __Fan__ (Thinkpad):
 Execute `kldload acpi_ibm.ko` or add `acpi_ibm_load="YES"` to `/boot/loader.conf`
 
 
-## Run source code
+## Run from source
 Running s-tui from source  
 Clone 
 ```
@@ -219,7 +228,7 @@ Running without root will display the Turbo Boost available on a single core.
 * Power read is supported on Intel Core CPUs of the second generation and newer (Sandy Bridge)  
 * s-tui tested to run on Raspberry-Pi 3,2,1
 
-## Q&A
+## FAQ
 __Q__: How is this different from htop?  
 __A__: s-tui is not a processes monitor like htop. The purpose is to monitor your CPU statistics and have an option to test the system under heavy load.  (Think AIDA64 stress test, not task manager).  
 
@@ -238,8 +247,9 @@ __A__: A default sensor is selected for temperature reads. On some systems this 
 __Q__: I am using the TTY with no X server and s-tui crashes on start  
 __A__: By default, s-tui is handles mouse inputs. This causes some systems to crash. Try running `s-tui --no-mouse` 
 
-__Q__: I am not seeing all the stats in the sidebar.
+__Q__: I am not seeing all the stats in the sidebar  
 __A__: The sidebar is scrollable, you can scroll down with `DOWN` or `j` or scroll to the bottom with `PG-DN` or `G`. You can also decrees the font of you terminal, to view more at once.
+
 
 ## Contributing
 
@@ -256,5 +266,6 @@ If you realy like it, share it with your friends and co-workers.
 
 If you really really like this work, leave a tip :)
 
+BTC: `1PPhYgecwvAN7utN2EotgTfy2mmLqzF8m3`  
 ETH: `0xc169699A825066f2F07E0b29C4082094b32A3F3e`
 

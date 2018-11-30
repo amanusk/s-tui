@@ -50,15 +50,18 @@ class TemperatureSource(Source):
 
         # Set temperature threshold if a custom one is set
         if temp_thresh is not None:
-            if int(temp_thresh) > 0:
-                self.temp_thresh = int(temp_thresh)
-                logging.debug("Updated custom threshold to " +
-                              str(self.temp_thresh))
-
-        if self.update is not None:
-            self.update()
+            try:
+                if int(temp_thresh) > 0:
+                    self.temp_thresh = int(temp_thresh)
+                    logging.debug("Updated custom threshold to " +
+                                  str(self.temp_thresh))
+                else:
+                    self.temp_thresh = self.THRESHOLD_TEMP
+            except ValueError:
+                self.temp_thresh = self.THRESHOLD_TEMP
         else:
-            self.is_available = False
+            self.temp_thresh = self.THRESHOLD_TEMP
+        self.update()
         logging.debug("Update is updated to " + str(self.update))
 
     # Replace with a function that does the update

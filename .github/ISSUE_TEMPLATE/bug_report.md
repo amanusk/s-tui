@@ -1,3 +1,8 @@
+---
+name: Bug report
+about: Create a report to help improve s-tui
+
+---
 
 ### Step 1: Describe your environment
 
