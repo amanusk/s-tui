@@ -98,7 +98,8 @@ class FreqSource(Source):
                                           stdout=subprocess.PIPE,
                                           stderr=subprocess.STDOUT)
                     output = ps.communicate()[0]
-                    self.top_freq = float(re.findall(b'\d+\.\d+', output)[0])
+                    self.top_freq = float(re.findall(r'\d+\.\d+',
+                                                     output.decode())[0])
                     logging.debug("Top freq " + str(self.top_freq))
                     if self.top_freq <= 0:
                         cmd = "lscpu | grep 'CPU * MHz'"
@@ -106,8 +107,8 @@ class FreqSource(Source):
                                               stdout=subprocess.PIPE,
                                               stderr=subprocess.STDOUT)
                         output = ps.communicate()[0]
-                        self.top_freq = float(re.findall(b'\d+\.\d+',
-                                                         output)[0])
+                        self.top_freq = float(re.findall(r'\d+\.\d+',
+                                                         output.decode())[0])
                 except(IndexError, OSError):
                     logging.debug("Max frequency from lscpu not available")
                     logging.debug("CPU top freqency N/A")
