@@ -5,7 +5,7 @@
 [![Downloads](https://pepy.tech/badge/s-tui)](http://pepy.tech/count/s-tui)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/s-tui/Lobby)
 
-![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/stui_logo.png?raw=true)
+<img src="https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui-logo.png" width="200">
 
 s-tui is a terminal UI for monitoring your computer. s-tui allows to monitor CPU temperature, frequency, power and utilization in a graphical way from the terminal. 
 
