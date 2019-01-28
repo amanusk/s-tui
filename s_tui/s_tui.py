@@ -38,8 +38,6 @@ import itertools
 try:
     import configparser
 except ImportError:
-    # pycharm warning suppression
-    # noinspection PyPep8Naming,SpellCheckingInspection
     import ConfigParser as configparser
 
 from sys import exit
@@ -177,10 +175,6 @@ class GraphMode:
 
 class MainLoop(urwid.MainLoop):
 
-    # pycharm warning suppression for unused variables that are part of
-    # function signature and for static function check since this function
-    # catches signals and can not be static
-    # noinspection PyUnusedLocal,PyMethodMayBeStatic
     def signal_handler(self, frame):
         """signal handler for properly exiting Ctrl+C"""
         logging.debug(graph_controller.mode.get_stress_process())
@@ -258,8 +252,6 @@ class GraphView(urwid.WidgetPlaceholder):
         urwid.connect_signal(self.refresh_rate_ctrl, 'change',
                              self.update_refresh_rate)
 
-    # pycharm warning suppression for unused vars in function
-    # noinspection PyUnusedLocal
     def update_refresh_rate(self, edit, new_refresh_rate):
         try:
             if float(new_refresh_rate) <= 0.001:
@@ -289,8 +281,6 @@ class GraphView(urwid.WidgetPlaceholder):
         self.clock_view.set_text(('bold text', seconds_to_text(
             int(self.controller.stress_time))))
 
-    # pycharm warning suppression for unused vars in function
-    # noinspection PyUnusedLocal
     def on_reset_button(self, w):
         """Reset graph data and display empty graph"""
         for g in self.visible_graphs.values():
@@ -324,13 +314,8 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.original_widget = self.main_window_w
 
-    # pycharm warning suppression for unused vars in function
-    # noinspection PyUnusedLocal
     def on_stress_menu_open(self, w):
         """Open stress options"""
-        # pycharm warning supression for funtion type input check, urwid
-        # did not specify all the allowed input types for 3rd arg
-        # noinspection PyTypeChecker
         self.original_widget = urwid.Overlay(self.stress_menu.main_window,
                                              self.original_widget,
                                              ('relative', self.left_margin),
@@ -338,13 +323,8 @@ class GraphView(urwid.WidgetPlaceholder):
                                              ('relative', self.top_margin),
                                              self.stress_menu.get_size()[0])
 
-    # pycharm warning suppression for unused vars in function
-    # noinspection PyUnusedLocal
     def on_help_menu_open(self, w):
         """Open Help menu"""
-        # pycharm warning supression for funtion type input check, urwid
-        # did not specify all the allowed input types for 3rd arg
-        # noinspection PyTypeChecker
         self.original_widget = urwid.Overlay(self.help_menu.main_window,
                                              self.original_widget,
                                              ('relative', self.left_margin),
@@ -352,13 +332,8 @@ class GraphView(urwid.WidgetPlaceholder):
                                              ('relative', self.top_margin),
                                              self.help_menu.get_size()[0])
 
-    # pycharm warning suppression for unused vars in function
-    # noinspection PyUnusedLocal
     def on_about_menu_open(self, w):
         """Open About menu"""
-        # pycharm warning supression for funtion type input check, urwid
-        # did not specify all the allowed input types for 3rd arg
-        # noinspection PyTypeChecker
         self.original_widget = urwid.Overlay(self.about_menu.main_window,
                                              self.original_widget,
                                              ('relative', self.left_margin),
@@ -366,13 +341,8 @@ class GraphView(urwid.WidgetPlaceholder):
                                              ('relative', self.top_margin),
                                              self.about_menu.get_size()[0])
 
-    # pycharm warning suppression for unused vars in function
-    # noinspection PyUnusedLocal
     def on_sensors_menu_open(self, w):
         """Open Sensor menu on top of existing frame"""
-        # pycharm warning supression for funtion type input check, urwid
-        # did not specify all the allowed input types for 3rd arg
-        # noinspection PyTypeChecker
         self.original_widget = urwid.Overlay(
             self.sensors_menu.main_window,
             self.original_widget,
@@ -395,8 +365,6 @@ class GraphView(urwid.WidgetPlaceholder):
                 rb.set_state(True, do_callback=False)
                 break
 
-    # pycharm warning suppression for unused vars in function
-    # noinspection PyUnusedLocal
     def on_unicode_checkbox(self, w=None, state=False):
         """Enable smooth edges if utf-8 is supported"""
         logging.debug("unicode State is " + str(state))
@@ -414,15 +382,11 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.show_graphs()
 
-    # pycharm warning suppression for unused vars in function
-    # noinspection PyUnusedLocal
     def exit_program(self, w=None):
         """ Kill all stress operations upon exit"""
         kill_child_processes(self.controller.mode.get_stress_process())
         raise urwid.ExitMainLoop()
 
-    # pycharm warning suppression for unused vars in function
-    # noinspection PyUnusedLocal
     def save_settings(self, w=None):
         """ Save the current configuration to a user config file """
 
@@ -829,8 +793,6 @@ class GraphController:
             logging.error(e, exc_info=True)
             print(ERROR_MESSAGE)
 
-    # pycharm warning suppression for unused vars in function
-    # noinspection PyUnusedLocal
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
         if self.save_csv or self.csv_file is not None:
@@ -908,8 +870,6 @@ class GraphController:
             logging.debug("Firestarter " + str(fire_starter))
             with open(os.devnull, 'w') as DEVNULL:
                 try:
-                    # pycharm warning suppression for unexpected type
-                    # noinspection PyTypeChecker
                     stress_proc = subprocess.Popen(
                         stress_cmd,
                         stdout=DEVNULL,

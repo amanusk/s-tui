@@ -19,37 +19,10 @@
 from __future__ import absolute_import
 
 import psutil
-import os
 from s_tui.Sources.Source import Source
 from collections import OrderedDict
 import logging
 logger = logging.getLogger(__name__)
-
-TURBO_MSR = 429
-
-
-def read_msr(msr, cpu=0):
-    """
-    reads the msr number given from the file /dev/cpu/0/msr
-    returns the value
-    """
-    if not os.path.exists("/dev/cpu/0/msr"):
-        try:
-            if os.system("/sbin/modprobe msr 2> /dev/null") == 0:
-                logging.debug("Ran modprobe sucessfully")
-        except OSError:
-            return None
-    msr_file = '/dev/cpu/%d/msr' % (cpu,)
-    try:
-        with open(msr_file, 'r') as f:
-            f.seek(msr)
-            read_res = f.read(8)
-        s_decoded = [ord(c) for c in read_res]
-        return s_decoded
-    except IOError as e:
-        raise IOError(str(e) + " Unable to read file " + msr_file)
-    except OSError as e:
-        raise OSError(str(e) + " File " + msr_file + " does not exist")
 
 
 class FreqSource(Source):
@@ -57,7 +30,6 @@ class FreqSource(Source):
     def __init__(self, is_admin):
         self.is_admin = is_admin
         self.is_available = True
-
         self.top_freq = -1
         self.turbo_freq = False
         self.last_freq = 0
@@ -132,7 +104,7 @@ class FreqSource(Source):
         return 'MHz'
 
     def get_pallet(self):
-        return 'freq light', \
-               'freq dark', \
-               'freq light smooth', \
-               'freq dark smooth'
+        return ('freq light',
+                'freq dark',
+                'freq light smooth',
+                'freq dark smooth')
