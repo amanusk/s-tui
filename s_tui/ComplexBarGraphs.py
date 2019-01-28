@@ -27,6 +27,7 @@ import urwid
 import logging
 logger = logging.getLogger(__name__)
 
+
 class ScalableBarGraph(urwid.BarGraph):
     """Scale the graph acording to screen size"""
     _size = (0, 0)
@@ -167,7 +168,12 @@ class LabeledBarGraph(urwid.Pile):
 class LabeledBarGraphVector(urwid.WidgetPlaceholder):
     """Add option to add labels for X and Y axes """
 
-    def __init__(self, title, sub_title_list, y_label, bar_graph_vector, visible_graph_list):
+    def __init__(self,
+                 title,
+                 sub_title_list,
+                 y_label,
+                 bar_graph_vector,
+                 visible_graph_list):
         for bar_graph in bar_graph_vector:
             if not isinstance(bar_graph, ScalableBarGraph):
                 raise Exception(
@@ -184,7 +190,8 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         self.y_label = []
         self.set_y_label(y_label)
 
-        self.title = urwid.WidgetPlaceholder(urwid.ListBox(urwid.SimpleFocusListWalker([])))
+        list_w = urwid.ListBox(urwid.SimpleFocusListWalker([]))
+        self.title = urwid.WidgetPlaceholder(list_w)
         self.sub_title_list = sub_title_list
         self.set_title(title)
 
@@ -194,8 +201,8 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
     def set_title(self, title):
         if len(title) == 0:
             return
-
-        list_w = urwid.SimpleFocusListWalker([urwid.Text(title, align="center")])
+        title_text_w = urwid.Text(title, align="center")
+        list_w = urwid.SimpleFocusListWalker([title_text_w])
         self.title.original_widget = urwid.ListBox(list_w)
 
     def set_y_label(self, y_label):
@@ -225,10 +232,16 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
 
         graph_vector_column_list = []
-        for state, graph, sub_title in zip(visible_graph_list, self.bar_graph_vector, self.sub_title_list):
+        for state, graph, sub_title in \
+                zip(visible_graph_list,
+                    self.bar_graph_vector,
+                    self.sub_title_list):
             if state:
-                sub_title_widget = urwid.ListBox([urwid.Text(sub_title, align='center')])
-                graph_and_title = urwid.Pile([('fixed', 1, sub_title_widget), ('weight', 1, graph)])
+                text_w = urwid.Text(sub_title, align='center')
+                sub_title_widget = urwid.ListBox([text_w])
+                graph_a = [('fixed', 1, sub_title_widget),
+                           ('weight', 1, graph)]
+                graph_and_title = urwid.Pile(graph_a)
                 graph_vector_column_list.append(('weight', 1, graph_and_title))
                 graph_vector_column_list.append(('fixed', 1, vline))
 
@@ -238,11 +251,14 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
             self.original_widget = urwid.Pile([])
             return
 
-        graph_vector_column_list.pop()  # remove the last vertical line separator
+        # remove the last vertical line separator
+        graph_vector_column_list.pop()
 
+        y_label_a = ('weight', 1, urwid.Columns(graph_vector_column_list))
         y_label_and_graphs = [self.y_label,
-                             ('weight', 1, urwid.Columns(graph_vector_column_list))]
-        y_label_and_graphs_widget = urwid.WidgetPlaceholder(urwid.Columns(y_label_and_graphs, dividechars=1))
+                              y_label_a]
+        column_w = urwid.Columns(y_label_and_graphs, dividechars=1)
+        y_label_and_graphs_widget = urwid.WidgetPlaceholder(column_w)
 
         init_widget = urwid.Pile([('fixed', 1, self.title),
                                   ('weight', 1, y_label_and_graphs_widget)])

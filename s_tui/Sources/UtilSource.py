@@ -65,6 +65,12 @@ class UtilSource(Source):
     def get_measurement_unit(self):
         return '%'
 
+    def get_pallet(self):
+        return ('util light',
+                'util dark',
+                'util light smooth',
+                'util dark smooth')
+
 
 if '__main__' == __name__:
     util = UtilSource()

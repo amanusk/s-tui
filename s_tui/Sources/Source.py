@@ -31,7 +31,7 @@ class Source:
         raise NotImplementedError("Get maximum is not implemented")
 
     def get_maximum_list(self):
-        raise NotImplementedError("Get maximum is not implemented")
+        raise NotImplementedError("Get maximum list is not implemented")
 
     def get_is_available(self):
         raise NotImplementedError("Get is available is not implemented")
@@ -53,6 +53,12 @@ class Source:
 
     def get_measurement_unit(self):
         raise NotImplementedError("Get measurement unit is not implemented")
+
+    def get_pallet(self):
+        raise NotImplementedError("Get pallet is not implemented")
+
+    def get_alert_pallet(self):
+        return None
 
     def get_sensor_name(self):
         return None

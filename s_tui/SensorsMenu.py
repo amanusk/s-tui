@@ -17,15 +17,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 """
-A class displaying all available Temperature sensors
+A class displaying all available sensors
 """
 
 from __future__ import print_function
 from __future__ import absolute_import
 import urwid
-import psutil
 from s_tui.UiElements import ViListBox
-from s_tui.UiElements import radio_button
 
 
 import logging
@@ -38,40 +36,11 @@ class SensorsMenu:
     def on_mode_button(self, button, state):
         pass
 
-    def __init__(self, return_fn, temp_source, freq_source):
-
-        # What is shown in menu
-        self.current_temp_mode = None
-        self.current_freq_mode = None
-
-        self.no_malloc = False
-
-        freq_title = urwid.Text(
-            ('bold text', u"  Frequency Sensors  \n"), 'center')
-        temp_title = urwid.Text(
-            ('bold text', u"  Temperature Sensors  \n"), 'center')
-
-        # self.available_sensors = []
-        self.available_temp_sensors = temp_source.get_sensor_list()
-        self.available_freq_sensors = freq_source.get_sensor_list()
-
-        # Sensor Applied
-        # TODO use saved values for default windows that are open
-        self.current_active_temp_mode = [True] * len(self.available_temp_sensors)
-        self.current_active_freq_mode = [True] * len(self.available_freq_sensors)
-
-        self.freq_sensor_buttons = []
-        for sensor in self.available_freq_sensors:
-            cb = urwid.CheckBox(sensor, True)
-            self.freq_sensor_buttons.append(cb)
-
-        self.temp_sensor_buttons = []
-        for sensor in self.available_temp_sensors:
-            cb = urwid.CheckBox(sensor, True)
-            self.temp_sensor_buttons.append(cb)
+    def __init__(self, return_fn, source_list):
 
         self.return_fn = return_fn
 
+        # create the cancel and apply buttons, and put the in an urwid column
         cancel_button = urwid.Button('Cancel', on_press=self.on_cancel)
         cancel_button._label.align = 'center'
         apply_button = urwid.Button('Apply', on_press=self.on_apply)
@@ -79,51 +48,76 @@ class SensorsMenu:
 
         if_buttons = urwid.Columns([apply_button, cancel_button])
 
-        list_temp = [freq_title] + self.freq_sensor_buttons
-        listw = urwid.SimpleFocusListWalker(list_temp)
-        freq_widget_col = urwid.Pile(listw)
+        self.sensor_status_dict = {}
+        sensor_column_list = []
+        self.sensor_button_dict = {}
+        self.sensor_current_active_dict = {}
+        for source in source_list:
+            # TODO use saved values for default windows that are open
+            source_name = source.get_source_name()
 
-        list_temp = [temp_title] + self.temp_sensor_buttons
-        listw = urwid.SimpleFocusListWalker(list_temp)
-        temp_widget_col = urwid.Pile(listw)
+            # get the saves sensor visibility list
+            self.sensor_status_dict[source_name] =\
+                [True] * len(source.get_sensor_list())
+            self.sensor_button_dict[source_name] = []
+            self.sensor_current_active_dict[source_name] = []
 
-        sensor_select_widget = urwid.Columns([freq_widget_col, temp_widget_col])
+            # add the title at the head of the checkbox column
+            sensor_title_str = "  " + source_name + " Sensors  \n"
+            sensor_title = urwid.Text(
+                ('bold text', sensor_title_str), 'center')
+
+            # create the checkbox buttons with the saved visibility
+            for sensor, s_tatus in \
+                    zip(source.get_sensor_list(),
+                        self.sensor_status_dict[source_name]):
+                cb = urwid.CheckBox(sensor, s_tatus)
+                self.sensor_button_dict[source_name].append(cb)
+                self.sensor_current_active_dict[source_name].append(s_tatus)
+
+            sensor_title_and_buttons = \
+                [sensor_title] + self.sensor_button_dict[source_name]
+            listw = urwid.SimpleFocusListWalker(sensor_title_and_buttons)
+
+            sensor_column_list.append(urwid.Pile(listw))
+
+        sensor_select_widget = urwid.Columns(sensor_column_list)
+
         list_temp = [sensor_select_widget, if_buttons]
         listw = urwid.SimpleFocusListWalker(list_temp)
         self.main_window = urwid.LineBox(ViListBox(listw))
 
+        max_height = 6
+        for sensor, s_tatus in self.sensor_current_active_dict.items():
+            max_height = max(max_height, len(s_tatus) + 6)
+
+        self.size = max_height, self.MAX_TITLE_LEN
+
     def get_size(self):
-        return max(len(self.available_temp_sensors), len(self.available_freq_sensors)) + 6, self.MAX_TITLE_LEN
+        return self.size
 
     def set_checkbox_value(self):
-        logging.info(str(self.current_active_freq_mode))
-        logging.info(str(self.freq_sensor_buttons))
-        for (checkbox, state) in zip(self.freq_sensor_buttons, self.current_active_freq_mode):
-            checkbox.set_state(state)
-
-        for (checkbox, state) in zip(self.temp_sensor_buttons, self.current_active_temp_mode):
-            checkbox.set_state(state)
+        for sensor, sensor_cb in self.sensor_button_dict.items():
+            sensor_cb_next_state = self.sensor_current_active_dict[sensor]
+            for (checkbox, state) in zip(sensor_cb, sensor_cb_next_state):
+                checkbox.set_state(state)
 
     def on_cancel(self, w):
         self.set_checkbox_value()
         self.return_fn(update=False)
 
     def on_apply(self, w):
+        update_sensor_visibility = False
+        for s_name, sensor_buttons in self.sensor_button_dict.items():
+            cb_sensor_visibility = []
+            for sensor_cb in sensor_buttons:
+                cb_sensor_visibility.append(sensor_cb.get_state())
 
-        self.current_temp_mode = []
-        self.current_freq_mode = []
-        for temp_sensor in self.temp_sensor_buttons:
-            self.current_temp_mode.append(temp_sensor.get_state())
-        for freq_sensor in self.freq_sensor_buttons:
-            self.current_freq_mode.append(freq_sensor.get_state())
+            update_sensor_visibility = \
+                (cb_sensor_visibility !=
+                 self.sensor_current_active_dict[s_name])
 
-        if self.current_temp_mode != self.current_active_temp_mode or \
-            self.current_freq_mode != self.current_active_freq_mode:
-            logging.info("sensor update detected")
-            self.current_active_temp_mode = self.current_temp_mode
-            self.current_active_freq_mode = self.current_freq_mode
-            self.set_checkbox_value()
-            self.return_fn(update=True)
-        else:
-            self.set_checkbox_value()
-            self.return_fn(update=False)
+            self.sensor_current_active_dict[s_name] = cb_sensor_visibility
+
+        self.set_checkbox_value()
+        self.return_fn(update=update_sensor_visibility)
