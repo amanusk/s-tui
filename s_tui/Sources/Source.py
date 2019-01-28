@@ -21,9 +21,6 @@ class Source:
     def __init__(self):
         self.edge_hooks = []
 
-    def get_reading(self):
-        raise NotImplementedError("Get reading is not implemented")
-
     def update(self):
         self.eval_hooks()
 

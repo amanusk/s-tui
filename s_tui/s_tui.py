@@ -236,7 +236,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.source_list = []
         self.source_list.append(TempSource(self.controller.custom_temp,
                                            self.controller.temp_thresh))
-        self.source_list.append(FreqSource(is_admin))
+        self.source_list.append(FreqSource())
 
         # construct the variouse menus during init phase
         self.stress_menu = StressMenu(self.on_menu_close)
@@ -929,7 +929,7 @@ def main():
 
     if args.terminal or args.json:
         logging.info("Printing single line to terminal")
-        sources = [FreqSource(is_admin), TempSource(args.custom_temp),
+        sources = [FreqSource(), TempSource(args.custom_temp),
                    UtilSource(),
                    RaplPowerSource(),
                    FanSource(args.custom_fan)]

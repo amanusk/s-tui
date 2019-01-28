@@ -17,27 +17,23 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 from __future__ import absolute_import
-
-import psutil
-from s_tui.Sources.Source import Source
 from collections import OrderedDict
+
 import logging
+import psutil
+
+from s_tui.Sources.Source import Source
+
 logger = logging.getLogger(__name__)
 
 
 class FreqSource(Source):
 
-    def __init__(self, is_admin):
-        self.is_admin = is_admin
+    def __init__(self):
         self.is_available = True
         self.top_freq = -1
-        self.turbo_freq = False
-        self.last_freq = 0
         self.last_freq_list = [0]
         self.samples_taken = 0
-        self.WAIT_SAMPLES = 5
-        self.perf_lost = 0
-        self.max_perf_lost = 0
         self.stress_started = False
 
         try:
@@ -64,9 +60,6 @@ class FreqSource(Source):
 
     def get_reading_list(self):
         return self.last_freq_list
-
-    def get_reading(self):
-        return self.last_freq
 
     def get_maximum(self):
         return self.top_freq
