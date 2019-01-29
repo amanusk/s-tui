@@ -20,7 +20,6 @@ from __future__ import absolute_import
 
 from s_tui.ComplexBarGraphs import LabeledBarGraphVector
 from s_tui.ComplexBarGraphs import ScalableBarGraph
-from collections import OrderedDict
 import logging
 logger = logging.getLogger(__name__)
 
@@ -226,20 +225,6 @@ class StuiBarGraphVector(LabeledBarGraphVector):
 
     def reset(self):
         self.graph_data = [[0] * self.num_samples] * len(self.bar_graph_vector)
-
-    def get_summary(self):
-        sub_title_list = self.source.get_sensor_list()
-
-        graph_vector_summary = OrderedDict()
-        graph_vector_summary[self.graph_name] = ''
-        for graph_idx, graph_data in enumerate(self.graph_data):
-            if self.visible_graph_list[graph_idx]:
-                val_str = str(int(graph_data[-1])) + \
-                          ' ' + \
-                          self.source.get_measurement_unit()
-                graph_vector_summary[sub_title_list[graph_idx]] = val_str
-
-        return graph_vector_summary
 
     def update(self):
         self.source.update()

@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 import psutil
 from s_tui.Sources.Source import Source
+from collections import OrderedDict
 
 import logging
 logger = logging.getLogger(__name__)
@@ -31,15 +32,13 @@ class TemperatureSource(Source):
     THRESHOLD_TEMP = 80
     DEGREE_SIGN = u'\N{DEGREE SIGN}'
 
-    def __init__(self, custom_temp=None, temp_thresh=None):
+    def __init__(self, temp_thresh=None):
         Source.__init__(self)
 
         self.max_temp = 10
         self.measurement_unit = 'C'
         self.last_temp = 0
         self.temp_thresh = self.THRESHOLD_TEMP
-        logging.debug("arg temp  " + str(custom_temp))
-        self.custom_temp = custom_temp
         self.is_available = True
 
         self.available_sensors = []
@@ -48,6 +47,8 @@ class TemperatureSource(Source):
             sensors_dict = psutil.sensors_temperatures()
         except (AttributeError, IOError):
             logging.debug("Unable to create sensors dict")
+            self.is_available = False
+            return
         for key, value in sensors_dict.items():
             sensor_name = key
             for itr in range(len(value)):
@@ -74,9 +75,6 @@ class TemperatureSource(Source):
 
         self.update()
 
-        self.is_available = len(sensors_dict) != 0
-        logging.debug("Update is updated to " + str(self.update))
-
     def update(self):
         sample = psutil.sensors_temperatures()
         for sensor_id, sensor in enumerate(sample):
@@ -97,8 +95,17 @@ class TemperatureSource(Source):
         return self.max_temp > self.temp_thresh
 
     def get_summary(self):
-        return {'Max Temp': '%.1f %s' %
-                (self.max_temp, self.get_measurement_unit())}
+        sub_title_list = self.get_sensor_list()
+
+        graph_vector_summary = OrderedDict()
+        graph_vector_summary[self.get_source_name()] = ''
+        for graph_idx, graph_data in enumerate(self.last_temp_list):
+            val_str = str(int(graph_data)) + \
+                      ' ' + \
+                      self.get_measurement_unit()
+            graph_vector_summary[sub_title_list[graph_idx]] = val_str
+
+        return graph_vector_summary
 
     def get_source_name(self):
         return 'Temp'
@@ -118,10 +125,6 @@ class TemperatureSource(Source):
 
     def get_measurement_unit(self):
         return self.measurement_unit
-
-    def set_source(self, source):
-        self.custom_temp = source
-        return
 
     def get_pallet(self):
         return 'temp light', \

@@ -183,6 +183,3 @@ class StuiBarGraph(LabeledBarGraph):
 
     def reset(self):
         self.graph_data = [0] * self.num_samples
-
-    def get_summary(self):
-        pass

@@ -85,10 +85,17 @@ class FreqSource(Source):
         return cpu_list
 
     def get_summary(self):
-        return OrderedDict([
-            ('Cur Freq', '%d %s' % (self.top_freq,
-                                    self.get_measurement_unit()))
-        ])
+        sub_title_list = self.get_sensor_list()
+
+        graph_vector_summary = OrderedDict()
+        graph_vector_summary[self.get_source_name()] = ''
+        for graph_idx, graph_data in enumerate(self.last_freq_list):
+            val_str = str(int(graph_data)) + \
+                      ' ' + \
+                      self.get_measurement_unit()
+            graph_vector_summary[sub_title_list[graph_idx]] = val_str
+
+        return graph_vector_summary
 
     def get_source_name(self):
         return 'Frequency'

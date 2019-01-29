@@ -17,13 +17,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 from __future__ import absolute_import
-# from collections import OrderedDict
 
 import time
 import logging
 import psutil
 
 from s_tui.Sources.Source import Source
+from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class UtilSource(Source):
 
         logging.info("Utilization recorded " + str(self.last_util_list))
 
-    def get_reading(self):
+    def get_reading_list(self):
         return self.last_util_list
 
     def get_maximum(self):
@@ -68,15 +68,27 @@ class UtilSource(Source):
     def get_is_available(self):
         return True
 
-    def get_summary(self):
-        return
-        # return OrderedDict([
-        #     ('CPU Util', '%d %s' % (self.top_freq,
-        #                             self.get_measurement_unit()))
-        # ])
+    def get_sensor_list(self):
+        cpu_list = []
+        for core_id in range(psutil.cpu_count()):
+            cpu_list.append("core " + str(core_id))
+        return cpu_list
 
     def get_source_name(self):
-        return 'Utilization'
+        return 'Util'
+
+    def get_summary(self):
+        sub_title_list = self.get_sensor_list()
+
+        graph_vector_summary = OrderedDict()
+        graph_vector_summary[self.get_source_name()] = ''
+        for graph_idx, graph_data in enumerate(self.last_util_list):
+            val_str = str(int(graph_data)) + \
+                      ' ' + \
+                      self.get_measurement_unit()
+            graph_vector_summary[sub_title_list[graph_idx]] = val_str
+
+        return graph_vector_summary
 
     def get_measurement_unit(self):
         return '%'

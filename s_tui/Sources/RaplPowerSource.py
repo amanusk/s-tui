@@ -117,8 +117,8 @@ class RaplPowerSource(Source):
     def update(self):
         self.get_power_usage()
 
-    def get_reading(self):
-        return self.last_watts
+    def get_reading_list(self):
+        return [self.last_watts]
 
     def get_maximum(self):
         return self.max_power
@@ -133,11 +133,20 @@ class RaplPowerSource(Source):
                 'Max Power': '%.1f %s' %
                 (self.max_power, self.get_measurement_unit())}
 
+    def get_sensor_list(self):
+        return ["Package"]
+
     def get_source_name(self):
         return 'Power'
 
     def get_measurement_unit(self):
         return 'W'
+
+    def get_pallet(self):
+        return ('power light',
+                'power dark',
+                'power light smooth',
+                'power dark smooth')
 
 
 if '__main__' == __name__:

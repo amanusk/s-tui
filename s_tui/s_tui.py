@@ -65,7 +65,6 @@ from s_tui.UiElements import radio_button
 from s_tui.UiElements import button
 # from s_tui.TempSensorsMenu import TempSensorsMenu
 from s_tui.SensorsMenu import SensorsMenu
-from s_tui.StuiBarGraph import StuiBarGraph
 from s_tui.StuiBarGraphVector import StuiBarGraphVector
 from s_tui.SummaryTextList import SummaryTextList
 from s_tui.Sources.UtilSource import UtilSource as UtilSource
@@ -204,8 +203,6 @@ class GraphView(urwid.WidgetPlaceholder):
     """
     def __init__(self, controller):
         # constants
-        self.TEMP_SOURCE = 0
-        self.FREQ_SOURCE = 1
         self.SUMMERY_TEXT_W = 20
         self.left_margin = 0
         self.top_margin = 0
@@ -234,9 +231,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # construct temperature graph and source
         self.source_list = []
-        self.source_list.append(TempSource(self.controller.custom_temp,
-                                           self.controller.temp_thresh))
+        self.source_list.append(TempSource(self.controller.temp_thresh))
         self.source_list.append(FreqSource())
+        self.source_list.append(UtilSource())
+        self.source_list.append(RaplPowerSource())
 
         # construct the variouse menus during init phase
         self.stress_menu = StressMenu(self.on_menu_close)
@@ -269,7 +267,6 @@ class GraphView(urwid.WidgetPlaceholder):
 
         for g in self.visible_graphs.values():
             g.update_displayed_graph_data()
-
         # update graph summery
         self.main_window_w.base_widget[0].body[self.SUMMERY_TEXT_W] = \
             self.graph_stats()
@@ -410,17 +407,7 @@ class GraphView(urwid.WidgetPlaceholder):
                 except (AttributeError, configparser.NoOptionError,
                         configparser.NoSectionError):
                     pass
-            # Writing temp sensor
-            conf.add_section('TempControll')
-            if self.controller.custom_temp is not None:
-                logging.debug("Custom temp sensor is " +
-                              self.controller.custom_temp)
-                try:
-                    conf.set('TempControll', 'sensor',
-                             self.controller.custom_temp)
-                except(AttributeError, configparser.NoOptionError,
-                       configparser.NoSectionError):
-                    pass
+
             if self.controller.temp_thresh is not None:
                 logging.debug("Custom temp threshold set to " +
                               str(self.controller.temp_thresh))
@@ -566,38 +553,10 @@ class GraphView(urwid.WidgetPlaceholder):
             )
 
             self.summaries[source_name] = SummaryTextList(
-                self.graphs[source_name]
+                self.graphs[source_name].source
             )
 
-        # construct utilization graph and source
-        util_source = UtilSource()
-        self.graphs[util_source.get_source_name()] = StuiBarGraph(
-            util_source, 'util light', 'util dark',
-            'util light smooth', 'util dark smooth'
-        )
-
-        self.summaries[util_source.get_source_name()] = SummaryTextList(
-            util_source
-        )
-        # construct temperature graph and source
-        temp_source = self.source_list[self.TEMP_SOURCE]
-
-        if self.controller.script_hooks_enabled:
-            temp_source.add_edge_hook(
-                self.controller.script_loader.load_script(
-                    temp_source.__class__.__name__, 30000)
-            )  # Invoke threshold script every 30s while threshold is exceeded.
-
-        rapl_power_source = RaplPowerSource()
-
-        self.graphs[rapl_power_source.get_source_name()] = StuiBarGraph(
-            rapl_power_source, 'power dark', 'power light',
-            'power dark smooth', 'power light smooth')
-
-        self.summaries[rapl_power_source.get_source_name()] = SummaryTextList(
-            rapl_power_source)
-
-        fan_source = FanSource(self.controller.args.custom_fan)
+        fan_source = FanSource()
         self.summaries[fan_source.get_source_name()] = SummaryTextList(
             fan_source)
 
@@ -710,18 +669,7 @@ class GraphController:
                 configparser.NoSectionError):
             logging.debug("No user config for utf8")
 
-        self.custom_temp = args.custom_temp
         self.temp_thresh = args.t_thresh
-
-        # Try to load selected temp sensor if a manual one is not set
-        if args.custom_temp is None:
-            try:
-                config_sensor = self.conf.get('TempControll', 'sensor')
-                self.custom_temp = config_sensor
-                logging.debug("Temp sensors set to " + config_sensor)
-            except (AttributeError, ValueError, configparser.NoOptionError,
-                    configparser.NoSectionError):
-                logging.debug("No user config for temp sensor")
 
         # Try to load high temperature threshold if configured
         if args.t_thresh is None:
@@ -929,10 +877,10 @@ def main():
 
     if args.terminal or args.json:
         logging.info("Printing single line to terminal")
-        sources = [FreqSource(), TempSource(args.custom_temp),
+        sources = [FreqSource(), TempSource(),
                    UtilSource(),
                    RaplPowerSource(),
-                   FanSource(args.custom_fan)]
+                   FanSource()]
         if args.terminal:
             output_to_terminal(sources)
         elif args.json:
@@ -944,28 +892,6 @@ def main():
 
 
 def get_args():
-    custom_temp_help = """Custom temperature sensors.
-The format is: <sensors>,<number>
-As it appears in 'sensors'
-e.g
-> sensors
-it8792-isa-0a60,
-temp1: +47.0C
-temp2: +35.0C
-temp3: +37.0C
-
-use: -ct it8792,0 for temp 1
-    """
-
-    custom_fan_help = """Similar to custom temp
-e.g
->sensors
-thinkpad-isa-0000
-Adapter: ISA adapter
-fan1:        1975 RPM
-
-use: -cf thinkpad,0 for fan1
-    """
 
     parser = argparse.ArgumentParser(
         description=INTRO_MESSAGE,
@@ -999,15 +925,9 @@ use: -cf thinkpad,0 for fan1
     parser.add_argument('-v', '--version',
                         default=False, action='store_true',
                         help="Display version")
-    parser.add_argument('-ct', '--custom_temp',
-                        default=None,
-                        help=custom_temp_help)
     parser.add_argument('-tt', '--t_thresh',
                         default=None,
                         help="High Temperature threshold. Default: 80")
-    parser.add_argument('-cf', '--custom_fan',
-                        default=None,
-                        help=custom_fan_help)
     args = parser.parse_args()
     return args
 

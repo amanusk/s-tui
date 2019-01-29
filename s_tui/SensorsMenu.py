@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class SensorsMenu:
-    MAX_TITLE_LEN = 70
+    MAX_TITLE_LEN = 120
 
     def on_mode_button(self, button, state):
         pass
@@ -113,9 +113,9 @@ class SensorsMenu:
             for sensor_cb in sensor_buttons:
                 cb_sensor_visibility.append(sensor_cb.get_state())
 
-            update_sensor_visibility = \
-                (cb_sensor_visibility !=
-                 self.sensor_current_active_dict[s_name])
+                changed_state = (cb_sensor_visibility !=
+                                 self.sensor_current_active_dict[s_name])
+            update_sensor_visibility |= changed_state
 
             self.sensor_current_active_dict[s_name] = cb_sensor_visibility
 

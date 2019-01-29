@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import time
 import psutil
 from s_tui.Sources.Source import Source
+from collections import OrderedDict
 
 import logging
 logger = logging.getLogger(__name__)
@@ -28,45 +29,48 @@ logger = logging.getLogger(__name__)
 
 class FanSource(Source):
 
-    def __init__(self, custom_fan=None):
+    def __init__(self):
         self.fan_speed = 0
         self.max_speed = 1
-        self.custom_fan = custom_fan
+        self.measurement_unit = 'RPM'
         self.is_available = True
+
+        self.available_sensors = []
+        sensors_dict = dict()
+        try:
+            sensors_dict = psutil.sensors_fans()
+        except (AttributeError, IOError):
+            logging.debug("Unable to create sensors dict")
+            self.is_available = False
+            return
+        for key, value in sensors_dict.items():
+            sensor_name = key
+            for itr in range(len(value)):
+                sensor_label = ""
+                try:
+                    sensor_label = value[itr].label
+                    logging.debug("Sensor Label")
+                    logging.debug(sensor_label)
+                except IndexError:
+                    pass
+
+                self.available_sensors.append(sensor_name +
+                                              "," + str(itr) +
+                                              "," + sensor_label)
+
+        self.last_fan_list = [0] * len(self.available_sensors)
+
         self.update()
 
     def update(self):
-        result = 0
-        if self.custom_fan is not None:
-            try:
-                sensors_info = self.custom_fan.split(",")
-                sensor_major = sensors_info[0]
-                sensor_minor = sensors_info[1]
-                logging.debug("Fan Major " + str(sensor_major) +
-                              " Fan Minor " + str(sensor_minor))
-                result = psutil.sensors_fans()[sensor_major][
-                    int(sensor_minor)].current
-            except (KeyError, IndexError, ValueError, AttributeError):
-                result = 0
-                logging.debug("Fan Speend Not Available")
-                self.is_available = False
-        else:
-            try:
-                fans = psutil.sensors_fans()
-                fan_list = list(fans.keys())
-                result = fans[fan_list[0]][0].current
-            except (KeyError, IndexError, ValueError, AttributeError):
-                result = 0
-                logging.debug("Fan Speend Not Available")
-                self.is_available = False
+        sample = psutil.sensors_fans()
+        for sensor_id, sensor in enumerate(sample):
+            for minor_sensor_id, minor_sensor in enumerate(sample[sensor]):
+                sensor_stui_id = sensor_id + minor_sensor_id
+                self.last_fan_list[sensor_stui_id] = minor_sensor.current
 
-        self.fan_speed = float(result)
-        if self.fan_speed > self.max_speed:
-            self.max_speed = self.fan_speed
-        logging.info("Fan speed recorded" + str(self.fan_speed))
-
-    def get_reading(self):
-        return self.fan_speed
+    def get_reading_list(self):
+        return self.last_fan_list
 
     def get_maximum(self):
         return self.max_speed
@@ -74,15 +78,33 @@ class FanSource(Source):
     def get_is_available(self):
         return self.is_available
 
-    def get_summary(self):
-        return {'Fan': '%.1f %s' %
-                (self.fan_speed, self.get_measurement_unit())}
-
     def get_source_name(self):
         return 'Fan'
 
+    def get_sensor_name(self):
+        sensors_info = self.custom_temp.split(",")
+        sensor_major = sensors_info[0]
+        sensor_minor = sensors_info[1]
+        return sensor_major + " " + sensor_minor
+
+    def get_sensor_list(self):
+        return self.available_sensors
+
     def get_measurement_unit(self):
-        return 'RPM'
+        return self.measurement_unit
+
+    def get_summary(self):
+        sub_title_list = self.get_sensor_list()
+
+        graph_vector_summary = OrderedDict()
+        graph_vector_summary[self.get_source_name()] = ''
+        for graph_idx, graph_data in enumerate(self.last_fan_list):
+            val_str = str(int(graph_data)) + \
+                      ' ' + \
+                      self.get_measurement_unit()
+            graph_vector_summary[sub_title_list[graph_idx]] = val_str
+
+        return graph_vector_summary
 
 
 if '__main__' == __name__:
