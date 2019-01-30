@@ -20,6 +20,8 @@ from __future__ import absolute_import
 
 from s_tui.ComplexBarGraphs import LabeledBarGraph
 from s_tui.ComplexBarGraphs import ScalableBarGraph
+from memory_profiler import profile
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -132,6 +134,8 @@ class StuiBarGraph(LabeledBarGraph):
         self.bar_graph.set_segment_attributes(
             ['bg background', self.color_a, self.color_b], satt=self.satt)
 
+    fp = open('memory_profiler.log', 'w+')
+    @profile(stream=fp)
     def update_displayed_graph_data(self):
         if not self.get_is_available():
             return

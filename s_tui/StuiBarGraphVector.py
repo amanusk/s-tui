@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from s_tui.ComplexBarGraphs import LabeledBarGraphVector
 from s_tui.ComplexBarGraphs import ScalableBarGraph
 import logging
+from memory_profiler import profile
 logger = logging.getLogger(__name__)
 
 
