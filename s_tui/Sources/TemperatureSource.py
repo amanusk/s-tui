@@ -77,10 +77,10 @@ class TemperatureSource(Source):
 
     def update(self):
         sample = psutil.sensors_temperatures()
+        self.last_temp_list = []
         for sensor_id, sensor in enumerate(sample):
             for minor_sensor_id, minor_sensor in enumerate(sample[sensor]):
-                sensor_stui_id = sensor_id + minor_sensor_id
-                self.last_temp_list[sensor_stui_id] = minor_sensor.current
+                self.last_temp_list.append(minor_sensor.current)
 
     def get_reading_list(self):
         return self.last_temp_list

@@ -21,7 +21,6 @@ from __future__ import absolute_import
 from s_tui.ComplexBarGraphs import LabeledBarGraphVector
 from s_tui.ComplexBarGraphs import ScalableBarGraph
 import logging
-from memory_profiler import profile
 logger = logging.getLogger(__name__)
 
 
@@ -172,7 +171,6 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         for graph_idx, graph in enumerate(self.bar_graph_vector):
             bars = []
             if self.visible_graph_list[graph_idx]:
-                logging.info("regular graph data phase" + str(graph_idx))
                 self.graph_data[graph_idx] = self.append_latest_value(
                     self.graph_data[graph_idx], current_reading[graph_idx])
 
@@ -183,14 +181,16 @@ class StuiBarGraphVector(LabeledBarGraphVector):
                 visible_graph_data = self.graph_data[graph_idx][visible_id:]
                 local_top_value.append(max(visible_graph_data))
 
+        update_max = False
         if len(local_top_value) > 0:
-            self.graph_max = max(local_top_value)
+            if int(max(local_top_value)) != int(self.graph_max):
+                update_max = True
+                self.graph_max = max(local_top_value)
 
         # update the graph bars
         for graph_idx, graph in enumerate(self.bar_graph_vector):
             bars = []
             if self.visible_graph_list[graph_idx]:
-                logging.info("regular graph draw phase" + str(graph_idx))
 
                 # Get the graph width (dimension 1)
                 num_displayed_bars = graph.get_size()[1]
@@ -222,7 +222,9 @@ class StuiBarGraphVector(LabeledBarGraphVector):
                                  float(y_label_size_max))
 
         self.set_y_label(s)
-        self.set_visible_graphs()
+        # Only create new graphs if the maximum has changed
+        if update_max:
+            self.set_visible_graphs()
 
     def reset(self):
         self.graph_data = [[0] * self.num_samples] * len(self.bar_graph_vector)

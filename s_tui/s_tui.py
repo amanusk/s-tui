@@ -227,11 +227,7 @@ class GraphView(urwid.WidgetPlaceholder):
         # Visible graphs are the graphs currently displayed, this is a
         # subset of the available graphs for display
         self.visible_graphs = {}
-        self.graphs = {}
-        self.available_graphs = {}
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
-        self.summaries = []
-        self.available_summaries = []
 
         # construct temperature graph and source
         self.source_list = []
@@ -572,7 +568,7 @@ class GraphView(urwid.WidgetPlaceholder):
             (key, val) for key, val in self.summaries.items() if
             val.get_is_available())
 
-        self.visible_graphs = self.available_graphs.copy()
+        self.visible_graphs = self.available_graphs
 
         # Remove graphs from shown graphs if user configured them out
         # TODO: get this information from the state
@@ -687,7 +683,6 @@ class GraphController:
 
         # Needed for use in view
         self.args = args
-        self.loop = []
 
         self.animate_alarm = None
         self.terminal = args.terminal
@@ -751,8 +746,8 @@ class GraphController:
         if self.save_csv or self.csv_file is not None:
             output_to_csv(self.view.summaries, self.csv_file)
 
-        snapshot = tracemalloc.take_snapshot()
-        display_top(snapshot)
+        # snapshot = tracemalloc.take_snapshot()
+        # display_top(snapshot)
 
         self.view.update_displayed_information()
         self.animate_alarm = self.loop.set_alarm_in(
