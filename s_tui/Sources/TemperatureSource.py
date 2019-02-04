@@ -25,8 +25,6 @@ from collections import OrderedDict
 import logging
 logger = logging.getLogger(__name__)
 
-count = -3
-
 
 class TemperatureSource(Source):
     THRESHOLD_TEMP = 80

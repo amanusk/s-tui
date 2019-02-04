@@ -23,7 +23,7 @@ import time
 import glob
 import os
 import sys
-import collections
+from collections import namedtuple
 
 import logging
 LOGGER = logging.getLogger(__name__)
@@ -41,6 +41,8 @@ else:
         ENCODING_ERRS = sys.getfilesystemencodeerrors()  # py 3.6
     except AttributeError:
         ENCODING_ERRS = "surrogateescape" if POSIX else "replace"
+
+RaplStats = namedtuple('rapl', ['label', 'current', 'max'])
 
 
 def _open_binary(fname, **kwargs):
@@ -79,7 +81,7 @@ def rapl_read():
     basenames = sorted(set({x for x in basenames}))
 
     pjoin = os.path.join
-    ret = collections.defaultdict(list)
+    ret = list()
     for path in basenames:
         name = None
         try:
@@ -90,11 +92,12 @@ def rapl_read():
             continue
         if name:
             try:
-                curr = cat(pjoin(path, 'energy_uj'))
+                current = cat(pjoin(path, 'energy_uj'))
             except (IOError, OSError, ValueError) as err:
                 logging.warning("ignoring %r for file %r",
                                 (err, path), RuntimeWarning)
-            ret[name].append((name, curr))
+            max_reading = 0.0
+            ret.append(RaplStats(name, float(current), max_reading))
     return ret
 
 

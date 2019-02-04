@@ -83,7 +83,7 @@ class UtilSource(Source):
         graph_vector_summary = OrderedDict()
         graph_vector_summary[self.get_source_name()] = ''
         for graph_idx, graph_data in enumerate(self.last_util_list):
-            val_str = str(int(graph_data)) + \
+            val_str = str(round(graph_data, 2)) + \
                       ' ' + \
                       self.get_measurement_unit()
             graph_vector_summary[sub_title_list[graph_idx]] = val_str
