@@ -74,9 +74,6 @@ from s_tui.Sources.RaplPowerSource import RaplPowerSource as RaplPowerSource
 from s_tui.Sources.FanSource import FanSource as FanSource
 from s_tui.GlobalData import GlobalData
 from s_tui.Sources.ScriptHookLoader import ScriptHookLoader
-from mem_top import mem_top
-import linecache
-import tracemalloc
 
 UPDATE_INTERVAL = 1
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
@@ -106,7 +103,6 @@ INTRO_MESSAGE = HELP_MESSAGE
 ERROR_MESSAGE = "\n\
         Ooop! s-tui has encountered a fatal error\n\
         Plase report this bug here: https://github.com/amanusk/s-tui"
-
 
 
 class GraphMode:
@@ -724,7 +720,6 @@ class GraphController:
     def main(self):
         self.loop = MainLoop(self.view, DEFAULT_PALETTE,
                              handle_mouse=self.handle_mouse)
-        tracemalloc.start()
         self.animate_graph()
         try:
             self.loop.run()
@@ -745,9 +740,6 @@ class GraphController:
         """update the graph and schedule the next update"""
         if self.save_csv or self.csv_file is not None:
             output_to_csv(self.view.summaries, self.csv_file)
-
-        # snapshot = tracemalloc.take_snapshot()
-        # display_top(snapshot)
 
         self.view.update_displayed_information()
         self.animate_alarm = self.loop.set_alarm_in(
@@ -934,31 +926,6 @@ def get_args():
                         help="High Temperature threshold. Default: 80")
     args = parser.parse_args()
     return args
-
-def display_top(snapshot, key_type='lineno', limit=10):
-    snapshot = snapshot.filter_traces((
-        tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
-        tracemalloc.Filter(False, "<unknown>"),
-    ))
-    top_stats = snapshot.statistics(key_type)
-
-    logging.debug("Top %s lines" % limit)
-    for index, stat in enumerate(top_stats[:limit], 1):
-        frame = stat.traceback[0]
-        # replace "/path/to/module/file.py" with "module/file.py"
-        filename = os.sep.join(frame.filename.split(os.sep)[-2:])
-        logging.debug("#%s: %s:%s: %.1f KiB"
-              % (index, filename, frame.lineno, stat.size / 1024))
-        line = linecache.getline(frame.filename, frame.lineno).strip()
-        if line:
-            logging.debug('    %s' % line)
-
-    other = top_stats[limit:]
-    if other:
-        size = sum(stat.size for stat in other)
-        logging.debug("%s other: %.1f KiB" % (len(other), size / 1024))
-    total = sum(stat.size for stat in top_stats)
-    logging.debug("Total allocated size: %.1f KiB" % (total / 1024))
 
 
 if '__main__' == __name__:
