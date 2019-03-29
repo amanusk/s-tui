@@ -71,7 +71,7 @@ class UtilSource(Source):
     def get_sensor_list(self):
         cpu_list = []
         for core_id in range(psutil.cpu_count()):
-            cpu_list.append("core " + str(core_id))
+            cpu_list.append("Core " + str(core_id))
         return cpu_list
 
     def get_source_name(self):

@@ -80,7 +80,7 @@ class FreqSource(Source):
     def get_sensor_list(self):
         cpu_list = []
         for core_id, core in enumerate(psutil.cpu_freq(True)):
-            cpu_list.append("core " + str(core_id))
+            cpu_list.append("Core " + str(core_id))
 
         return cpu_list
 

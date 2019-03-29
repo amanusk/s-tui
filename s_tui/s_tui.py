@@ -203,7 +203,7 @@ class GraphView(urwid.WidgetPlaceholder):
     """
     def __init__(self, controller):
         # constants
-        self.SUMMERY_TEXT_W = 20
+        self.SUMMERY_TEXT_W = 21
         self.left_margin = 0
         self.top_margin = 0
 
@@ -226,15 +226,11 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
 
         # construct sources
-        self.source_list = []
-        if TempSource().get_is_available():
-            self.source_list.append(TempSource(self.controller.temp_thresh))
-        if FreqSource().get_is_available():
-            self.source_list.append(FreqSource())
-        if UtilSource().get_is_available():
-            self.source_list.append(UtilSource())
-        if RaplPowerSource().get_is_available():
-            self.source_list.append(RaplPowerSource())
+        possible_source = [TempSource(self.controller.temp_thresh),
+                           FreqSource(),
+                           UtilSource(),
+                           RaplPowerSource()]
+        self.source_list = [s for s in possible_source if s.get_is_available()]
 
         # construct the variouse menus during init phase
         self.stress_menu = StressMenu(self.on_menu_close)
