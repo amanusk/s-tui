@@ -45,18 +45,18 @@ class FanSource(Source):
             return
         for key, value in sensors_dict.items():
             sensor_name = key
-            for itr in range(len(value)):
-                sensor_label = ""
-                try:
-                    sensor_label = value[itr].label
-                    logging.debug("Sensor Label")
-                    logging.debug(sensor_label)
-                except IndexError:
-                    pass
+            for sensor_idx, sensor in enumerate(value):
+                sensor_label = sensor.label
 
-                self.available_sensors.append(sensor_name +
-                                              "," + str(itr) +
-                                              "," + sensor_label)
+                full_name = ""
+                if not sensor_label:
+                    full_name = sensor_name + "," + str(sensor_idx)
+                else:
+                    full_name = sensor_label
+
+                logging.debug("Fan sensor name " + full_name)
+
+                self.available_sensors.append(full_name)
 
         self.last_fan_list = [0] * len(self.available_sensors)
 

@@ -40,17 +40,15 @@ class RaplPowerSource(Source):
         self.is_available = True
         self.last_measurement_time = time.time()
         self.last_measurement_value = rapl_read()
-        self.max_power = 1
-        self.last_watts_list = [0]
-        try:
-            self.last_watts_list = [0] * len(rapl_read())
-        except AttributeError:
-            logging.debug("Power reading is not available")
+        if not self.last_measurement_value:
             self.is_available = False
+            logging.debug("Power reading is not available")
             return
+        self.max_power = 1
+        self.last_watts_list = [0] * len(self.last_measurement_value)
 
         self.available_sensors = []
-        for item in rapl_read():
+        for item in self.last_measurement_value:
             self.available_sensors.append(item.label)
 
         self.update()
@@ -97,7 +95,7 @@ class RaplPowerSource(Source):
 
     def reset(self):
         self.max_power = 1
-        self.last_watts_list = [0] * len(rapl_read())
+        self.last_watts_list = [0] * len(self.last_measurement_value)
 
     def get_summary(self):
         sub_title_list = self.get_sensor_list()
