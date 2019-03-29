@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2018 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tzuker, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -49,20 +49,18 @@ class TemperatureSource(Source):
             return
         for key, value in sensors_dict.items():
             sensor_name = key
-            for itr in range(len(value)):
-                sensor_label = ""
-                try:
-                    sensor_label = value[itr].label
-                    logging.debug("Sensor Label")
-                    logging.debug(sensor_label)
-                except IndexError:
-                    pass
+            for sensor_idx, sensor in enumerate(value):
+                sensor_label = sensor.label
 
-                self.available_sensors.append(sensor_name +
-                                              "," + str(itr) +
-                                              "," + sensor_label)
+                full_name = ""
+                if not sensor_label:
+                    full_name = sensor_name + "," + str(sensor_idx)
+                else:
+                    full_name = sensor_label
 
-        self.last_temp_list = [0] * len(self.available_sensors)
+                logging.debug("Temp sensor name " + full_name)
+
+                self.available_sensors.append(full_name)
 
         # Set temperature threshold if a custom one is set
         if temp_thresh is not None:
@@ -108,18 +106,11 @@ class TemperatureSource(Source):
     def get_source_name(self):
         return 'Temp'
 
-    def get_sensor_name(self):
-        sensors_info = self.custom_temp.split(",")
-        sensor_major = sensors_info[0]
-        sensor_minor = sensors_info[1]
-        return sensor_major + " " + sensor_minor
-
     def get_sensor_list(self):
         return self.available_sensors
 
     def reset(self):
         self.max_temp = 1
-        # self.cur_temp = 1
 
     def get_measurement_unit(self):
         return self.measurement_unit

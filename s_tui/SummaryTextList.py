@@ -2,7 +2,7 @@ import urwid
 
 
 class SummaryTextList:
-    MAX_LABEL_L = 11
+    MAX_LABEL_L = 10
 
     def __init__(self, source, alert_color=None):
         self.source = source
@@ -13,7 +13,7 @@ class SummaryTextList:
 
         summery_text_list = []
         for key, val in self.source.get_summary().items():
-            label_w = urwid.Text(str(key[0:self.MAX_LABEL_L-1]), align='left')
+            label_w = urwid.Text(str(key[0:self.MAX_LABEL_L]))
             value_w = urwid.Text(str(val), align='right')
             col_w = urwid.Columns([label_w, value_w])
             summery_text_list.append(col_w)
