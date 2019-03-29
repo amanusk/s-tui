@@ -550,8 +550,9 @@ class GraphView(urwid.WidgetPlaceholder):
             )
 
         fan_source = FanSource()
-        self.summaries[fan_source.get_source_name()] = SummaryTextList(
-            fan_source)
+        if fan_source.get_is_available():
+            self.summaries[fan_source.get_source_name()] = SummaryTextList(
+                fan_source)
 
         # only interested in available graph
         self.available_graphs = OrderedDict(

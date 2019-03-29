@@ -32,7 +32,7 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         values.append(new_val)
         return values[1:]
 
-    MAX_SAMPLES = 100
+    MAX_SAMPLES = 200
     SCALE_DENSITY = 5
 
     def __init__(self,
@@ -181,10 +181,8 @@ class StuiBarGraphVector(LabeledBarGraphVector):
                 local_top_value.append(max(visible_graph_data))
 
         update_max = False
-        # Only update if there is signifant change
         local_max = int(max(local_top_value))
-        if (local_max > int(self.graph_max) or
-                local_max + 0.5 * int(self.graph_max) < int(self.graph_max)):
+        if (local_max > int(self.graph_max)):
             update_max = True
             self.graph_max = local_max
 
