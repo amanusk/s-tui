@@ -86,7 +86,7 @@ DEFAULT_CSV_FILE = "s-tui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
 
 VERSION_MESSAGE = \
     "s-tui " + __version__ +\
-    " - (C) 2017-2018 Alex Manuskin, Gil Tsuker\n\
+    " - (C) 2017-2019 Alex Manuskin, Gil Tsuker\n\
     Released under GNU GPLv2"
 
 fire_starter = None
@@ -225,12 +225,16 @@ class GraphView(urwid.WidgetPlaceholder):
         self.visible_graphs = {}
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
 
-        # construct temperature graph and source
+        # construct sources
         self.source_list = []
-        self.source_list.append(TempSource(self.controller.temp_thresh))
-        self.source_list.append(FreqSource())
-        self.source_list.append(UtilSource())
-        self.source_list.append(RaplPowerSource())
+        if TempSource().get_is_available():
+            self.source_list.append(TempSource(self.controller.temp_thresh))
+        if FreqSource().get_is_available():
+            self.source_list.append(FreqSource())
+        if UtilSource().get_is_available():
+            self.source_list.append(UtilSource())
+        if RaplPowerSource().get_is_available():
+            self.source_list.append(RaplPowerSource())
 
         # construct the variouse menus during init phase
         self.stress_menu = StressMenu(self.on_menu_close)
@@ -470,10 +474,6 @@ class GraphView(urwid.WidgetPlaceholder):
                             on_state_change=lambda w,
                             state, x=x:  self.change_checkbox_state(x, state))
                             for x in self.available_graphs.values()]
-        unavailable_graphs = [urwid.Text("[N/A] " + x.get_graph_name())
-                              for x in self.graphs.values()
-                              if x.source.get_is_available() is False]
-        graph_checkboxes += unavailable_graphs
 
         buttons = [urwid.Text(('bold text', u"Modes"), align="center"),
                    ] + self.mode_buttons + [
@@ -929,4 +929,4 @@ def get_args():
 
 
 if '__main__' == __name__:
-        main()
+    main()

@@ -51,7 +51,6 @@ class StuiBarGraphVector(LabeledBarGraphVector):
 
         self.num_samples = self.MAX_SAMPLES
         self.graph_data = [[0] * self.num_samples] * graph_count
-        self.graph_data_list_last = [0] * graph_count
         self.graph_max = 0
 
         self.color_a = color_a
@@ -183,7 +182,7 @@ class StuiBarGraphVector(LabeledBarGraphVector):
 
         update_max = False
         if len(local_top_value) > 0:
-            if int(max(local_top_value)) != int(self.graph_max):
+            if int(max(local_top_value)) > int(self.graph_max):
                 update_max = True
                 self.graph_max = max(local_top_value)
 
