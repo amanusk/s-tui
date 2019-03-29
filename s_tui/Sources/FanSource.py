@@ -43,6 +43,10 @@ class FanSource(Source):
             logging.debug("Unable to create sensors dict")
             self.is_available = False
             return
+        if not sensors_dict:
+            self.is_available = False
+            return
+
         for key, value in sensors_dict.items():
             sensor_name = key
             for sensor_idx, sensor in enumerate(value):
