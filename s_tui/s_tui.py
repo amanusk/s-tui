@@ -203,7 +203,6 @@ class GraphView(urwid.WidgetPlaceholder):
     """
     def __init__(self, controller):
         # constants
-        self.SUMMERY_TEXT_W = 21
         self.left_margin = 0
         self.top_margin = 0
 
@@ -264,8 +263,9 @@ class GraphView(urwid.WidgetPlaceholder):
         for g in self.visible_graphs.values():
             g.update_displayed_graph_data()
         # update graph summery
-        self.main_window_w.base_widget[0].body[self.SUMMERY_TEXT_W] = \
-            self.graph_stats()
+
+        for s in self.available_summaries.values():
+            s.update()
 
         # Only update clock if not is stress mode
         if self.controller.mode.get_current_mode() != 'Monitor':
@@ -302,8 +302,6 @@ class GraphView(urwid.WidgetPlaceholder):
                     self.sensors_menu.sensor_current_active_dict.items():
                 logging.info(str(visible_sensors))
                 self.graphs[sensor].set_visible_graphs(visible_sensors)
-                self.main_window_w.base_widget[0].body[self.SUMMERY_TEXT_W] = \
-                    self.graph_stats()
 
         self.original_widget = self.main_window_w
 
@@ -413,6 +411,9 @@ class GraphView(urwid.WidgetPlaceholder):
                 except(AttributeError, configparser.NoOptionError,
                        configparser.NoSectionError):
                     pass
+
+            # Save settings for sensors menu
+            conf.add_section('Sensors')
             conf.write(cfgfile)
 
     def graph_controls(self, conf):
@@ -597,10 +598,6 @@ class GraphView(urwid.WidgetPlaceholder):
         w = urwid.LineBox(w)
         w = urwid.AttrWrap(w, 'line')
         self.main_window_w = w
-
-        for item_id, item in enumerate(self.main_window_w.base_widget[0].body):
-            if isinstance(item, urwid.Pile):
-                self.SUMMERY_TEXT_W = item_id
 
         return self.main_window_w
 

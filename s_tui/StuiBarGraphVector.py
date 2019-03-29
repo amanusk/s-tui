@@ -184,7 +184,7 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         # Only update if there is signifant change
         local_max = int(max(local_top_value))
         if (local_max > int(self.graph_max) or
-                local_max + 0.5 * local_max < int(self.graph_max)):
+                local_max + 0.5 * int(self.graph_max) < int(self.graph_max)):
             update_max = True
             self.graph_max = local_max
 

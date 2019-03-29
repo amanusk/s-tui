@@ -14,7 +14,7 @@ class TestUtilSource(unittest.TestCase):
 
     def test_util_summary(self):
         util_source = UtilSource.UtilSource()
-        self.assertEqual(util_source.get_source_name(), 'Utilization')
+        self.assertEqual(util_source.get_source_name(), 'Util')
 
     def test_stui(self):
         os.system('s-tui -t')
