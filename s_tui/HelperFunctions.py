@@ -172,6 +172,15 @@ def seconds_to_text(secs):
     return "%02d:%02d:%02d" % (hours, minutes, seconds)
 
 
+def str_to_bool(s):
+    if s == 'True':
+        return True
+    elif s == 'False':
+        return False
+    else:
+        raise ValueError
+
+
 DEFAULT_PALETTE = [
     ('body',                    'default',        'default',     'standout'),
     ('header',                  'default',        'dark red',),

@@ -23,6 +23,7 @@ A class displaying all available sensors
 from __future__ import print_function
 from __future__ import absolute_import
 import urwid
+import copy
 from s_tui.UiElements import ViListBox
 
 
@@ -36,7 +37,7 @@ class SensorsMenu:
     def on_mode_button(self, button, state):
         pass
 
-    def __init__(self, return_fn, source_list):
+    def __init__(self, return_fn, source_list, default_source_conf):
 
         self.return_fn = return_fn
 
@@ -57,8 +58,14 @@ class SensorsMenu:
             source_name = source.get_source_name()
 
             # get the saves sensor visibility list
-            self.sensor_status_dict[source_name] =\
-                [True] * len(source.get_sensor_list())
+            if default_source_conf[source_name]:
+                # print(str(default_source_conf[source_name]))
+                self.sensor_status_dict[source_name] =\
+                    copy.deepcopy(default_source_conf[source_name])
+            else:
+                self.sensor_status_dict[source_name] =\
+                    [True] * len(source.get_sensor_list())
+
             self.sensor_button_dict[source_name] = []
             self.sensor_current_active_dict[source_name] = []
 

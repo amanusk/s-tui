@@ -21,7 +21,6 @@
 """An urwid program to stress and monitor you computer"""
 
 from __future__ import absolute_import
-from __future__ import print_function
 
 import argparse
 import ctypes
@@ -42,6 +41,7 @@ except ImportError:
 
 from sys import exit
 from collections import OrderedDict
+from collections import defaultdict
 from distutils.spawn import find_executable
 from s_tui.AboutMenu import AboutMenu
 from s_tui.HelpMenu import HelpMenu
@@ -60,6 +60,7 @@ from s_tui.HelperFunctions import make_user_config_dir
 from s_tui.HelperFunctions import user_config_dir_exists
 from s_tui.HelperFunctions import user_config_file_exists
 from s_tui.HelperFunctions import seconds_to_text
+from s_tui.HelperFunctions import str_to_bool
 from s_tui.UiElements import ViListBox
 from s_tui.UiElements import radio_button
 from s_tui.UiElements import button
@@ -221,7 +222,6 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # Visible graphs are the graphs currently displayed, this is a
         # subset of the available graphs for display
-        self.visible_graphs = {}
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
 
         # construct sources
@@ -236,7 +236,8 @@ class GraphView(urwid.WidgetPlaceholder):
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
         self.sensors_menu = SensorsMenu(self.on_sensors_menu_close,
-                                        self.source_list)
+                                        self.source_list,
+                                        self.controller.source_default_conf)
         self.global_data = GlobalData(is_admin)
         self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
 
@@ -295,13 +296,18 @@ class GraphView(urwid.WidgetPlaceholder):
     def on_sensors_menu_close(self, update):
         """Return to main screen and update sensor that
         are active in the view"""
-        logging.info("closing sensor menu")
-        logging.info("sensor update is: " + str(update))
+        logging.info("closing sensor menu, update=" + str(update))
         if update:
             for sensor, visible_sensors in \
                     self.sensors_menu.sensor_current_active_dict.items():
-                logging.info(str(visible_sensors))
                 self.graphs[sensor].set_visible_graphs(visible_sensors)
+                # If not sensor is selected, do not display the graph
+                if not any(visible_sensors):
+                    del self.visible_graphs[sensor]
+                # Update visible graphs if a sensor was selected
+                else:
+                    self.visible_graphs[sensor] = self.graphs[sensor]
+            self.show_graphs()
 
         self.original_widget = self.main_window_w
 
@@ -392,31 +398,23 @@ class GraphView(urwid.WidgetPlaceholder):
                 self.controller.refresh_rate))
             conf.set('GraphControll', 'UTF8', str(
                 self.controller.smooth_graph_mode))
-            for graph_name in self.available_graphs.keys():
-                try:
-                    if graph_name in self.visible_graphs:
-                        conf.set('GraphControll', graph_name, 'True')
-                    else:
-                        conf.set('GraphControll', graph_name, 'False')
-                except (AttributeError, configparser.NoOptionError,
-                        configparser.NoSectionError):
-                    pass
-
-            if self.controller.temp_thresh is not None:
-                logging.debug("Custom temp threshold set to " +
-                              str(self.controller.temp_thresh))
-                try:
-                    conf.set('TempControll', 'threshold',
-                             self.controller.temp_thresh)
-                except(AttributeError, configparser.NoOptionError,
-                       configparser.NoSectionError):
-                    pass
 
             # Save settings for sensors menu
-            conf.add_section('Sensors')
+            for source, visible_sensors in \
+                    self.sensors_menu.sensor_current_active_dict.items():
+                conf.add_section(source)
+
+                source_list = self.source_list
+                # TODO: consider changing sensors_list to dict
+                curr_sensor = [x for x in source_list if
+                               x.get_source_name() == source][0]
+                logging.debug("Saving settings for" + str(curr_sensor))
+                sensor_list = curr_sensor.get_sensor_list()
+                for sensor_id, sensor in enumerate(sensor_list):
+                    conf.set(source, sensor, str(visible_sensors[sensor_id]))
             conf.write(cfgfile)
 
-    def graph_controls(self, conf):
+    def graph_controls(self):
         """ Display sidebar controls. i.e. buttons, and controls"""
         modes = self.controller.get_modes()
         # setup mode radio buttons
@@ -455,23 +453,6 @@ class GraphView(urwid.WidgetPlaceholder):
             install_stress_message = urwid.Text(
                 ('button normal', u"(N/A) install stress"))
 
-        # Disable graphs the user selected not to display in config file
-        # TODO: Get this from graph state
-        graphs_available_state = dict()
-        for g in self.available_graphs.values():
-            try:
-                graphs_available_state[g.get_graph_name()] = conf.getboolean(
-                    'GraphControll', g.get_graph_name())
-            except(AttributeError, configparser.NoOptionError,
-                   configparser.NoSectionError):
-                graphs_available_state[g.get_graph_name()] = True
-
-        graph_checkboxes = [urwid.CheckBox(x.get_graph_name(),
-                            graphs_available_state[x.get_graph_name()],
-                            on_state_change=lambda w,
-                            state, x=x:  self.change_checkbox_state(x, state))
-                            for x in self.available_graphs.values()]
-
         buttons = [urwid.Text(('bold text', u"Modes"), align="center"),
                    ] + self.mode_buttons + [
             install_stress_message,
@@ -482,7 +463,6 @@ class GraphView(urwid.WidgetPlaceholder):
             urwid.Divider(),
             self.refresh_rate_ctrl,
             urwid.Divider(),
-            urwid.LineBox(urwid.Pile(graph_checkboxes)),
             urwid.LineBox(unicode_checkbox),
             urwid.Divider(),
             button("Save Settings", self.save_settings),
@@ -491,14 +471,6 @@ class GraphView(urwid.WidgetPlaceholder):
         ]
 
         return buttons
-
-    def change_checkbox_state(self, x, state):
-
-        if state:
-            self.visible_graphs[x.get_graph_name()] = x
-        else:
-            del self.visible_graphs[x.get_graph_name()]
-        self.show_graphs()
 
     def show_graphs(self):
         """Show a pile of the graph selected for dislpay"""
@@ -532,7 +504,7 @@ class GraphView(urwid.WidgetPlaceholder):
         # initiating the graphs
         self.graphs = OrderedDict()
         self.summaries = OrderedDict()
-        # construct frequency graph and source
+
         for source in self.source_list:
             source_name = source.get_source_name()
             color_pallet = source.get_pallet()
@@ -554,31 +526,26 @@ class GraphView(urwid.WidgetPlaceholder):
             self.summaries[fan_source.get_source_name()] = SummaryTextList(
                 fan_source)
 
-        # only interested in available graph
-        self.available_graphs = OrderedDict(
+        # Check if source is available and add it to a dict of visible graphs
+        # and summaryies.
+        # All available summaries are always visible
+        self.visible_graphs = OrderedDict(
             (key, val) for key, val in self.graphs.items()
             if val.get_is_available())
+
+        # Do not show the graph if there is no selected sensors
+        for key in self.graphs.keys():
+            if not any(self.sensors_menu.sensor_current_active_dict[key]):
+                del self.visible_graphs[key]
+
         self.available_summaries = OrderedDict(
             (key, val) for key, val in self.summaries.items() if
             val.get_is_available())
 
-        self.visible_graphs = self.available_graphs
-
-        # Remove graphs from shown graphs if user configured them out
-        # TODO: get this information from the state
-        conf = self.controller.conf
-        for graph_name in self.available_graphs.keys():
-            try:
-                if conf.getboolean('GraphControll', graph_name) is False:
-                    del self.visible_graphs[graph_name]
-            except (AttributeError, configparser.NoOptionError, ValueError,
-                    configparser.NoSectionError):
-                pass
-
         self.show_graphs()
 
         cpu_stats = self.cpu_stats()
-        graph_controls = self.graph_controls(conf)
+        graph_controls = self.graph_controls()
         graph_stats = self.graph_stats()
 
         text_col = ViListBox(urwid.SimpleListWalker(cpu_stats +
@@ -671,6 +638,15 @@ class GraphController:
                     configparser.NoSectionError):
                 logging.debug("No user config for temp threshold")
 
+        # Load sensors config if available
+        sources = ['Temp', 'Frequency', 'Util', 'Power']
+        self.source_default_conf = defaultdict(list)
+        for source in sources:
+            options = list(self.conf.items(source))
+            for option in options:
+                # Returns tuples of values in order
+                self.source_default_conf[source].append(str_to_bool(option[1]))
+
         # Needed for use in view
         self.args = args
 
@@ -755,7 +731,6 @@ class GraphController:
             kill_child_processes(mode.get_stress_process())
             mode.set_stress_process(None)
             # This is not pretty, but this is how we know stress started
-            self.view.graphs['Frequency'].source.set_stress_started()
             stress_cmd = [stress_program]
             if int(self.view.stress_menu.sqrt_workers) > 0:
                 stress_cmd.append('-c')
@@ -804,7 +779,6 @@ class GraphController:
             self.stress_start_time = timeit.default_timer()
             self.stress_time = 0
 
-            self.view.graphs['Frequency'].source.set_stress_started()
             logging.debug("Firestarter " + str(fire_starter))
             with open(os.devnull, 'w') as DEVNULL:
                 try:
@@ -823,10 +797,6 @@ class GraphController:
             logging.debug('Monitoring')
             kill_child_processes(mode.get_stress_process())
             mode.set_stress_process(None)
-            try:
-                self.view.graphs['Frequency'].source.set_stress_stopped()
-            except(KeyError, AttributeError):
-                logging.debug('Unalbe to reset performance loss meter')
 
         # Start a new clock upon starting a new stress test
         self.view.clock_view.set_text(('bold text', seconds_to_text(

@@ -40,9 +40,10 @@ class TemperatureSource(Source):
         self.is_available = True
 
         self.available_sensors = []
-        sensors_dict = dict()
+        sensors_dict = None
         try:
-            sensors_dict = psutil.sensors_temperatures()
+            sensors_dict = OrderedDict(sorted(
+                psutil.sensors_temperatures().items()))
         except (AttributeError, IOError):
             logging.debug("Unable to create sensors dict")
             self.is_available = False
@@ -73,7 +74,7 @@ class TemperatureSource(Source):
         self.update()
 
     def update(self):
-        sample = psutil.sensors_temperatures()
+        sample = OrderedDict(sorted(psutil.sensors_temperatures().items()))
         self.last_temp_list = []
         for sensor_id, sensor in enumerate(sample):
             for minor_sensor_id, minor_sensor in enumerate(sample[sensor]):

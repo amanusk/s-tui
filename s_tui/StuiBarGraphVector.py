@@ -181,7 +181,10 @@ class StuiBarGraphVector(LabeledBarGraphVector):
                 local_top_value.append(max(visible_graph_data))
 
         update_max = False
-        local_max = int(max(local_top_value))
+        try:
+            local_max = int(max(local_top_value))
+        except ValueError:
+            return
         if (local_max > int(self.graph_max)):
             update_max = True
             self.graph_max = local_max
