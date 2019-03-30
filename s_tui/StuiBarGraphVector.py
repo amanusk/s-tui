@@ -50,7 +50,10 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         self.measurement_unit = self.source.get_measurement_unit()
 
         self.num_samples = self.MAX_SAMPLES
-        self.graph_data = [[0] * self.num_samples] * graph_count
+
+        self.graph_data = []
+        for i in range(graph_count):
+            self.graph_data.append([0] * self.num_samples)
         self.graph_max = 0
 
         self.color_a = color_a
@@ -122,6 +125,9 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         for graph in self.bar_graph_vector:
             graph.set_segment_attributes(
                 ['bg background', self.color_a, self.color_b], satt=self.satt)
+            size = graph.get_size()
+            size = (size[1], size[0])
+            graph.render_init(size)
 
     def set_regular_colors(self):
         self.color_a = self.regular_colors[0]
@@ -134,6 +140,8 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         for graph in self.bar_graph_vector:
             graph.set_segment_attributes(
                 ['bg background', self.color_a, self.color_b], satt=self.satt)
+            size = graph.get_size()
+            graph.render_init((size[1], size[0]))
 
     def set_alert_colors(self):
         self.color_a = self.alert_colors[0]
@@ -170,6 +178,7 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         for graph_idx, graph in enumerate(self.bar_graph_vector):
             bars = []
             if self.visible_graph_list[graph_idx]:
+                logging.info("regular graph data phase" + str(graph_idx))
                 self.graph_data[graph_idx] = self.append_latest_value(
                     self.graph_data[graph_idx], current_reading[graph_idx])
 
@@ -221,12 +230,22 @@ class StuiBarGraphVector(LabeledBarGraphVector):
                                  float(y_label_size_max))
 
         self.set_y_label(s)
-        # Only create new graphs if the maximum has changed
-        if update_max:
-            self.set_visible_graphs()
+        self.set_visible_graphs()
 
     def reset(self):
-        self.graph_data = [[0] * self.num_samples] * len(self.bar_graph_vector)
+        # TODO implement reset properly
+        pass
+        # for i in range(len(self.bar_graph_vector)):
+        #     self.graph_data[i] = [0] * self.num_samples
+        #
+        #
+        # for graph in self.bar_graph_vector:
+        #     size = graph.get_size()
+        #     size = (size[1], size[0])
+        #     graph.set_data([[0, 0] * graph.get_size()[1]], float(self.graph_max))
+        #
+        # # self.set_regular_colors()
+        #     graph.render_init(size)
 
     def update(self):
         self.source.update()

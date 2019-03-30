@@ -349,6 +349,9 @@ class GraphView(urwid.WidgetPlaceholder):
             self.controller.set_mode(my_button.get_label())
             self.controller.start_stress()
 
+            for graph in self.graphs:
+                graph.update_displayed_graph_data()
+
     def on_mode_change(self, m):
         """Handle external mode change by updating radio buttons."""
         for rb in self.mode_buttons:
@@ -370,6 +373,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         for g_name, g in self.graphs.items():
             g.set_smooth_colors(state)
+            # g.update_displayed_graph_data()
 
         self.show_graphs()
 
