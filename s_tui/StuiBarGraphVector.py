@@ -32,7 +32,7 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         values.append(new_val)
         return values[1:]
 
-    MAX_SAMPLES = 1000
+    MAX_SAMPLES = 200
     SCALE_DENSITY = 5
 
     def __init__(self,
@@ -189,14 +189,16 @@ class StuiBarGraphVector(LabeledBarGraphVector):
                 visible_graph_data = self.graph_data[graph_idx][visible_id:]
                 local_top_value.append(max(visible_graph_data))
 
-        if len(local_top_value) > 0:
-            self.graph_max = max(local_top_value)
+        update_max = False
+        local_max = int(max(local_top_value))
+        if (local_max > int(self.graph_max)):
+            update_max = True
+            self.graph_max = local_max
 
         # update the graph bars
         for graph_idx, graph in enumerate(self.bar_graph_vector):
             bars = []
             if self.visible_graph_list[graph_idx]:
-                logging.info("regular graph draw phase" + str(graph_idx))
 
                 # Get the graph width (dimension 1)
                 num_displayed_bars = graph.get_size()[1]

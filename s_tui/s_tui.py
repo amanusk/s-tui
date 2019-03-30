@@ -86,7 +86,7 @@ DEFAULT_CSV_FILE = "s-tui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
 
 VERSION_MESSAGE = \
     "s-tui " + __version__ +\
-    " - (C) 2017-2018 Alex Manuskin, Gil Tsuker\n\
+    " - (C) 2017-2019 Alex Manuskin, Gil Tsuker\n\
     Released under GNU GPLv2"
 
 fire_starter = None
@@ -203,7 +203,6 @@ class GraphView(urwid.WidgetPlaceholder):
     """
     def __init__(self, controller):
         # constants
-        self.SUMMERY_TEXT_W = 20
         self.left_margin = 0
         self.top_margin = 0
 
@@ -223,18 +222,14 @@ class GraphView(urwid.WidgetPlaceholder):
         # Visible graphs are the graphs currently displayed, this is a
         # subset of the available graphs for display
         self.visible_graphs = {}
-        self.graphs = {}
-        self.available_graphs = {}
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
-        self.summaries = []
-        self.available_summaries = []
 
-        # construct temperature graph and source
-        self.source_list = []
-        self.source_list.append(TempSource(self.controller.temp_thresh))
-        self.source_list.append(FreqSource())
-        self.source_list.append(UtilSource())
-        self.source_list.append(RaplPowerSource())
+        # construct sources
+        possible_source = [TempSource(self.controller.temp_thresh),
+                           FreqSource(),
+                           UtilSource(),
+                           RaplPowerSource()]
+        self.source_list = [s for s in possible_source if s.get_is_available()]
 
         # construct the variouse menus during init phase
         self.stress_menu = StressMenu(self.on_menu_close)
@@ -268,8 +263,9 @@ class GraphView(urwid.WidgetPlaceholder):
         for g in self.visible_graphs.values():
             g.update_displayed_graph_data()
         # update graph summery
-        self.main_window_w.base_widget[0].body[self.SUMMERY_TEXT_W] = \
-            self.graph_stats()
+
+        for s in self.available_summaries.values():
+            s.update()
 
         # Only update clock if not is stress mode
         if self.controller.mode.get_current_mode() != 'Monitor':
@@ -306,8 +302,6 @@ class GraphView(urwid.WidgetPlaceholder):
                     self.sensors_menu.sensor_current_active_dict.items():
                 logging.info(str(visible_sensors))
                 self.graphs[sensor].set_visible_graphs(visible_sensors)
-                self.main_window_w.base_widget[0].body[self.SUMMERY_TEXT_W] = \
-                    self.graph_stats()
 
         self.original_widget = self.main_window_w
 
@@ -421,6 +415,9 @@ class GraphView(urwid.WidgetPlaceholder):
                 except(AttributeError, configparser.NoOptionError,
                        configparser.NoSectionError):
                     pass
+
+            # Save settings for sensors menu
+            conf.add_section('Sensors')
             conf.write(cfgfile)
 
     def graph_controls(self, conf):
@@ -478,10 +475,6 @@ class GraphView(urwid.WidgetPlaceholder):
                             on_state_change=lambda w,
                             state, x=x:  self.change_checkbox_state(x, state))
                             for x in self.available_graphs.values()]
-        unavailable_graphs = [urwid.Text("[N/A] " + x.get_graph_name())
-                              for x in self.graphs.values()
-                              if x.source.get_is_available() is False]
-        graph_checkboxes += unavailable_graphs
 
         buttons = [urwid.Text(('bold text', u"Modes"), align="center"),
                    ] + self.mode_buttons + [
@@ -561,8 +554,9 @@ class GraphView(urwid.WidgetPlaceholder):
             )
 
         fan_source = FanSource()
-        self.summaries[fan_source.get_source_name()] = SummaryTextList(
-            fan_source)
+        if fan_source.get_is_available():
+            self.summaries[fan_source.get_source_name()] = SummaryTextList(
+                fan_source)
 
         # only interested in available graph
         self.available_graphs = OrderedDict(
@@ -572,7 +566,7 @@ class GraphView(urwid.WidgetPlaceholder):
             (key, val) for key, val in self.summaries.items() if
             val.get_is_available())
 
-        self.visible_graphs = self.available_graphs.copy()
+        self.visible_graphs = self.available_graphs
 
         # Remove graphs from shown graphs if user configured them out
         # TODO: get this information from the state
@@ -609,10 +603,6 @@ class GraphView(urwid.WidgetPlaceholder):
         w = urwid.LineBox(w)
         w = urwid.AttrWrap(w, 'line')
         self.main_window_w = w
-
-        for item_id, item in enumerate(self.main_window_w.base_widget[0].body):
-            if isinstance(item, urwid.Pile):
-                self.SUMMERY_TEXT_W = item_id
 
         return self.main_window_w
 
@@ -687,7 +677,6 @@ class GraphController:
 
         # Needed for use in view
         self.args = args
-        self.loop = []
 
         self.animate_alarm = None
         self.terminal = args.terminal
@@ -749,6 +738,7 @@ class GraphController:
         """update the graph and schedule the next update"""
         if self.save_csv or self.csv_file is not None:
             output_to_csv(self.view.summaries, self.csv_file)
+
         self.view.update_displayed_information()
         self.animate_alarm = self.loop.set_alarm_in(
             float(self.refresh_rate), self.animate_graph)
@@ -937,4 +927,4 @@ def get_args():
 
 
 if '__main__' == __name__:
-        main()
+    main()
