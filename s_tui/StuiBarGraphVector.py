@@ -233,7 +233,19 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         self.set_visible_graphs()
 
     def reset(self):
-        self.graph_data = [[0] * self.num_samples] * len(self.bar_graph_vector)
+        # TODO implement reset properly
+        pass
+        # for i in range(len(self.bar_graph_vector)):
+        #     self.graph_data[i] = [0] * self.num_samples
+        #
+        #
+        # for graph in self.bar_graph_vector:
+        #     size = graph.get_size()
+        #     size = (size[1], size[0])
+        #     graph.set_data([[0, 0] * graph.get_size()[1]], float(self.graph_max))
+        #
+        # # self.set_regular_colors()
+        #     graph.render_init(size)
 
     def update(self):
         self.source.update()
