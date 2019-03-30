@@ -643,13 +643,18 @@ class GraphController:
                 logging.debug("No user config for temp threshold")
 
         # Load sensors config if available
-        sources = ['Temp', 'Frequency', 'Util', 'Power']
-        self.source_default_conf = defaultdict(list)
-        for source in sources:
-            options = list(self.conf.items(source))
-            for option in options:
-                # Returns tuples of values in order
-                self.source_default_conf[source].append(str_to_bool(option[1]))
+        try:
+            sources = ['Temp', 'Frequency', 'Util', 'Power']
+            self.source_default_conf = defaultdict(list)
+            for source in sources:
+                options = list(self.conf.items(source))
+                for option in options:
+                    # Returns tuples of values in order
+                    self.source_default_conf[source].append(str_to_bool(option[1]))
+        except (AttributeError, ValueError, configparser.NoOptionError,
+                configparser.NoSectionError):
+            self.source_default_conf = defaultdict(list)
+
 
         # Needed for use in view
         self.args = args
