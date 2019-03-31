@@ -77,6 +77,7 @@ from s_tui.GlobalData import GlobalData
 from s_tui.Sources.ScriptHookLoader import ScriptHookLoader
 
 UPDATE_INTERVAL = 1
+HOOK_INTERVAL = 30 * 1000
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
 
 log_file = os.devnull
@@ -517,6 +518,11 @@ class GraphView(urwid.WidgetPlaceholder):
                 self.sensors_menu.sensor_current_active_dict[source_name],
                 alert_colors=alert_pallet
             )
+            if self.controller.script_hooks_enabled:
+                source.add_edge_hook(
+                    self.controller.script_loader.load_script(
+                        source.__class__.__name__, HOOK_INTERVAL)
+                )  # Invoke threshold script every 30s
 
             self.summaries[source_name] = SummaryTextList(
                 self.graphs[source_name].source
