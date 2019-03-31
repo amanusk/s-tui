@@ -214,7 +214,7 @@ class GraphView(urwid.WidgetPlaceholder):
         # general urwid items
         clock_text = seconds_to_text(self.controller.stress_time)
         self.clock_view = urwid.Text(('bold text', clock_text), align="center")
-        self.refresh_rate_ctrl = urwid.Edit(('bold text', u'Refresh[s]:'),
+        self.refresh_rate_ctrl = urwid.Edit((u'Refresh[s]:'),
                                             self.controller.refresh_rate)
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
 
@@ -424,12 +424,13 @@ class GraphView(urwid.WidgetPlaceholder):
             self.mode_buttons.append(rb)
 
         # Create list of buttons
-        control_options = [button("Reset", self.on_reset_button)]
+        control_options = list()
+        control_options.append(button('Sensors',
+                                      self.on_sensors_menu_open))
         if stress_installed:
             control_options.append(button('Stress Options',
                                           self.on_stress_menu_open))
-        control_options.append(button('Sensors',
-                                      self.on_sensors_menu_open))
+        control_options.append(button("Reset", self.on_reset_button))
         control_options.append(button('Help', self.on_help_menu_open))
         control_options.append(button('About', self.on_about_menu_open))
 
@@ -456,17 +457,17 @@ class GraphView(urwid.WidgetPlaceholder):
         buttons = [urwid.Text(('bold text', u"Modes"), align="center"),
                    ] + self.mode_buttons + [
             install_stress_message,
-            urwid.LineBox(self.clock_view),
+            urwid.Text(('bold text', u"Stress Timer"), align="center"),
+            self.clock_view,
             urwid.Divider(),
             urwid.Text(('bold text', u"Control Options"), align="center"),
             animate_controls,
             urwid.Divider(),
+            urwid.Text(('bold text', u"Visual Options"), align="center"),
+            unicode_checkbox,
             self.refresh_rate_ctrl,
             urwid.Divider(),
-            urwid.LineBox(unicode_checkbox),
-            urwid.Divider(),
             button("Save Settings", self.save_settings),
-            urwid.Divider(),
             button("Quit", self.exit_program),
         ]
 
@@ -487,7 +488,8 @@ class GraphView(urwid.WidgetPlaceholder):
             cpu_name = urwid.Text(get_processor_name().strip(), align="center")
         except OSError:
             logging.info("CPU name not available")
-        cpu_stats = [cpu_name, urwid.Divider()]
+        cpu_stats = [urwid.Text(('bold text', "CPU Detected"),
+                                align="center"), cpu_name, urwid.Divider()]
         return cpu_stats
 
     def graph_stats(self):
@@ -510,8 +512,7 @@ class GraphView(urwid.WidgetPlaceholder):
             color_pallet = source.get_pallet()
             alert_pallet = source.get_alert_pallet()
             self.graphs[source_name] = StuiBarGraphVector(
-                source, color_pallet[0], color_pallet[1],
-                color_pallet[2], color_pallet[3],
+                source, color_pallet,
                 len(source.get_sensor_list()),
                 self.sensors_menu.sensor_current_active_dict[source_name],
                 alert_colors=alert_pallet
@@ -646,11 +647,11 @@ class GraphController:
                 options = list(self.conf.items(source))
                 for option in options:
                     # Returns tuples of values in order
-                    self.source_default_conf[source].append(str_to_bool(option[1]))
+                    self.source_default_conf[source].append(
+                        str_to_bool(option[1]))
         except (AttributeError, ValueError, configparser.NoOptionError,
                 configparser.NoSectionError):
             self.source_default_conf = defaultdict(list)
-
 
         # Needed for use in view
         self.args = args

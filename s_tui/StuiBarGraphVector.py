@@ -32,34 +32,38 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         values.append(new_val)
         return values[1:]
 
-    MAX_SAMPLES = 200
+    MAX_SAMPLES = 300
     SCALE_DENSITY = 5
 
     def __init__(self,
                  source,
-                 color_a,
-                 color_b,
-                 smooth_a,
-                 smooth_b,
+                 regular_colors,
                  graph_count,
                  visible_graph_list,
                  alert_colors=None,
                  bar_width=1):
         self.source = source
+        self.graph_count = graph_count
         self.graph_name = self.source.get_source_name()
         self.measurement_unit = self.source.get_measurement_unit()
 
         self.num_samples = self.MAX_SAMPLES
-        self.graph_data = [[0] * self.num_samples] * graph_count
+
+        self.graph_data = []
+        for i in range(graph_count):
+            self.graph_data.append([0] * self.num_samples)
         self.graph_max = 0
 
-        self.color_a = color_a
-        self.color_b = color_b
-        self.smooth_a = smooth_a
-        self.smooth_b = smooth_b
+        self.color_a = regular_colors[0]
+        self.color_b = regular_colors[1]
+        self.smooth_a = regular_colors[2]
+        self.smooth_b = regular_colors[3]
 
-        self.alert_colors = alert_colors
-        self.regular_colors = [color_a, color_b, smooth_a, smooth_b]
+        if alert_colors:
+            self.alert_colors = alert_colors
+        else:
+            self.alert_colors = regular_colors
+        self.regular_colors = regular_colors
 
         self.satt = None
 
@@ -71,7 +75,8 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         # create several different instances of salable bar graph
         w = []
         for i in range(graph_count):
-            graph = ScalableBarGraph(['bg background', color_a, color_b])
+            graph = ScalableBarGraph(['bg background',
+                                      self.color_a, self.color_b])
             w.append(graph)
 
         super(StuiBarGraphVector, self).__init__(
@@ -229,7 +234,10 @@ class StuiBarGraphVector(LabeledBarGraphVector):
             self.set_visible_graphs()
 
     def reset(self):
-        self.graph_data = [[0] * self.num_samples] * len(self.bar_graph_vector)
+        self.graph_data = []
+        for i in range(self.graph_count):
+            self.graph_data.append([0] * self.num_samples)
+        self.graph_max = 0
 
     def update(self):
         self.source.update()

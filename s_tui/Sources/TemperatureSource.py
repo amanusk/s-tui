@@ -79,6 +79,7 @@ class TemperatureSource(Source):
         for sensor_id, sensor in enumerate(sample):
             for minor_sensor_id, minor_sensor in enumerate(sample[sensor]):
                 self.last_temp_list.append(minor_sensor.current)
+        self.last_temp = max(self.last_temp_list)
 
     def get_reading_list(self):
         return self.last_temp_list

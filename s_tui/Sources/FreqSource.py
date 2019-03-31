@@ -33,8 +33,6 @@ class FreqSource(Source):
         self.is_available = True
         self.top_freq = -1
         self.last_freq_list = [0]
-        self.samples_taken = 0
-        self.stress_started = False
 
         try:
             self.last_freq_list = [0] * len(psutil.cpu_freq(True))
@@ -69,13 +67,6 @@ class FreqSource(Source):
 
     def reset(self):
         self.max_perf_lost = 0
-
-    def set_stress_started(self):
-        self.stress_started = True
-
-    def set_stress_stopped(self):
-        self.stress_started = False
-        self.samples_taken = 0
 
     def get_sensor_list(self):
         cpu_list = []

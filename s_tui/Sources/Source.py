@@ -45,9 +45,6 @@ class Source:
     def get_edge_triggered(self):
         raise NotImplementedError("Get Edge triggered not implemented")
 
-    def get_max_triggered(self):
-        raise NotImplementedError("Get Edge triggered not implemented")
-
     def get_measurement_unit(self):
         raise NotImplementedError("Get measurement unit is not implemented")
 
