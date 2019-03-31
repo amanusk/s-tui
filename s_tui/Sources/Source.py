@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+import logging
 
 
 class Source:
@@ -78,7 +79,9 @@ class Source:
         Evaluate the current state of this Source and
         invoke any attached hooks if they've been triggered
         """
+        logging.debug("Evaluating hooks")
         if self.get_edge_triggered():
+            logging.debug("Hook triggered")
             for hook in [h for h in self.edge_hooks if h.is_ready()]:
                 hook.invoke()
 
