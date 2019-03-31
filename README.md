@@ -2,11 +2,17 @@
 
 [![Build Status](https://travis-ci.org/amanusk/s-tui.svg?branch=master)](https://travis-ci.org/amanusk/s-tui)
 [![PyPI version](https://badge.fury.io/py/s-tui.svg)](https://badge.fury.io/py/s-tui)
-[![Downloads](https://pepy.tech/badge/s-tui/month)
+[![Downloads](https://pepy.tech/badge/s-tui/month)](https://pepy.tech/project/s-tui)
 
-![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/stui_logo.png?raw=true)
+<img src="https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui-logo.png" width="200"/>
 
 Stress-Terminal UI, s-tui,  monitors CPU temperature, frequency, power and utilization in a graphical way from the terminal. 
+
+## __DISCLAIMER__ ## 
+We currently working on the 1.0 release.  
+This adds multiples sensors for each source.   
+Some functionality might be lost and readded in the future.   
+Please help testing, report bugs and issues.
 
 ## Screenshot
 ![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui2.gif?raw=true)
@@ -19,10 +25,10 @@ Stress-Terminal UI, s-tui,  monitors CPU temperature, frequency, power and utili
 	 * [pip (x86   ARM)](#pip-x86--arm)
   * [Options](#options)
   * [Dependencies](#dependencies)
-  * [Other installation methods](#other-installation-methods)
+  * [More installation methods](#more-installation-methods)
 	 * [Ubuntu](#ubuntu)
 	 * [Arch-Linux](#arch-linux)
-  * [Build](#build)
+  * [Run from source](#run-from-source)
   * [Compatibility](#compatibility)
   * [FAQ](#faq)
   * [Contributing](#contributing)
@@ -40,10 +46,6 @@ Stress-Terminal UI, s-tui,  monitors CPU temperature, frequency, power and utili
 ```
 s-tui
 ```
-or  
-```
-sudo s-tui
-```
 
 ## Simple installation
 ### pip (x86 + ARM)
@@ -60,9 +62,13 @@ sudo pip install s-tui
 
 If you are installing s-tui on a Raspberry-Pi you might need to install `python-dev` first
 
-## Options
+Installation in virtualenv with [pipsi](https://github.com/mitsuhiko/pipsi):
 ```
-TUI interface:
+pipsi install s-tui
+```
+
+## Options
+``` TUI interface:
 
 The side bar houses the controls for the displayed graphs.
 At the bottom, all sensors reading are presented in text form.
@@ -127,12 +133,18 @@ The latest stable version of s-tui is available via pip. To install pip on Ubunt
 Once pip is installed, install s-tui from pip:  
 `(sudo) pip install s-tui`  
 
-A ppa is available (xenial,bionic)
+### Ubuntu(PPA)
+A ppa is available but is not always up to date(xenial,bionic)
 ```
 sudo add-apt-repository ppa:amanusk/python-s-tui
 sudo apt-get update
 sudo apt-get install python3-s-tui
 ```
+### Ubuntu(18.10)
+```
+sudo apt install s-tui
+```
+
 ### Arch-Linux
 AUR packages of s-tui are available
 
@@ -186,7 +198,7 @@ s-tui uses [urwid](https://github.com/urwid/urwid) as a graphical engine. urwid 
 * Power read is supported on Intel Core CPUs of the second generation and newer (Sandy Bridge)  
 * s-tui tested to run on Raspberry-Pi 3,2,1
 
-## Q&A
+## FAQ
 __Q__: How is this different from htop?  
 __A__: s-tui is not a processes monitor like htop. The purpose is to monitor your CPU statistics and have an option to test the system under heavy load.  (Think AIDA64 stress test, not task manager).  
 
@@ -195,6 +207,7 @@ __A__: By default, s-tui is handles mouse inputs. This causes some systems to cr
 
 __Q__: I am not seeing all the stats in the sidebar.
 __A__: The sidebar is scrollable, you can scroll down with `DOWN` or `j` or scroll to the bottom with `PG-DN` or `G`. You can also decrees the font of you terminal :)
+
 
 ## Contributing
 
@@ -211,5 +224,6 @@ If you really like it, share it with your friends and co-workers.
 
 If you really really like this work, leave a tip :)
 
+BTC: `1PPhYgecwvAN7utN2EotgTfy2mmLqzF8m3`  
 ETH: `0xc169699A825066f2F07E0b29C4082094b32A3F3e`
 

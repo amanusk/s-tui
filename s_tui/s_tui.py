@@ -42,7 +42,6 @@ except ImportError:
 from sys import exit
 from collections import OrderedDict
 from collections import defaultdict
-from distutils.spawn import find_executable
 from s_tui.AboutMenu import AboutMenu
 from s_tui.HelpMenu import HelpMenu
 from s_tui.HelpMenu import HELP_MESSAGE
@@ -61,6 +60,7 @@ from s_tui.HelperFunctions import user_config_dir_exists
 from s_tui.HelperFunctions import user_config_file_exists
 from s_tui.HelperFunctions import seconds_to_text
 from s_tui.HelperFunctions import str_to_bool
+from s_tui.HelperFunctions import which
 from s_tui.UiElements import ViListBox
 from s_tui.UiElements import radio_button
 from s_tui.UiElements import button
@@ -144,14 +144,16 @@ class GraphMode:
                 self.modes.append('Stress')
 
             global fire_starter
+            fire_starter_exe = which('FIRESTARTER')
             if os.path.isfile('./FIRESTARTER/FIRESTARTER'):
                 fire_starter = os.path.join(os.getcwd(), 'FIRESTARTER',
                                             'FIRESTARTER')
-            elif find_executable('FIRESTARTER') is not None:
-                fire_starter = 'FIRESTARTER'
+            elif fire_starter_exe is not None:
+                fire_starter = fire_starter_exe
 
             if fire_starter is not None:
                 self.modes.append('FIRESTARTER')
+                stress_installed = True
 
         self.current_mode = self.modes[0]
         self.stress_process = None
@@ -420,6 +422,10 @@ class GraphView(urwid.WidgetPlaceholder):
         for m in modes:
             rb = radio_button(group, m, self.on_mode_button)
             self.mode_buttons.append(rb)
+        if not stress_installed:
+            self.mode_buttons.append(urwid.Text(
+                ('button normal', u"(N/A) install stress")))
+            self.mode_buttons.append(urwid.Divider())
 
         # Create list of buttons
         control_options = list()
@@ -585,6 +591,7 @@ class GraphController:
 
     The controller is generated once, and is updated according to inputs
     """
+
     def __init__(self, args):
 
         # Load and configure user config dir when controller starts
@@ -710,15 +717,21 @@ class GraphController:
         try:
             self.loop.run()
         except (ZeroDivisionError) as e:
+            # In case of Zero division, we want an error to return, and
+            # get a clue where this happens
             logging.debug("Some stat caused divide by zero exception. Exiting")
             logging.error(e, exc_info=True)
             print(ERROR_MESSAGE)
         except (AttributeError) as e:
-            logging.error("Catch attribute Error in urwid and restart")
-            logging.error(e, exc_info=True)
-            print(ERROR_MESSAGE)
+            # In this case we restart the loop, to address bug #50, where
+            # urwid crashes on multiple presses on 'esc'
+            logging.debug("Catch attribute Error in urwid and restart")
+            logging.debug(e, exc_info=True)
+            self.main()
         except (psutil.NoSuchProcess) as e:
-            logging.error("No such proccess error")
+            # This might happen if the stress process is not found, in this
+            # case, we want to know why
+            logging.error("No such process error")
             logging.error(e, exc_info=True)
             print(ERROR_MESSAGE)
 

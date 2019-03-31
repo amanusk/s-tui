@@ -25,12 +25,12 @@ Screenshot
 
 -  `Options <#options>`__
 -  `Dependencies <#dependencies>`__
--  `Other installation methods <#other-installation-methods>`__
+-  `More installation methods <#more-installation-methods>`__
 
    -  `Ubuntu <#ubuntu>`__
    -  `Arch-Linux <#arch-linux>`__
 
--  `Build <#build>`__
+-  `Run from source <#run-from-source>`__
 -  `Compatibility <#compatibility>`__
 -  `FAQ <#faq>`__
 -  `Contributing <#contributing>`__
@@ -79,6 +79,13 @@ Or if you want to install as root
 
 If you are installing s-tui on a Raspberry-Pi you might need to install
 ``python-dev`` first
+
+Installation in virtualenv with
+`pipsi <https://github.com/mitsuhiko/pipsi>`__:
+
+::
+
+    pipsi install s-tui
 
 Options
 -------
@@ -176,13 +183,23 @@ Ubuntu
 | Once pip is installed, install s-tui from pip:
 | ``(sudo) pip install s-tui``
 
-A ppa is available (xenial,bionic)
+Ubuntu(PPA)
+~~~~~~~~~~~
+
+A ppa is available but is not always up to date(xenial,bionic)
 
 ::
 
     sudo add-apt-repository ppa:amanusk/python-s-tui
     sudo apt-get update
     sudo apt-get install python3-s-tui
+
+Ubuntu(18.10)
+~~~~~~~~~~~~~
+
+::
+
+    sudo apt install s-tui
 
 Arch-Linux
 ~~~~~~~~~~
@@ -262,7 +279,7 @@ engine. urwid only works with UNIX-like systems
    and newer (Sandy Bridge)
 -  s-tui tested to run on Raspberry-Pi 3,2,1
 
-Q&A
+FAQ
 ---
 
 | **Q**: How is this different from htop?
@@ -300,7 +317,8 @@ If you really like it, share it with your friends and co-workers.
 
 If you really really like this work, leave a tip :)
 
-ETH: ``0xc169699A825066f2F07E0b29C4082094b32A3F3e``
+| BTC: ``1PPhYgecwvAN7utN2EotgTfy2mmLqzF8m3``
+| ETH: ``0xc169699A825066f2F07E0b29C4082094b32A3F3e``
 
 .. |Build Status| image:: https://travis-ci.org/amanusk/s-tui.svg?branch=master
    :target: https://travis-ci.org/amanusk/s-tui
