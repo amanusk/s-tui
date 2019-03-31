@@ -241,6 +241,10 @@ class GraphView(urwid.WidgetPlaceholder):
                              self.update_refresh_rate)
 
     def update_refresh_rate(self, edit, new_refresh_rate):
+        # Special case of 'q' in refresh rate
+        if 'q' in new_refresh_rate:
+            self.exit_program()
+
         try:
             if float(new_refresh_rate) <= 0.001:
                 pass
@@ -266,7 +270,7 @@ class GraphView(urwid.WidgetPlaceholder):
         if self.controller.mode.get_current_mode() != 'Monitor':
             self.controller.stress_time = (timeit.default_timer() -
                                            self.controller.stress_start_time)
-        self.clock_view.set_text(('bold text', seconds_to_text(
+        self.clock_view.set_text((seconds_to_text(
             int(self.controller.stress_time))))
 
     def on_reset_button(self, w):
@@ -427,6 +431,8 @@ class GraphView(urwid.WidgetPlaceholder):
         control_options.append(button("Reset", self.on_reset_button))
         control_options.append(button('Help', self.on_help_menu_open))
         control_options.append(button('About', self.on_about_menu_open))
+        control_options.append(button("Save Settings", self.save_settings)),
+        control_options.append(button("Quit", self.exit_program)),
 
         # Create the menu
         animate_controls = urwid.GridFlow(control_options, 18, 2, 0, 'center')
@@ -435,13 +441,13 @@ class GraphView(urwid.WidgetPlaceholder):
         default_smooth = self.controller.smooth_graph_mode
         if urwid.get_encoding_mode() == "utf8":
             unicode_checkbox = urwid.CheckBox(
-                "Smooth Graph", state=default_smooth,
+                "UTF-8", state=default_smooth,
                 on_state_change=self.on_unicode_checkbox)
             # Init the state of the graph accoding to the selected mode
             self.on_unicode_checkbox(state=default_smooth)
         else:
             unicode_checkbox = urwid.Text(
-                "UTF-8 encoding not detected")
+                "[N/A] UTF-8")
 
         install_stress_message = urwid.Text("")
         if not stress_installed:
@@ -461,8 +467,7 @@ class GraphView(urwid.WidgetPlaceholder):
             unicode_checkbox,
             self.refresh_rate_ctrl,
             urwid.Divider(),
-            button("Save Settings", self.save_settings),
-            button("Quit", self.exit_program),
+            urwid.Text(('bold text', u"Sensors"), align="center"),
         ]
 
         return buttons
@@ -719,14 +724,14 @@ class GraphController:
 
     def animate_graph(self, loop=None, user_data=None):
         """update the graph and schedule the next update"""
+        self.view.update_displayed_information()
+
         if self.save_csv or self.csv_file is not None:
             output_to_csv(self.view.summaries, self.csv_file)
 
         self.animate_alarm = self.loop.set_alarm_in(
             float(self.refresh_rate), self.animate_graph)
         # Update
-
-        self.view.update_displayed_information()
 
         global debug_run_counter
         if self.args.debug_run:

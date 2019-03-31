@@ -36,6 +36,8 @@ class ViListBox(urwid.ListBox):
             key = 'page up'
         elif key == 'x':
             key = 'enter'
+        elif key == 'q':
+            key = 'q'
         return super(ViListBox, self).keypress(size, key)
 
 

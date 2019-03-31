@@ -70,7 +70,7 @@ def output_to_csv(sources, csv_writeable_file):
         csv_dict.update({'Time': time.strftime("%Y-%m-%d_%H:%M:%S")})
         summaries = [val for key, val in sources.items()]
         for summarie in summaries:
-            csv_dict.update(summarie.source.get_summary())
+            csv_dict.update(summarie.source.get_sensors_summary())
 
         fieldnames = [key for key, val in csv_dict.items()]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -86,8 +86,6 @@ def output_to_terminal(sources):
     for s in sources:
         if s.get_is_available():
             s.update()
-    for s in sources:
-        if s.get_is_available():
             results.update(s.get_summary())
     for key, value in results.items():
         sys.stdout.write(str(key) + ": " + str(value) + ", ")
@@ -101,9 +99,8 @@ def output_to_json(sources):
     for s in sources:
         if s.get_is_available():
             s.update()
-    for s in sources:
-        if s.get_is_available():
-            results.update(s.get_summary())
+            source_name = s.get_source_name()
+            results[source_name] = s.get_sensors_summary()
     print(json.dumps(results, indent=4))
     exit()
 

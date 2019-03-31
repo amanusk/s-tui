@@ -62,11 +62,10 @@ class FreqSource(Source):
     def get_maximum(self):
         return self.top_freq
 
-    def get_summary(self):
+    def get_sensors_summary(self):
         sub_title_list = self.get_sensor_list()
 
         graph_vector_summary = OrderedDict()
-        graph_vector_summary[self.get_source_name()] = ''
         for graph_idx, graph_data in enumerate(self.last_measurement):
             val_str = str(int(graph_data)) + " " + self.measurement_unit
             graph_vector_summary[sub_title_list[graph_idx]] = val_str
