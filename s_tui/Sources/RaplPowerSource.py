@@ -52,9 +52,11 @@ class RaplPowerSource(Source):
         self.max_power = 1
         self.last_measurement = [0] * len(self.last_probe)
 
+        multi_sensors = []
         for item in self.last_probe:
             name = item.label
-            sensor_count = self.available_sensors.count(item.label)
+            sensor_count = multi_sensors.count(name)
+            multi_sensors.append(name)
             if 'package' not in name:
                 name += ",Pkg" + str(sensor_count)
             self.available_sensors.append(name)

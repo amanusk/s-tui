@@ -50,6 +50,7 @@ class TemperatureSource(Source):
             logging.debug("Unable to create sensors dict")
             self.is_available = False
             return
+        multi_sensors = []
         for key, value in sensors_dict.items():
             sensor_name = "".join(key.title().split(" "))
             for sensor_idx, sensor in enumerate(value):
@@ -60,7 +61,8 @@ class TemperatureSource(Source):
                     full_name = sensor_name + "," + str(sensor_idx)
                 else:
                     full_name = ("".join(sensor_label.title().split(" ")))
-                    sensor_count = self.available_sensors.count(full_name)
+                    sensor_count = multi_sensors.count(full_name)
+                    multi_sensors.append(full_name)
                     full_name += ",Pkg" + str(sensor_count)
 
                 logging.debug("Temp sensor name " + full_name)
