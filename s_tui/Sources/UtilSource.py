@@ -34,8 +34,8 @@ class UtilSource(Source):
 
         self.name = 'Util'
         self.measurement_unit = '%'
-
-        self.last_measurement = [0]
+        self.pallet = ('util light', 'util dark',
+                       'util light smooth', 'util dark smooth')
 
         try:
             self.last_measurement = [0] * psutil.cpu_count()
@@ -66,12 +66,6 @@ class UtilSource(Source):
 
     def get_is_available(self):
         return True
-
-    def get_pallet(self):
-        return ('util light',
-                'util dark',
-                'util light smooth',
-                'util dark smooth')
 
 
 if '__main__' == __name__:

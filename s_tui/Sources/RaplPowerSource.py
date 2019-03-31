@@ -40,6 +40,8 @@ class RaplPowerSource(Source):
 
         self.name = 'Power'
         self.measurement_unit = 'W'
+        self.pallet = ('power light', 'power dark',
+                       'power light smooth', 'power dark smooth')
 
         self.last_probe_time = time.time()
         self.last_probe = rapl_read()
@@ -51,7 +53,11 @@ class RaplPowerSource(Source):
         self.last_measurement = [0] * len(self.last_probe)
 
         for item in self.last_probe:
-            self.available_sensors.append(item.label)
+            name = item.label
+            sensor_count = self.available_sensors.count(item.label)
+            if 'package' not in name:
+                name += ",Pkg" + str(sensor_count)
+            self.available_sensors.append(name)
 
     def update(self):
         if not self.is_available:
@@ -85,16 +91,6 @@ class RaplPowerSource(Source):
 
     def get_maximum(self):
         return self.max_power
-
-    def reset(self):
-        self.max_power = 1
-        self.last_measurement = [0] * len(self.last_probe)
-
-    def get_pallet(self):
-        return ('power light',
-                'power dark',
-                'power light smooth',
-                'power dark smooth')
 
 
 if __name__ == '__main__':

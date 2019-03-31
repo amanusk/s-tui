@@ -28,6 +28,8 @@ class Source:
         self.is_available = True
         self.available_sensors = []
         self.name = ''
+        self.pallet = ()
+        self.alert_pallet = None
 
     def update(self):
         self.eval_hooks()
@@ -42,7 +44,7 @@ class Source:
         return self.is_available
 
     def reset(self):
-        raise NotImplementedError("Reset max information")
+        return
 
     def get_summary(self):
         sub_title_list = self.get_sensor_list()
@@ -50,7 +52,7 @@ class Source:
         graph_vector_summary = OrderedDict()
         graph_vector_summary[self.get_source_name()] = ''
         for graph_idx, graph_data in enumerate(self.last_measurement):
-            val_str = str(int(graph_data)) + ' ' + self.get_measurement_unit()
+            val_str = str(round(graph_data, 1)) + " " + self.measurement_unit
             graph_vector_summary[sub_title_list[graph_idx]] = val_str
 
         return graph_vector_summary
@@ -65,10 +67,10 @@ class Source:
         return self.measurement_unit
 
     def get_pallet(self):
-        raise NotImplementedError("Get pallet is not implemented")
+        return self.pallet
 
     def get_alert_pallet(self):
-        return None
+        return self.alert_pallet
 
     def get_sensor_name(self):
         return None

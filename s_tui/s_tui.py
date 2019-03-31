@@ -252,15 +252,15 @@ class GraphView(urwid.WidgetPlaceholder):
     def update_displayed_information(self):
         """ Update all the graphs that are being displayed """
 
-        for key, val in self.available_summaries.items():
-            val.source.update()
+        for summary in self.available_summaries.values():
+            summary.source.update()
 
         for g in self.visible_graphs.values():
             g.update_displayed_graph_data()
         # update graph summery
 
         for s in self.available_summaries.values():
-            s.update()
+            s.update_text()
 
         # Only update clock if not is stress mode
         if self.controller.mode.get_current_mode() != 'Monitor':
@@ -696,7 +696,6 @@ class GraphController:
     def set_mode(self, m):
         """Allow our view to set the mode."""
         rval = self.mode.set_mode(m)
-        self.view.update_displayed_information()
         return rval
 
     def main(self):
@@ -723,11 +722,11 @@ class GraphController:
         if self.save_csv or self.csv_file is not None:
             output_to_csv(self.view.summaries, self.csv_file)
 
-        self.view.update_displayed_information()
-
         self.animate_alarm = self.loop.set_alarm_in(
             float(self.refresh_rate), self.animate_graph)
         # Update
+
+        self.view.update_displayed_information()
 
         global debug_run_counter
         if self.args.debug_run:

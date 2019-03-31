@@ -32,12 +32,16 @@ class TemperatureSource(Source):
 
     def __init__(self, temp_thresh=None):
         Source.__init__(self)
+
         self.name = 'Temp'
-        self.max_temp = 10
         self.measurement_unit = 'C'
         self.last_max_temp = 0
-        self.temp_thresh = self.THRESHOLD_TEMP
+        self.pallet = ('temp light', 'temp dark',
+                       'temp light smooth', 'temp dark smooth')
+        self.alert_pallet = ('high temp light', 'high temp dark',
+                             'high temp light smooth', 'high temp dark smooth')
 
+        self.max_temp = 10
         sensors_dict = None
         try:
             sensors_dict = OrderedDict(sorted(
@@ -55,14 +59,17 @@ class TemperatureSource(Source):
                 if not sensor_label:
                     full_name = sensor_name + "," + str(sensor_idx)
                 else:
-                    full_name = ("".join(sensor_label.title().split(" ")) +
-                                 "," + sensor_name)
+                    full_name = ("".join(sensor_label.title().split(" ")))
+                    sensor_count = self.available_sensors.count(full_name)
+                    full_name += ",Pkg" + str(sensor_count)
 
                 logging.debug("Temp sensor name " + full_name)
-
                 self.available_sensors.append(full_name)
 
+        self.last_measurement = [0] * len(self.available_sensors)
+
         # Set temperature threshold if a custom one is set
+        self.temp_thresh = self.THRESHOLD_TEMP
         if temp_thresh is not None:
             if int(temp_thresh) > 0:
                 self.temp_thresh = int(temp_thresh)
@@ -88,17 +95,4 @@ class TemperatureSource(Source):
         return self.max_temp > self.temp_thresh
 
     def reset(self):
-        self.max_temp = 1
-
-    def get_measurement_unit(self):
-        return self.measurement_unit
-
-    def get_pallet(self):
-        return 'temp light', \
-               'temp dark', \
-               'temp light smooth', \
-               'temp dark smooth'
-
-    def get_alert_pallet(self):
-        return 'high temp light', 'high temp dark', \
-               'high temp light smooth', 'high temp dark smooth'
+        self.max_temp = 10

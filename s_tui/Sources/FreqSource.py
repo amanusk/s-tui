@@ -18,6 +18,7 @@
 
 from __future__ import absolute_import
 
+from collections import OrderedDict
 import logging
 import psutil
 
@@ -30,11 +31,13 @@ class FreqSource(Source):
 
     def __init__(self):
         Source.__init__(self)
-        self.name = 'Frequency'
-        self.top_freq = -1
-        self.last_measurement = [0]
-        self.measurement_unit = 'MHz'
 
+        self.name = 'Frequency'
+        self.measurement_unit = 'MHz'
+        self.pallet = ('freq light', 'freq dark',
+                       'freq light smooth', 'freq dark smooth')
+
+        self.top_freq = -1
         try:
             self.last_measurement = [0] * len(psutil.cpu_freq(True))
         except AttributeError:
@@ -59,11 +62,13 @@ class FreqSource(Source):
     def get_maximum(self):
         return self.top_freq
 
-    def reset(self):
-        self.max_perf_lost = 0
+    def get_summary(self):
+        sub_title_list = self.get_sensor_list()
 
-    def get_pallet(self):
-        return ('freq light',
-                'freq dark',
-                'freq light smooth',
-                'freq dark smooth')
+        graph_vector_summary = OrderedDict()
+        graph_vector_summary[self.get_source_name()] = ''
+        for graph_idx, graph_data in enumerate(self.last_measurement):
+            val_str = str(int(graph_data)) + " " + self.measurement_unit
+            graph_vector_summary[sub_title_list[graph_idx]] = val_str
+
+        return graph_vector_summary
