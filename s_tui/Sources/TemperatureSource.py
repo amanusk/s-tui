@@ -32,14 +32,12 @@ class TemperatureSource(Source):
 
     def __init__(self, temp_thresh=None):
         Source.__init__(self)
-
+        self.name = 'Temp'
         self.max_temp = 10
         self.measurement_unit = 'C'
-        self.last_temp = 0
+        self.last_max_temp = 0
         self.temp_thresh = self.THRESHOLD_TEMP
-        self.is_available = True
 
-        self.available_sensors = []
         sensors_dict = None
         try:
             sensors_dict = OrderedDict(sorted(
@@ -71,50 +69,23 @@ class TemperatureSource(Source):
                 logging.debug("Updated custom threshold to " +
                               str(self.temp_thresh))
 
-        self.update()
-
     def update(self):
         sample = OrderedDict(sorted(psutil.sensors_temperatures().items()))
-        self.last_temp_list = []
+        self.last_measurement = []
         for sensor_id, sensor in enumerate(sample):
             for minor_sensor_id, minor_sensor in enumerate(sample[sensor]):
-                self.last_temp_list.append(minor_sensor.current)
+                self.last_measurement.append(minor_sensor.current)
 
-        if self.last_temp_list:
-            self.last_temp = max(self.last_temp_list)
+        if self.last_measurement:
+            self.max_last_temp = max(self.last_measurement)
             # Call check for hooks
             Source.update(self)
 
-    def get_reading_list(self):
-        return self.last_temp_list
-
-    def get_is_available(self):
-        return self.is_available
-
     def get_edge_triggered(self):
-        return self.last_temp > self.temp_thresh
+        return self.max_last_temp > self.temp_thresh
 
     def get_max_triggered(self):
         return self.max_temp > self.temp_thresh
-
-    def get_summary(self):
-        sub_title_list = self.get_sensor_list()
-
-        graph_vector_summary = OrderedDict()
-        graph_vector_summary[self.get_source_name()] = ''
-        for graph_idx, graph_data in enumerate(self.last_temp_list):
-            val_str = str(int(graph_data)) + \
-                      ' ' + \
-                      self.get_measurement_unit()
-            graph_vector_summary[sub_title_list[graph_idx]] = val_str
-
-        return graph_vector_summary
-
-    def get_source_name(self):
-        return 'Temp'
-
-    def get_sensor_list(self):
-        return self.available_sensors
 
     def reset(self):
         self.max_temp = 1

@@ -225,19 +225,12 @@ class GraphView(urwid.WidgetPlaceholder):
         # subset of the available graphs for display
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
 
-        # construct sources
-        possible_source = [TempSource(self.controller.temp_thresh),
-                           FreqSource(),
-                           UtilSource(),
-                           RaplPowerSource()]
-        self.source_list = [s for s in possible_source if s.get_is_available()]
-
         # construct the variouse menus during init phase
         self.stress_menu = StressMenu(self.on_menu_close)
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
         self.sensors_menu = SensorsMenu(self.on_sensors_menu_close,
-                                        self.source_list,
+                                        self.controller.source_list,
                                         self.controller.source_default_conf)
         self.global_data = GlobalData(is_admin)
         self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
@@ -405,7 +398,7 @@ class GraphView(urwid.WidgetPlaceholder):
                     self.sensors_menu.sensor_current_active_dict.items():
                 conf.add_section(source)
 
-                source_list = self.source_list
+                source_list = self.controller.source_list
                 # TODO: consider changing sensors_list to dict
                 curr_sensor = [x for x in source_list if
                                x.get_source_name() == source][0]
@@ -508,7 +501,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graphs = OrderedDict()
         self.summaries = OrderedDict()
 
-        for source in self.source_list:
+        for source in self.controller.source_list:
             source_name = source.get_source_name()
             color_pallet = source.get_pallet()
             alert_pallet = source.get_alert_pallet()
@@ -645,9 +638,14 @@ class GraphController:
                     configparser.NoSectionError):
                 logging.debug("No user config for temp threshold")
 
+        possible_source = [TempSource(self.temp_thresh),
+                           FreqSource(),
+                           UtilSource(),
+                           RaplPowerSource()]
+
         # Load sensors config if available
         try:
-            sources = ['Temp', 'Frequency', 'Util', 'Power']
+            sources = [x.get_source_name() for x in possible_source]
             self.source_default_conf = defaultdict(list)
             for source in sources:
                 options = list(self.conf.items(source))
@@ -672,13 +670,15 @@ class GraphController:
         self.stress_start_time = 0
         self.stress_time = 0
 
+        # construct sources
+        self.source_list = [s for s in possible_source if s.get_is_available()]
+
         self.view = GraphView(self)
         # use the first mode (no stress) as the default
         mode = self.get_modes()[0]
         self.mode.set_mode(mode)
         # update the view
         self.view.on_mode_change(mode)
-        self.view.update_displayed_information()
 
         # Update csv file to save
         self.csv_file = None
@@ -724,9 +724,11 @@ class GraphController:
             output_to_csv(self.view.summaries, self.csv_file)
 
         self.view.update_displayed_information()
+
         self.animate_alarm = self.loop.set_alarm_in(
             float(self.refresh_rate), self.animate_graph)
         # Update
+
         global debug_run_counter
         if self.args.debug_run:
             debug_run_counter += int(float(self.refresh_rate))

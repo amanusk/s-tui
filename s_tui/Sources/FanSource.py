@@ -21,7 +21,6 @@ from __future__ import absolute_import
 import time
 import psutil
 from s_tui.Sources.Source import Source
-from collections import OrderedDict
 
 import logging
 logger = logging.getLogger(__name__)
@@ -30,12 +29,13 @@ logger = logging.getLogger(__name__)
 class FanSource(Source):
 
     def __init__(self):
+        Source.__init__(self)
+
+        self.name = 'Fan'
         self.fan_speed = 0
         self.max_speed = 1
         self.measurement_unit = 'RPM'
-        self.is_available = True
 
-        self.available_sensors = []
         sensors_dict = dict()
         try:
             sensors_dict = psutil.sensors_fans()
@@ -62,53 +62,23 @@ class FanSource(Source):
 
                 self.available_sensors.append(full_name)
 
-        self.last_fan_list = [0] * len(self.available_sensors)
-
-        self.update()
+        self.last_measurement = [0] * len(self.available_sensors)
 
     def update(self):
         sample = psutil.sensors_fans()
         for sensor_id, sensor in enumerate(sample):
             for minor_sensor_id, minor_sensor in enumerate(sample[sensor]):
                 sensor_stui_id = sensor_id + minor_sensor_id
-                self.last_fan_list[sensor_stui_id] = minor_sensor.current
-
-    def get_reading_list(self):
-        return self.last_fan_list
+                self.last_measurement[sensor_stui_id] = minor_sensor.current
 
     def get_maximum(self):
         return self.max_speed
-
-    def get_is_available(self):
-        return self.is_available
-
-    def get_source_name(self):
-        return 'Fan'
 
     def get_sensor_name(self):
         sensors_info = self.custom_temp.split(",")
         sensor_major = sensors_info[0]
         sensor_minor = sensors_info[1]
         return sensor_major + " " + sensor_minor
-
-    def get_sensor_list(self):
-        return self.available_sensors
-
-    def get_measurement_unit(self):
-        return self.measurement_unit
-
-    def get_summary(self):
-        sub_title_list = self.get_sensor_list()
-
-        graph_vector_summary = OrderedDict()
-        graph_vector_summary[self.get_source_name()] = ''
-        for graph_idx, graph_data in enumerate(self.last_fan_list):
-            val_str = str(int(graph_data)) + \
-                      ' ' + \
-                      self.get_measurement_unit()
-            graph_vector_summary[sub_title_list[graph_idx]] = val_str
-
-        return graph_vector_summary
 
 
 if '__main__' == __name__:

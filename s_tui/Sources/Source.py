@@ -15,12 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+
+from collections import OrderedDict
 import logging
 
 
 class Source:
     def __init__(self):
         self.edge_hooks = []
+        self.measurement_unit = ''
+        self.last_measurement = []
+        self.is_available = True
+        self.available_sensors = []
+        self.name = ''
 
     def update(self):
         self.eval_hooks()
@@ -32,22 +39,30 @@ class Source:
         raise NotImplementedError("Get maximum list is not implemented")
 
     def get_is_available(self):
-        raise NotImplementedError("Get is available is not implemented")
+        return self.is_available
 
     def reset(self):
         raise NotImplementedError("Reset max information")
 
     def get_summary(self):
-        raise NotImplementedError("Get summary is not implemented")
+        sub_title_list = self.get_sensor_list()
+
+        graph_vector_summary = OrderedDict()
+        graph_vector_summary[self.get_source_name()] = ''
+        for graph_idx, graph_data in enumerate(self.last_measurement):
+            val_str = str(int(graph_data)) + ' ' + self.get_measurement_unit()
+            graph_vector_summary[sub_title_list[graph_idx]] = val_str
+
+        return graph_vector_summary
 
     def get_source_name(self):
-        raise NotImplementedError("Get source name is not implemented")
+        return self.name
 
     def get_edge_triggered(self):
         raise NotImplementedError("Get Edge triggered not implemented")
 
     def get_measurement_unit(self):
-        raise NotImplementedError("Get measurement unit is not implemented")
+        return self.measurement_unit
 
     def get_pallet(self):
         raise NotImplementedError("Get pallet is not implemented")
@@ -60,10 +75,10 @@ class Source:
         # raise NotImplementedError("get_sensor_name is not implemented")
 
     def get_sensor_list(self):
-        raise NotImplementedError("get_sensor_list is not implemented")
+        return self.available_sensors
 
     def get_reading_list(self):
-        raise NotImplementedError("get_reading_list is not implemented")
+        return self.last_measurement
 
     def add_edge_hook(self, hook):
         """
