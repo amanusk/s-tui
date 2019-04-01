@@ -177,6 +177,7 @@ def str_to_bool(s):
     else:
         raise ValueError
 
+
 def which(program):
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)

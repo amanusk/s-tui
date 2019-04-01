@@ -10,14 +10,16 @@
 
 Stress-Terminal UI, s-tui,  monitors CPU temperature, frequency, power and utilization in a graphical way from the terminal. 
 
-## __DISCLAIMER__ ## 
-We currently working on the 1.0 release.  
-This adds multiples sensors for each source.   
-Some functionality might be lost and readded in the future.   
-Please help testing, report bugs and issues.
+## *!DISCLAIMER!* ## 
+The master branch is now updated to the upcoming version 1.0-beta.   
+This adds multiple sensors for each source.   
+Some functionality might be lost and readded in the future upon request and need.   
+Please help testing, report bugs and issues and request new features.   
+
+See [releases](https://github.com/amanusk/s-tui/releases) for previous versions.  
 
 ## Screenshot
-![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui2.gif?raw=true)
+![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui-1.0.gif?raw=true)
 
 * [The Stress Terminal UI: s-tui](#the-stress-terminal-ui-s-tui)
   * [Screenshot](#screenshot)
