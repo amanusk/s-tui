@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -28,21 +28,20 @@ HELP_MESSAGE = """
 TUI interface:
 
 The side bar houses the controls for the displayed graphs.\n\
-At the bottom of the side bar, more information is presented in text form.\n\
+At the bottom, all sensors reading are presented in text form.\n\
 
 * Use the arrow keys or 'hjkl' to navigate the side bar
 * Toggle between stressed and regular operation using the radio buttons in \
 'Modes'.\n\
-* If you wish to alternate stress defaults, you can do it in 'Stress \
-options'\n\
-* Select a different temperature sensors from the 'Temp Sensors' menu\n\
+* If you wish to alternate stress defaults, you can do it in <Stress \
+options>\n\
+* Select sensors to display in the <Sensors> menu \n\
 * Change time between updates using the 'Refresh' field\n\
 * Use the <Reset> button to reset graphs and statistics\n\
-* Toggle displayed graphs by selecting the [X] check box\n\
-* If a sensor is not available on your system, N/A is presented\n\
-* If your system supports it, you can use the utf8 button to get a smoother \
+* If your system supports it, you can use the UTF-8 button to get a smoother \
 graph\n\
-* Press 'q' or the <quit> button to quit\n\
+* Save your current configuration with the <Save Settings> button\n\
+* Press 'q' or the <Quit> button to quit\n\
 \n\
 * Run `s-tui --help` to get this message and additional cli options\n\
 \n\

@@ -26,24 +26,28 @@ import urwid
 from s_tui.UiElements import ViListBox
 from s_tui.HelperFunctions import __version__
 
-ABOUT_MESSAGE = " \n\
-s-tui is a monitoring tool for your CPU temperature, frequency, utilization \
+ABOUT_MESSAGE = """
+s-tui is a monitoring tool for your CPU's temperature, frequency, utilization \
 and power.\n\
-With s-tui you can monitor your system over SSH without a need for a GUI\n\
-\n\
+
 Code for s-tui is available on github\n\
 https://github.com/amanusk/s-tui\n\
 \n\
 ***    Please star on github :)    ***\n\
 \n\
+Help, issues and pull requests are appreciated.
+\n\
 Created by:\n\
     - Alex Manuskin\n\
     - Gil Tsuker\n\
     - Maor Veitsman\n\
+    And others
 \n\
 April 2017\n\
 \n\
-s-tui " + __version__ +\
+"""
+
+ABOUT_MESSAGE += "s-tui " + __version__ +\
     " Released under GNU GPLv2 "
 
 MESSAGE_LEN = 20

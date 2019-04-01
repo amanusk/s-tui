@@ -19,3 +19,7 @@ env*/*
 *.log
 *.conf
 *.cfg
+*.dat
+pyenv*
+*.loop
+*.spec

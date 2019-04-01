@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@ import time
 from collections import OrderedDict
 from sys import exit
 
-__version__ = "0.8.3"
+__version__ = "1.0.0-beta"
 
 
 def get_processor_name():
@@ -70,7 +70,7 @@ def output_to_csv(sources, csv_writeable_file):
         csv_dict.update({'Time': time.strftime("%Y-%m-%d_%H:%M:%S")})
         summaries = [val for key, val in sources.items()]
         for summarie in summaries:
-            csv_dict.update(summarie.source.get_summary())
+            csv_dict.update(summarie.source.get_sensors_summary())
 
         fieldnames = [key for key, val in csv_dict.items()]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -86,8 +86,6 @@ def output_to_terminal(sources):
     for s in sources:
         if s.get_is_available():
             s.update()
-    for s in sources:
-        if s.get_is_available():
             results.update(s.get_summary())
     for key, value in results.items():
         sys.stdout.write(str(key) + ": " + str(value) + ", ")
@@ -101,9 +99,8 @@ def output_to_json(sources):
     for s in sources:
         if s.get_is_available():
             s.update()
-    for s in sources:
-        if s.get_is_available():
-            results.update(s.get_summary())
+            source_name = s.get_source_name()
+            results[source_name] = s.get_sensors_summary()
     print(json.dumps(results, indent=4))
     exit()
 
@@ -170,6 +167,15 @@ def seconds_to_text(secs):
     minutes = (secs - hours*3600)//60
     seconds = secs - hours*3600 - minutes*60
     return "%02d:%02d:%02d" % (hours, minutes, seconds)
+
+
+def str_to_bool(s):
+    if s == 'True':
+        return True
+    elif s == 'False':
+        return False
+    else:
+        raise ValueError
 
 
 def which(program):

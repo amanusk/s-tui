@@ -1,42 +1,37 @@
 import urwid
-import itertools
 from collections import OrderedDict
 
 
 class SummaryTextList:
+    MAX_LABEL_L = 12
+
     def __init__(self, source, alert_color=None):
-        self.summary_text_items = OrderedDict(
-            (key, urwid.Text(str(val), align='right')) for key, val in
-            source.get_summary().items())
         self.source = source
         self.alert_color = alert_color
+        self.summery_text_list = []
+
+        # We keep a dict of all the items in the summary list
+        self.summary_text_items = OrderedDict()
 
     def get_text_item_list(self):
-        return itertools.chain.from_iterable(
-            [urwid.Text(str(key), align='left'), val] for (key, val) in
-            self.summary_text_items.items())
 
-    def update(self):
+        summery_text_list = []
+        for key, val in self.source.get_summary().items():
+            label_w = urwid.Text(str(key[0:self.MAX_LABEL_L]))
+            value_w = urwid.Text(str(val), align='right')
+            # This can be accessed by the update method
+            self.summary_text_items[key] = value_w
+            col_w = urwid.Columns([('weight', 1.5, label_w), value_w])
+            summery_text_list.append(col_w)
+
+        self.summery_text_list = summery_text_list
+
+        return self.summery_text_list
+
+    def update_text(self):
         for key, val in self.source.get_summary().items():
             if key in self.summary_text_items:
-                try:
-                    # NOTE: Not the best way to keep the max values
-                    # persistent colors
-                    if 'Max' in key:
-                        if self.source.get_max_triggered():
-                            self.summary_text_items[key].set_text(
-                                (self.alert_color, str(val)))
-                        else:
-                            self.summary_text_items[key].set_text(str(val))
-                    else:
-                        if self.source.get_edge_triggered():
-                            self.summary_text_items[key].set_text(
-                                (self.alert_color, str(val)))
-                        else:
-                            self.summary_text_items[key].set_text(str(val))
-
-                except (NotImplementedError):
-                    self.summary_text_items[key].set_text(str(val))
+                self.summary_text_items[key].set_text(str(val))
 
     def get_is_available(self):
         return self.source.get_is_available()
