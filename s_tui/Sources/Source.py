@@ -52,7 +52,7 @@ class Source:
 
         graph_vector_summary = OrderedDict()
         for graph_idx, graph_data in enumerate(self.last_measurement):
-            val_str = str(round(graph_data, 1)) + " " + self.measurement_unit
+            val_str = str(round(graph_data, 1))
             graph_vector_summary[sub_title_list[graph_idx]] = val_str
 
         return graph_vector_summary
@@ -60,7 +60,8 @@ class Source:
     def get_summary(self):
         """ Returns a dict of source name and sensors with their values """
         graph_vector_summary = OrderedDict()
-        graph_vector_summary[self.get_source_name()] = ''
+        graph_vector_summary[self.get_source_name()] = (
+                             '[' + self.measurement_unit + ']')
         graph_vector_summary.update(self.get_sensors_summary())
         return graph_vector_summary
 

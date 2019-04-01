@@ -63,7 +63,9 @@ class TemperatureSource(Source):
                     full_name = ("".join(sensor_label.title().split(" ")))
                     sensor_count = multi_sensors.count(full_name)
                     multi_sensors.append(full_name)
-                    full_name += ",Pkg" + str(sensor_count)
+                    if ('package' not in full_name.lower() and
+                            'physical' not in full_name.lower()):
+                        full_name += ",Pkg" + str(sensor_count)
 
                 logging.debug("Temp sensor name " + full_name)
                 self.available_sensors.append(full_name)
