@@ -4,7 +4,9 @@
 [![PyPI version](https://badge.fury.io/py/s-tui.svg)](https://badge.fury.io/py/s-tui)
 [![Downloads](https://pepy.tech/badge/s-tui/month)](https://pepy.tech/project/s-tui)
 
-<img src="https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui-logo.png" width="200"/>
+<p align="center">
+<img src="https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui-logo.png" width="199">
+</p>
 
 Stress-Terminal UI, s-tui,  monitors CPU temperature, frequency, power and utilization in a graphical way from the terminal. 
 

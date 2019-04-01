@@ -216,7 +216,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # general urwid items
         clock_text = seconds_to_text(self.controller.stress_time)
-        self.clock_view = urwid.Text(('bold text', clock_text), align="center")
+        self.clock_view = urwid.Text((clock_text), align="center")
         self.refresh_rate_ctrl = urwid.Edit((u'Refresh[s]:'),
                                             self.controller.refresh_rate)
         self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
@@ -830,7 +830,7 @@ class GraphController:
             mode.set_stress_process(None)
 
         # Start a new clock upon starting a new stress test
-        self.view.clock_view.set_text(('bold text', seconds_to_text(
+        self.view.clock_view.set_text((seconds_to_text(
             int(self.stress_time))))
 
 
