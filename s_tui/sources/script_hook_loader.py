@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
-from s_tui.Sources.ScriptHook import ScriptHook
+from s_tui.sources.hook_script import ScriptHook
 
 
 class ScriptHookLoader:

@@ -22,7 +22,7 @@ import time
 import logging
 import psutil
 
-from s_tui.Sources.Source import Source
+from s_tui.sources.source import Source
 
 logger = logging.getLogger(__name__)
 

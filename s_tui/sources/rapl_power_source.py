@@ -24,9 +24,9 @@ from __future__ import absolute_import
 import time
 import logging
 
-from s_tui.Sources.Source import Source
+from s_tui.sources.source import Source
 # from Source import Source
-from s_tui.Sources.rapl_read import rapl_read
+from s_tui.sources.rapl_read import rapl_read
 
 LOGGER = logging.getLogger(__name__)
 

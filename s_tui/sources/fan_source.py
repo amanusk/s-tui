@@ -20,7 +20,7 @@ from __future__ import absolute_import
 
 import time
 import psutil
-from s_tui.Sources.Source import Source
+from s_tui.sources.source import Source
 
 import logging
 logger = logging.getLogger(__name__)

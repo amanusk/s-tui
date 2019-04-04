@@ -19,14 +19,14 @@
 from __future__ import absolute_import
 
 import psutil
-from s_tui.Sources.Source import Source
+from s_tui.sources.source import Source
 from collections import OrderedDict
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-class TemperatureSource(Source):
+class TempSource(Source):
     THRESHOLD_TEMP = 80
     DEGREE_SIGN = u'\N{DEGREE SIGN}'
 

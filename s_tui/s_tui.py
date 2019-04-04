@@ -42,39 +42,39 @@ except ImportError:
 from sys import exit
 from collections import OrderedDict
 from collections import defaultdict
-from s_tui.AboutMenu import AboutMenu
-from s_tui.HelpMenu import HelpMenu
-from s_tui.HelpMenu import HELP_MESSAGE
-from s_tui.StressMenu import StressMenu
-from s_tui.HelperFunctions import DEFAULT_PALETTE
-from s_tui.HelperFunctions import __version__
-from s_tui.HelperFunctions import get_processor_name
-from s_tui.HelperFunctions import kill_child_processes
-from s_tui.HelperFunctions import output_to_csv
-from s_tui.HelperFunctions import output_to_terminal
-from s_tui.HelperFunctions import output_to_json
-from s_tui.HelperFunctions import get_user_config_dir
-from s_tui.HelperFunctions import get_user_config_file
-from s_tui.HelperFunctions import make_user_config_dir
-from s_tui.HelperFunctions import user_config_dir_exists
-from s_tui.HelperFunctions import user_config_file_exists
-from s_tui.HelperFunctions import seconds_to_text
-from s_tui.HelperFunctions import str_to_bool
-from s_tui.HelperFunctions import which
-from s_tui.UiElements import ViListBox
-from s_tui.UiElements import radio_button
-from s_tui.UiElements import button
+from s_tui.about_menu import AboutMenu
+from s_tui.help_menu import HelpMenu
+from s_tui.help_menu import HELP_MESSAGE
+from s_tui.stress_menu import StressMenu
+from s_tui.helper_functions import DEFAULT_PALETTE
+from s_tui.helper_functions import __version__
+from s_tui.helper_functions import get_processor_name
+from s_tui.helper_functions import kill_child_processes
+from s_tui.helper_functions import output_to_csv
+from s_tui.helper_functions import output_to_terminal
+from s_tui.helper_functions import output_to_json
+from s_tui.helper_functions import get_user_config_dir
+from s_tui.helper_functions import get_user_config_file
+from s_tui.helper_functions import make_user_config_dir
+from s_tui.helper_functions import user_config_dir_exists
+from s_tui.helper_functions import user_config_file_exists
+from s_tui.helper_functions import seconds_to_text
+from s_tui.helper_functions import str_to_bool
+from s_tui.helper_functions import which
+from s_tui.ui_elements import ViListBox
+from s_tui.ui_elements import radio_button
+from s_tui.ui_elements import button
 # from s_tui.TempSensorsMenu import TempSensorsMenu
-from s_tui.SensorsMenu import SensorsMenu
-from s_tui.StuiBarGraphVector import StuiBarGraphVector
-from s_tui.SummaryTextList import SummaryTextList
-from s_tui.Sources.UtilSource import UtilSource as UtilSource
-from s_tui.Sources.FreqSource import FreqSource as FreqSource
-from s_tui.Sources.TemperatureSource import TemperatureSource as TempSource
-from s_tui.Sources.RaplPowerSource import RaplPowerSource as RaplPowerSource
-from s_tui.Sources.FanSource import FanSource as FanSource
-from s_tui.GlobalData import GlobalData
-from s_tui.Sources.ScriptHookLoader import ScriptHookLoader
+from s_tui.sensors_menu import SensorsMenu
+from s_tui.stui_bar_graph_vector import StuiBarGraphVector
+from s_tui.summary_text_list import SummaryTextList
+from s_tui.sources.util_source import UtilSource
+from s_tui.sources.freq_source import FreqSource
+from s_tui.sources.temp_source import TempSource
+from s_tui.sources.rapl_power_source import RaplPowerSource
+from s_tui.sources.fan_source import FanSource
+from s_tui.global_data import GlobalData
+from s_tui.sources.script_hook_loader import ScriptHookLoader
 
 UPDATE_INTERVAL = 1
 HOOK_INTERVAL = 30 * 1000

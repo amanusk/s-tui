@@ -18,8 +18,8 @@
 
 from __future__ import absolute_import
 
-from s_tui.ComplexBarGraphs import LabeledBarGraphVector
-from s_tui.ComplexBarGraphs import ScalableBarGraph
+from s_tui.complex_bar_graph import LabeledBarGraphVector
+from s_tui.complex_bar_graph import ScalableBarGraph
 import logging
 logger = logging.getLogger(__name__)
 

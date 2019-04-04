@@ -18,7 +18,7 @@
 
 import os
 import subprocess
-from s_tui.Sources.Hook import Hook
+from s_tui.sources.hook import Hook
 
 
 class ScriptHook:
