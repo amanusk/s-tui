@@ -23,8 +23,6 @@ import psutil
 
 from s_tui.sources.source import Source
 
-logger = logging.getLogger(__name__)
-
 
 class FreqSource(Source):
 
@@ -51,7 +49,7 @@ class FreqSource(Source):
         except ValueError:
             self.is_available = False
 
-        for core_id, core in enumerate(psutil.cpu_freq(True)):
+        for core_id, _ in enumerate(psutil.cpu_freq(True)):
             self.available_sensors.append("Core " + str(core_id))
 
     def update(self):

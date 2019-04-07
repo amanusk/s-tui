@@ -15,12 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+""" This module implements a parent source class for s-tui"""
 
 from collections import OrderedDict
 import logging
 
 
 class Source:
+    """ This is a basic source class for s-tui"""
     def __init__(self):
         self.edge_hooks = []
         self.measurement_unit = ''
@@ -37,14 +39,11 @@ class Source:
     def get_maximum(self):
         raise NotImplementedError("Get maximum is not implemented")
 
-    def get_maximum_list(self):
-        raise NotImplementedError("Get maximum list is not implemented")
-
     def get_is_available(self):
         return self.is_available
 
     def reset(self):
-        return
+        raise NotImplementedError("Reset is not implemented")
 
     def get_sensors_summary(self):
         """ This returns a dict of sensor of the source and their values """
@@ -61,7 +60,7 @@ class Source:
         """ Returns a dict of source name and sensors with their values """
         graph_vector_summary = OrderedDict()
         graph_vector_summary[self.get_source_name()] = (
-                             '[' + self.measurement_unit + ']')
+            '[' + self.measurement_unit + ']')
         graph_vector_summary.update(self.get_sensors_summary())
         return graph_vector_summary
 
@@ -79,10 +78,6 @@ class Source:
 
     def get_alert_pallet(self):
         return self.alert_pallet
-
-    def get_sensor_name(self):
-        return None
-        # raise NotImplementedError("get_sensor_name is not implemented")
 
     def get_sensor_list(self):
         return self.available_sensors
@@ -112,12 +107,7 @@ class Source:
 
 
 class MockSource(Source):
-    """
-    Mock class for testing
-    """
-    def get_reading(self):
-        return 5
-
+    """ Mock class for testing """
     def get_maximum(self):
         return 20
 
@@ -132,3 +122,6 @@ class MockSource(Source):
 
     def get_measurement_unit(self):
         return 'K'
+
+    def get_edge_triggered(self):
+        raise NotImplementedError("Get Edge triggered not implemented")

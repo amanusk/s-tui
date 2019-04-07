@@ -15,19 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+""" This module implements a fan source """
+
 
 from __future__ import absolute_import
 
-import time
+import logging
 import psutil
 from s_tui.sources.source import Source
 
-import logging
-logger = logging.getLogger(__name__)
-
 
 class FanSource(Source):
-
+    """ Source for fan information """
     def __init__(self):
         Source.__init__(self)
 
@@ -58,7 +57,7 @@ class FanSource(Source):
                 else:
                     full_name = sensor_label
 
-                logging.debug("Fan sensor name " + full_name)
+                logging.debug("Fan sensor name %s", full_name)
 
                 self.available_sensors.append(full_name)
 
@@ -74,15 +73,5 @@ class FanSource(Source):
     def get_maximum(self):
         return self.max_speed
 
-    def get_sensor_name(self):
-        sensors_info = self.custom_temp.split(",")
-        sensor_major = sensors_info[0]
-        sensor_minor = sensors_info[1]
-        return sensor_major + " " + sensor_minor
-
-
-if '__main__' == __name__:
-    fan = FanSource()
-    while True:
-        print(fan.get_reading())
-        time.sleep(2)
+    def get_edge_triggered(self):
+        return False

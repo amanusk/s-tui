@@ -25,7 +25,6 @@ import time
 import logging
 
 from s_tui.sources.source import Source
-# from Source import Source
 from s_tui.sources.rapl_read import rapl_read
 
 LOGGER = logging.getLogger(__name__)
@@ -75,9 +74,9 @@ class RaplPowerSource(Source):
 
             seconds_passed = (current_measurement_time -
                               self.last_probe_time)
-            logging.debug("seconds passed " + str(seconds_passed))
+            logging.debug("seconds passed %s", seconds_passed)
             watts_used = float(joule_used) / float(seconds_passed)
-            logging.debug("watts used " + str(watts_used))
+            logging.debug("watts used %s", watts_used)
             logging.info("Joule_Used %d, seconds passed, %d", joule_used,
                          seconds_passed)
 
@@ -93,10 +92,3 @@ class RaplPowerSource(Source):
 
     def get_maximum(self):
         return self.max_power
-
-
-if __name__ == '__main__':
-    RAPL = RaplPowerSource()
-    while True:
-        print(RAPL.update())
-        time.sleep(2)

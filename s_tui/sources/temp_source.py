@@ -15,27 +15,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+""" This module implements a Temperature source """
 
 from __future__ import absolute_import
 
-import psutil
-from s_tui.sources.source import Source
-from collections import OrderedDict
-
 import logging
-logger = logging.getLogger(__name__)
+from collections import OrderedDict
+import psutil
+
+from s_tui.sources.source import Source
 
 
 class TempSource(Source):
+    """ This class inherits a source and implements a temprature source """
     THRESHOLD_TEMP = 80
-    DEGREE_SIGN = u'\N{DEGREE SIGN}'
 
     def __init__(self, temp_thresh=None):
         Source.__init__(self)
 
         self.name = 'Temp'
         self.measurement_unit = 'C'
-        self.last_max_temp = 0
+        self.max_last_temp = 0
         self.pallet = ('temp light', 'temp dark',
                        'temp light smooth', 'temp dark smooth')
         self.alert_pallet = ('high temp light', 'high temp dark',
@@ -67,7 +67,7 @@ class TempSource(Source):
                             'physical' not in full_name.lower()):
                         full_name += ",Pkg" + str(sensor_count)
 
-                logging.debug("Temp sensor name " + full_name)
+                logging.debug("Temp sensor name %s", full_name)
                 self.available_sensors.append(full_name)
 
         self.last_measurement = [0] * len(self.available_sensors)
@@ -77,14 +77,14 @@ class TempSource(Source):
         if temp_thresh is not None:
             if int(temp_thresh) > 0:
                 self.temp_thresh = int(temp_thresh)
-                logging.debug("Updated custom threshold to " +
-                              str(self.temp_thresh))
+                logging.debug("Updated custom threshold to %s",
+                              self.temp_thresh)
 
     def update(self):
         sample = OrderedDict(sorted(psutil.sensors_temperatures().items()))
         self.last_measurement = []
-        for sensor_id, sensor in enumerate(sample):
-            for minor_sensor_id, minor_sensor in enumerate(sample[sensor]):
+        for sensor in sample:
+            for minor_sensor in sample[sensor]:
                 self.last_measurement.append(minor_sensor.current)
 
         if self.last_measurement:
@@ -96,7 +96,11 @@ class TempSource(Source):
         return self.max_last_temp > self.temp_thresh
 
     def get_max_triggered(self):
+        """ Returns whether the current temperature threshold is exceeded"""
         return self.max_temp > self.temp_thresh
 
     def reset(self):
         self.max_temp = 10
+
+    def get_maximum(self):
+        raise NotImplementedError("Get maximum is not implemented")

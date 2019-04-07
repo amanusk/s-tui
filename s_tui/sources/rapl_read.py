@@ -93,11 +93,11 @@ def rapl_read():
         if name:
             try:
                 current = cat(pjoin(path, 'energy_uj'))
+                max_reading = 0.0
+                ret.append(RaplStats(name, float(current), max_reading))
             except (IOError, OSError, ValueError) as err:
                 logging.warning("ignoring %r for file %r",
                                 (err, path), RuntimeWarning)
-            max_reading = 0.0
-            ret.append(RaplStats(name, float(current), max_reading))
     return ret
 
 

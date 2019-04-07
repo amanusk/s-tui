@@ -18,13 +18,10 @@
 
 from __future__ import absolute_import
 
-import time
 import logging
 import psutil
 
 from s_tui.sources.source import Source
-
-logger = logging.getLogger(__name__)
 
 
 class UtilSource(Source):
@@ -51,7 +48,7 @@ class UtilSource(Source):
         try:
             for core_id, util in enumerate(psutil.cpu_percent(interval=0.0,
                                                               percpu=True)):
-                logging.info("Core id" + str(core_id) + " util " + str(util))
+                logging.info("Core id %s util %s", core_id, util)
                 self.last_measurement[core_id] = float(util)
         except AttributeError:
             logging.debug("Cpu Utilization unavailable")
@@ -59,17 +56,10 @@ class UtilSource(Source):
         except ValueError:
             logging.debug("Utilization is not a float")
 
-        logging.info("Utilization recorded " + str(self.last_measurement))
+        logging.info("Utilization recorded %s", self.last_measurement)
 
     def get_maximum(self):
         return 100
 
     def get_is_available(self):
-        return True
-
-
-if '__main__' == __name__:
-    util = UtilSource()
-    while True:
-        print(util.get_reading())
-        time.sleep(2)
+        return self.is_available

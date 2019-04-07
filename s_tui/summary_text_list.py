@@ -28,7 +28,7 @@ class SummaryTextList:
 
         return self.summery_text_list
 
-    def update_text(self):
+    def update(self):
         for key, val in self.source.get_summary().items():
             if key in self.summary_text_items:
                 self.summary_text_items[key].set_text(str(val))

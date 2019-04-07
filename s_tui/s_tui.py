@@ -23,25 +23,27 @@
 from __future__ import absolute_import
 
 import argparse
+# from multiprocessing.pool import ThreadPool
 import ctypes
+import signal
+import itertools
 import logging
 import os
 import subprocess
 import time
 import timeit
+from collections import OrderedDict
+from collections import defaultdict
+import sys
+
 import psutil
 import urwid
-import signal
-import itertools
 
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
 
-from sys import exit
-from collections import OrderedDict
-from collections import defaultdict
 from s_tui.about_menu import AboutMenu
 from s_tui.help_menu import HelpMenu
 from s_tui.help_menu import HELP_MESSAGE
@@ -82,7 +84,6 @@ DEGREE_SIGN = u'\N{DEGREE SIGN}'
 
 log_file = os.devnull
 DEFAULT_LOG_FILE = "_s-tui.log"
-# TODO: Add timestamp
 
 DEFAULT_CSV_FILE = "s-tui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
 
@@ -117,43 +118,29 @@ class GraphMode:
         self.modes = ['Monitor']
         global stress_installed
         global stress_program
-        with open(os.devnull, 'w') as DEVNULL:
-            # Try if stress installed
-            try:
-                p = subprocess.Popen("stress", stdout=DEVNULL,
-                                     stderr=DEVNULL, shell=False)
-                p.kill()
-            except OSError:
-                logging.debug("stress is not installed")
-            else:
+
+        # Try if stress installed
+        stress_program = which('stress')
+        if stress_program:
+            stress_installed = True
+        else:
+            stress_program = which('stress-ng')
+            if stress_program:
                 stress_installed = True
-                stress_program = 'stress'
 
-            # Try if stress-ng installed
-            try:
-                p = subprocess.Popen("stress-ng", stdout=DEVNULL,
-                                     stderr=DEVNULL, shell=False)
-                p.kill()
-            except OSError:
-                logging.debug("stress-ng is not installed")
-            else:
-                stress_installed = True
-                stress_program = 'stress-ng'
+        if stress_installed:
+            self.modes.append('Stress')
 
-            if stress_installed:
-                self.modes.append('Stress')
+        global fire_starter
+        fire_starter_exe = which('FIRESTARTER')
+        if os.path.isfile('./FIRESTARTER/FIRESTARTER'):
+            fire_starter = os.path.join(os.getcwd(), 'FIRESTARTER',
+                                        'FIRESTARTER')
+        elif fire_starter_exe is not None:
+            fire_starter = fire_starter_exe
 
-            global fire_starter
-            fire_starter_exe = which('FIRESTARTER')
-            if os.path.isfile('./FIRESTARTER/FIRESTARTER'):
-                fire_starter = os.path.join(os.getcwd(), 'FIRESTARTER',
-                                            'FIRESTARTER')
-            elif fire_starter_exe is not None:
-                fire_starter = fire_starter_exe
-
-            if fire_starter is not None:
-                self.modes.append('FIRESTARTER')
-                stress_installed = True
+        if fire_starter is not None:
+            self.modes.append('FIRESTARTER')
 
         self.current_mode = self.modes[0]
         self.stress_process = None
@@ -164,19 +151,18 @@ class GraphMode:
     def get_current_mode(self):
         return self.current_mode
 
-    def set_mode(self, m):
-        self.current_mode = m
-        return True
+    def set_mode(self, mode):
+        self.current_mode = mode
 
     def get_stress_process(self):
         return self.stress_process
 
     def set_stress_process(self, proc):
         self.stress_process = proc
-        return True
 
 
 class MainLoop(urwid.MainLoop):
+    """ Inherit urwid Mainloop to catch special character inputs"""
 
     def signal_handler(self, frame):
         """signal handler for properly exiting Ctrl+C"""
@@ -184,9 +170,8 @@ class MainLoop(urwid.MainLoop):
         kill_child_processes(graph_controller.mode.get_stress_process())
         raise urwid.ExitMainLoop()
 
-    """ Inherit urwid Mainloop to catch special character inputs"""
     def unhandled_input(self, stui_input):
-        logging.debug('Caught ' + str(stui_input))
+        logging.debug('Caught %s', stui_input)
         if stui_input == 'q':
             logging.debug(graph_controller.mode.get_stress_process())
             kill_child_processes(graph_controller.mode.get_stress_process())
@@ -242,7 +227,7 @@ class GraphView(urwid.WidgetPlaceholder):
         urwid.connect_signal(self.refresh_rate_ctrl, 'change',
                              self.update_refresh_rate)
 
-    def update_refresh_rate(self, edit, new_refresh_rate):
+    def update_refresh_rate(self, _, new_refresh_rate):
         # Special case of 'q' in refresh rate
         if 'q' in new_refresh_rate:
             self.exit_program()
@@ -258,15 +243,28 @@ class GraphView(urwid.WidgetPlaceholder):
     def update_displayed_information(self):
         """ Update all the graphs that are being displayed """
 
+        # def call_update(instance):
+        #     instance.update()
+
+        # threads = ThreadPool(processes=4)
+        # threads.map(call_update, [x.source
+        #                          for x in self.available_summaries.values()])
+
         for summary in self.available_summaries.values():
             summary.source.update()
 
-        for g in self.visible_graphs.values():
-            g.update_displayed_graph_data()
-        # update graph summery
+        # threads.map(call_update, self.visible_graphs.values())
 
-        for s in self.available_summaries.values():
-            s.update_text()
+        for graph in self.visible_graphs.values():
+            graph.update()
+
+        # update graph summery
+        # threads.map(call_update, self.available_summaries.values())
+
+        for summary in self.available_summaries.values():
+            summary.update()
+
+        # threads.close()
 
         # Only update clock if not is stress mode
         if self.controller.mode.get_current_mode() != 'Monitor':
@@ -275,13 +273,13 @@ class GraphView(urwid.WidgetPlaceholder):
         self.clock_view.set_text((seconds_to_text(
             int(self.controller.stress_time))))
 
-    def on_reset_button(self, w):
+    def on_reset_button(self, _):
         """Reset graph data and display empty graph"""
-        for g in self.visible_graphs.values():
-            g.reset()
-        for g in self.graphs.values():
+        for graph in self.visible_graphs.values():
+            graph.reset()
+        for graph in self.graphs.values():
             try:
-                g.source.reset()
+                graph.source.reset()
             except NotImplementedError:
                 pass
         # Reset clock
@@ -296,7 +294,7 @@ class GraphView(urwid.WidgetPlaceholder):
     def on_sensors_menu_close(self, update):
         """Return to main screen and update sensor that
         are active in the view"""
-        logging.info("closing sensor menu, update=" + str(update))
+        logging.info("closing sensor menu, update=%s", update)
         if update:
             for sensor, visible_sensors in \
                     self.sensors_menu.sensor_current_active_dict.items():
@@ -422,10 +420,6 @@ class GraphView(urwid.WidgetPlaceholder):
         for m in modes:
             rb = radio_button(group, m, self.on_mode_button)
             self.mode_buttons.append(rb)
-        if not stress_installed:
-            self.mode_buttons.append(urwid.Text(
-                ('button normal', u"(N/A) install stress")))
-            self.mode_buttons.append(urwid.Divider())
 
         # Create list of buttons
         control_options = list()
@@ -705,10 +699,9 @@ class GraphController:
         """Allow our view access to the list of modes."""
         return self.mode.get_modes()
 
-    def set_mode(self, m):
+    def set_mode(self, mode):
         """Allow our view to set the mode."""
-        rval = self.mode.set_mode(m)
-        return rval
+        self.mode.set_mode(mode)
 
     def main(self):
         self.loop = MainLoop(self.view, DEFAULT_PALETTE,
@@ -819,8 +812,8 @@ class GraphController:
                         stderr=DEVNULL,
                         shell=False)
                     mode.set_stress_process(psutil.Process(stress_proc.pid))
-                    logging.debug('Started process' +
-                                  str(mode.get_stress_process()))
+                    logging.debug('Started process %s',
+                                  mode.get_stress_process())
                 except OSError:
                     logging.debug("Unable to start stress")
 
@@ -839,7 +832,7 @@ def main():
     # Print version and exit
     if args.version:
         print(VERSION_MESSAGE)
-        exit(0)
+        sys.exit(0)
 
     # Setup logging util
     global log_file
@@ -923,5 +916,5 @@ def get_args():
     return args
 
 
-if '__main__' == __name__:
+if __name__ == '__main__':
     main()

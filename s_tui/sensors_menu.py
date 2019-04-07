@@ -122,7 +122,7 @@ class SensorsMenu:
 
                 changed_state = (cb_sensor_visibility !=
                                  self.sensor_current_active_dict[s_name])
-            update_sensor_visibility |= changed_state
+                update_sensor_visibility |= changed_state
 
             self.sensor_current_active_dict[s_name] = cb_sensor_visibility
 

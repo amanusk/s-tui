@@ -152,7 +152,7 @@ class StuiBarGraphVector(LabeledBarGraphVector):
             graph.set_segment_attributes(
                 ['bg background', self.color_a, self.color_b], satt=self.satt)
 
-    def update_displayed_graph_data(self):
+    def update(self):
         if not self.get_is_available():
             return
 
@@ -238,6 +238,3 @@ class StuiBarGraphVector(LabeledBarGraphVector):
         for i in range(self.graph_count):
             self.graph_data.append([0] * self.num_samples)
         self.graph_max = 0
-
-    def update(self):
-        self.source.update()
