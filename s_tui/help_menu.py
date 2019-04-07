@@ -22,7 +22,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 import urwid
-from s_tui.ui_elements import ViListBox
+from s_tui.sturwid.ui_elements import ViListBox
 
 HELP_MESSAGE = """
 TUI interface:

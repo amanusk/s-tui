@@ -23,7 +23,6 @@
 from __future__ import absolute_import
 
 import argparse
-# from multiprocessing.pool import ThreadPool
 import ctypes
 import signal
 import itertools
@@ -63,13 +62,13 @@ from s_tui.helper_functions import user_config_file_exists
 from s_tui.helper_functions import seconds_to_text
 from s_tui.helper_functions import str_to_bool
 from s_tui.helper_functions import which
-from s_tui.ui_elements import ViListBox
-from s_tui.ui_elements import radio_button
-from s_tui.ui_elements import button
+from s_tui.sturwid.ui_elements import ViListBox
+from s_tui.sturwid.ui_elements import radio_button
+from s_tui.sturwid.ui_elements import button
 # from s_tui.TempSensorsMenu import TempSensorsMenu
 from s_tui.sensors_menu import SensorsMenu
-from s_tui.stui_bar_graph_vector import StuiBarGraphVector
-from s_tui.summary_text_list import SummaryTextList
+from s_tui.sturwid.bar_graph_vector import BarGraphVector
+from s_tui.sturwid.summary_text_list import SummaryTextList
 from s_tui.sources.util_source import UtilSource
 from s_tui.sources.freq_source import FreqSource
 from s_tui.sources.temp_source import TempSource
@@ -243,28 +242,15 @@ class GraphView(urwid.WidgetPlaceholder):
     def update_displayed_information(self):
         """ Update all the graphs that are being displayed """
 
-        # def call_update(instance):
-        #     instance.update()
-
-        # threads = ThreadPool(processes=4)
-        # threads.map(call_update, [x.source
-        #                          for x in self.available_summaries.values()])
-
         for summary in self.available_summaries.values():
             summary.source.update()
-
-        # threads.map(call_update, self.visible_graphs.values())
 
         for graph in self.visible_graphs.values():
             graph.update()
 
         # update graph summery
-        # threads.map(call_update, self.available_summaries.values())
-
         for summary in self.available_summaries.values():
             summary.update()
-
-        # threads.close()
 
         # Only update clock if not is stress mode
         if self.controller.mode.get_current_mode() != 'Monitor':
@@ -510,7 +496,7 @@ class GraphView(urwid.WidgetPlaceholder):
             source_name = source.get_source_name()
             color_pallet = source.get_pallet()
             alert_pallet = source.get_alert_pallet()
-            self.graphs[source_name] = StuiBarGraphVector(
+            self.graphs[source_name] = BarGraphVector(
                 source, color_pallet,
                 len(source.get_sensor_list()),
                 self.sensors_menu.sensor_current_active_dict[source_name],
@@ -806,11 +792,8 @@ class GraphController:
             logging.debug("Firestarter " + str(fire_starter))
             with open(os.devnull, 'w') as DEVNULL:
                 try:
-                    stress_proc = subprocess.Popen(
-                        stress_cmd,
-                        stdout=DEVNULL,
-                        stderr=DEVNULL,
-                        shell=False)
+                    stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL,
+                        stderr=DEVNULL, shell=False)
                     mode.set_stress_process(psutil.Process(stress_proc.pid))
                     logging.debug('Started process %s',
                                   mode.get_stress_process())

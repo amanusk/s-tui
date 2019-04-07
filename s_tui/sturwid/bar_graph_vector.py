@@ -18,13 +18,13 @@
 
 from __future__ import absolute_import
 
-from s_tui.complex_bar_graph import LabeledBarGraphVector
-from s_tui.complex_bar_graph import ScalableBarGraph
+from s_tui.sturwid.complex_bar_graph import LabeledBarGraphVector
+from s_tui.sturwid.complex_bar_graph import ScalableBarGraph
 import logging
 logger = logging.getLogger(__name__)
 
 
-class StuiBarGraphVector(LabeledBarGraphVector):
+class BarGraphVector(LabeledBarGraphVector):
 
     @staticmethod
     def append_latest_value(values, new_val):
@@ -79,7 +79,7 @@ class StuiBarGraphVector(LabeledBarGraphVector):
                                       self.color_a, self.color_b])
             w.append(graph)
 
-        super(StuiBarGraphVector, self).__init__(
+        super(BarGraphVector, self).__init__(
             graph_title, sub_title_list, y_label, w, visible_graph_list)
 
         for graph in self.bar_graph_vector:
