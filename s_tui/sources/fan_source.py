@@ -67,8 +67,8 @@ class FanSource(Source):
         sample = psutil.sensors_fans()
         for sensor_id, sensor in enumerate(sample):
             for minor_sensor_id, minor_sensor in enumerate(sample[sensor]):
-                sensor_stui_id = sensor_id + minor_sensor_id
-                self.last_measurement[sensor_stui_id] = minor_sensor.current
+                sensor_id = sensor_id + minor_sensor_id
+                self.last_measurement[sensor_id] = minor_sensor.current
 
     def get_maximum(self):
         return self.max_speed

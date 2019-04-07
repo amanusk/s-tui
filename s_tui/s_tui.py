@@ -23,7 +23,6 @@
 from __future__ import absolute_import
 
 import argparse
-import ctypes
 import signal
 import itertools
 import logging
@@ -74,14 +73,12 @@ from s_tui.sources.freq_source import FreqSource
 from s_tui.sources.temp_source import TempSource
 from s_tui.sources.rapl_power_source import RaplPowerSource
 from s_tui.sources.fan_source import FanSource
-from s_tui.global_data import GlobalData
 from s_tui.sources.script_hook_loader import ScriptHookLoader
 
 UPDATE_INTERVAL = 1
 HOOK_INTERVAL = 30 * 1000
 DEGREE_SIGN = u'\N{DEGREE SIGN}'
 
-log_file = os.devnull
 DEFAULT_LOG_FILE = "_s-tui.log"
 
 DEFAULT_CSV_FILE = "s-tui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
@@ -94,7 +91,6 @@ VERSION_MESSAGE = \
 fire_starter = None
 
 # globals
-is_admin = None
 stress_installed = False
 graph_controller = None
 stress_program = ''
@@ -169,14 +165,14 @@ class MainLoop(urwid.MainLoop):
         kill_child_processes(graph_controller.mode.get_stress_process())
         raise urwid.ExitMainLoop()
 
-    def unhandled_input(self, stui_input):
-        logging.debug('Caught %s', stui_input)
-        if stui_input == 'q':
+    def unhandled_input(self, uinput):
+        logging.debug('Caught %s', uinput)
+        if uinput == 'q':
             logging.debug(graph_controller.mode.get_stress_process())
             kill_child_processes(graph_controller.mode.get_stress_process())
             raise urwid.ExitMainLoop()
 
-        if stui_input == 'esc':
+        if uinput == 'esc':
             graph_controller.view.on_menu_close()
 
     signal.signal(signal.SIGINT, signal_handler)
@@ -218,8 +214,6 @@ class GraphView(urwid.WidgetPlaceholder):
         self.sensors_menu = SensorsMenu(self.on_sensors_menu_close,
                                         self.controller.source_list,
                                         self.controller.source_default_conf)
-        self.global_data = GlobalData(is_admin)
-        self.stress_menu.sqrt_workers = str(self.global_data.num_cpus)
 
         # call super
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
@@ -341,14 +335,14 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def on_mode_change(self, m):
         """Handle external mode change by updating radio buttons."""
-        for rb in self.mode_buttons:
-            if rb.get_label() == m:
-                rb.set_state(True, do_callback=False)
+        for mode_button in self.mode_buttons:
+            if mode_button.get_label() == m:
+                mode_button.set_state(True, do_callback=False)
                 break
 
     def on_unicode_checkbox(self, w=None, state=False):
         """Enable smooth edges if utf-8 is supported"""
-        logging.debug("unicode State is " + str(state))
+        logging.debug("unicode State is %s", state)
 
         # Update the controller to the state of the checkbox
         self.controller.smooth_graph_mode = state
@@ -358,8 +352,8 @@ class GraphView(urwid.WidgetPlaceholder):
         else:
             self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
 
-        for g_name, g in self.graphs.items():
-            g.set_smooth_colors(state)
+        for graph in self.graphs.values():
+            graph.set_smooth_colors(state)
 
         self.show_graphs()
 
@@ -392,7 +386,7 @@ class GraphView(urwid.WidgetPlaceholder):
                 # TODO: consider changing sensors_list to dict
                 curr_sensor = [x for x in source_list if
                                x.get_source_name() == source][0]
-                logging.debug("Saving settings for" + str(curr_sensor))
+                logging.debug("Saving settings for %s", curr_sensor)
                 sensor_list = curr_sensor.get_sensor_list()
                 for sensor_id, sensor in enumerate(sensor_list):
                     conf.set(source, sensor, str(visible_sensors[sensor_id]))
@@ -417,8 +411,8 @@ class GraphView(urwid.WidgetPlaceholder):
         control_options.append(button("Reset", self.on_reset_button))
         control_options.append(button('Help', self.on_help_menu_open))
         control_options.append(button('About', self.on_about_menu_open))
-        control_options.append(button("Save Settings", self.save_settings)),
-        control_options.append(button("Quit", self.exit_program)),
+        control_options.append(button("Save Settings", self.save_settings))
+        control_options.append(button("Quit", self.exit_program))
 
         # Create the menu
         animate_controls = urwid.GridFlow(control_options, 18, 2, 0, 'center')
@@ -690,38 +684,38 @@ class GraphController:
         self.mode.set_mode(mode)
 
     def main(self):
-        self.loop = MainLoop(self.view, DEFAULT_PALETTE,
-                             handle_mouse=self.handle_mouse)
-        self.animate_graph()
+        loop = MainLoop(self.view, DEFAULT_PALETTE,
+                        handle_mouse=self.handle_mouse)
+        self.animate_graph(loop)
         try:
-            self.loop.run()
-        except (ZeroDivisionError) as e:
+            loop.run()
+        except (ZeroDivisionError) as err:
             # In case of Zero division, we want an error to return, and
             # get a clue where this happens
             logging.debug("Some stat caused divide by zero exception. Exiting")
-            logging.error(e, exc_info=True)
+            logging.error(err, exc_info=True)
             print(ERROR_MESSAGE)
-        except (AttributeError) as e:
+        except (AttributeError) as err:
             # In this case we restart the loop, to address bug #50, where
             # urwid crashes on multiple presses on 'esc'
             logging.debug("Catch attribute Error in urwid and restart")
-            logging.debug(e, exc_info=True)
+            logging.debug(err, exc_info=True)
             self.main()
-        except (psutil.NoSuchProcess) as e:
+        except (psutil.NoSuchProcess) as err:
             # This might happen if the stress process is not found, in this
             # case, we want to know why
             logging.error("No such process error")
-            logging.error(e, exc_info=True)
+            logging.error(err, exc_info=True)
             print(ERROR_MESSAGE)
 
-    def animate_graph(self, loop=None, user_data=None):
+    def animate_graph(self, loop, user_data=None):
         """update the graph and schedule the next update"""
         self.view.update_displayed_information()
 
         if self.save_csv or self.csv_file is not None:
             output_to_csv(self.view.summaries, self.csv_file)
 
-        self.animate_alarm = self.loop.set_alarm_in(
+        self.animate_alarm = loop.set_alarm_in(
             float(self.refresh_rate), self.animate_graph)
         # Update
 
@@ -784,16 +778,16 @@ class GraphController:
             kill_child_processes(mode.get_stress_process())
             mode.set_stress_process(None)
 
-            stress_cmd = fire_starter
+            stress_cmd = [fire_starter]
 
             self.stress_start_time = timeit.default_timer()
             self.stress_time = 0
 
-            logging.debug("Firestarter " + str(fire_starter))
+            logging.debug("Firestarter %s", fire_starter)
             with open(os.devnull, 'w') as DEVNULL:
                 try:
                     stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL,
-                        stderr=DEVNULL, shell=False)
+                                                   stderr=DEVNULL, shell=False)
                     mode.set_stress_process(psutil.Process(stress_proc.pid))
                     logging.debug('Started process %s',
                                   mode.get_stress_process())
@@ -818,7 +812,6 @@ def main():
         sys.exit(0)
 
     # Setup logging util
-    global log_file
     log_file = DEFAULT_LOG_FILE
     if args.debug_run:
         args.debug = True
@@ -833,14 +826,6 @@ def main():
         file_handler.setFormatter(log_formatter)
         root_logger.addHandler(file_handler)
         root_logger.setLevel(level)
-
-    global is_admin
-    try:
-        is_admin = os.getuid() == 0
-    except AttributeError:
-        is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
-    if not is_admin:
-        logging.info("Started without root permissions")
 
     if args.terminal or args.json:
         logging.info("Printing single line to terminal")

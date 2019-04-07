@@ -21,7 +21,7 @@ import s_tui.helper_functions as AUX
 
 setup(
     name="s-tui",
-    packages=['s_tui', 's_tui.sources'],
+    packages=['s_tui', 's_tui.sources', 's_tui.sturwid'],
     version=AUX.__version__,
     author="Alex Manuskin",
     author_email="alex.manuskin@gmail.com",

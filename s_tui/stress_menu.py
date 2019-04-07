@@ -20,8 +20,11 @@
 """
 
 from __future__ import print_function
-import urwid
 import re
+import logging
+
+import psutil
+import urwid
 
 
 class StressMenu:
@@ -33,6 +36,12 @@ class StressMenu:
 
         self.time_out = 'none'
         self.sqrt_workers = '1'
+        try:
+            self.sqrt_workers = str(psutil.cpu_count())
+            logging.info("num cpus %s", self.sqrt_workers)
+        except (IOError, OSError) as err:
+            logging.debug(err)
+
         self.sync_workers = '0'
         self.memory_workers = '0'
         self.malloc_byte = '256M'
@@ -113,7 +122,7 @@ class StressMenu:
         self.write_workers_ctrl.set_edit_text(self.write_workers)
         self.write_bytes_ctrl.set_edit_text(self.write_bytes)
 
-    def on_default(self, w):
+    def on_default(self, _):
         self.time_out = 'none'
         self.sqrt_workers = '1'
         self.sync_workers = '0'
@@ -131,7 +140,7 @@ class StressMenu:
     def get_size(self):
         return len(self.titles) + 5, self.MAX_TITLE_LEN
 
-    def on_save(self, w):
+    def on_save(self, _):
         self.time_out = self.get_pos_num(
             self.time_out_ctrl.get_edit_text(), 'none')
         self.sqrt_workers = self.get_pos_num(
@@ -155,7 +164,7 @@ class StressMenu:
         self.set_edit_texts()
         self.return_fn()
 
-    def on_cancel(self, w):
+    def on_cancel(self, _):
         self.set_edit_texts()
         self.return_fn()
 
