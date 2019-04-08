@@ -30,9 +30,11 @@ import urwid
 class StressMenu:
     MAX_TITLE_LEN = 50
 
-    def __init__(self, return_fn):
+    def __init__(self, return_fn, stress_exe):
 
         self.return_fn = return_fn
+
+        self.stress_exe = stress_exe
 
         self.time_out = 'none'
         self.sqrt_workers = '1'
@@ -168,20 +170,51 @@ class StressMenu:
         self.set_edit_texts()
         self.return_fn()
 
+    def get_stress_cmd(self):
+        stress_cmd = [self.stress_exe]
+        if int(self.sqrt_workers) > 0:
+            stress_cmd.append('-c')
+            stress_cmd.append(self.sqrt_workers)
+
+        if int(self.sync_workers) > 0:
+            stress_cmd.append('-i')
+            stress_cmd.append(self.sync_workers)
+
+        if int(self.memory_workers) > 0:
+            stress_cmd.append('--vm')
+            stress_cmd.append(self.memory_workers)
+            stress_cmd.append('--vm-bytes')
+            stress_cmd.append(self.malloc_byte)
+            stress_cmd.append('--vm-stride')
+            stress_cmd.append(self.byte_touch_cnt)
+
+        if self.no_malloc:
+            stress_cmd.append('--vm-keep')
+
+        if int(self.write_workers) > 0:
+            stress_cmd.append('--hdd')
+            stress_cmd.append(self.write_workers)
+            stress_cmd.append('--hdd-bytes')
+            stress_cmd.append(self.write_bytes)
+
+        if self.time_out != 'none':
+            stress_cmd.append('-t')
+            stress_cmd.append(self.time_out)
+
+        return stress_cmd
+
     @staticmethod
     def get_pos_num(num, default):
         num_valid = re.match(r"\A([0-9]+)\Z", num, re.I)
         if num_valid or (num == 'none' and default == 'none'):
             return num
-        else:
-            return default
+        return default
 
     @staticmethod
     def get_valid_byte(num, default):
-        # check if the format of number is (num)(G|m|B) i.e 500GB, 200mb. 400
-        # etc..
+        """check if the format of number is (num)(G|m|B) i.e 500GB, 200mb. 400
+        etc.. """
         num_valid = re.match(r"\A([0-9]+)(M|G|m|g|)(B|b|\b)\Z", num, re.I)
         if num_valid:
             return num
-        else:
-            return default
+        return default
