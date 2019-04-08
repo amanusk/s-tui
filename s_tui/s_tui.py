@@ -746,7 +746,7 @@ class GraphController:
             with open(os.devnull, 'w') as DEVNULL:
                 try:
                     stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL,
-                                                   stderr=DEVNULL, shell=False)
+                                                   stderr=DEVNULL)
                     mode.set_stress_process(psutil.Process(stress_proc.pid))
                 except OSError:
                     logging.debug("Unable to start stress")
@@ -765,7 +765,7 @@ class GraphController:
             with open(os.devnull, 'w') as DEVNULL:
                 try:
                     stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL,
-                                                   stderr=DEVNULL, shell=True)
+                                                   stderr=DEVNULL)
                     mode.set_stress_process(psutil.Process(stress_proc.pid))
                     logging.debug('Started process %s',
                                   mode.get_stress_process())
