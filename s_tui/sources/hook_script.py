@@ -50,7 +50,6 @@ class ScriptHook:
                 # interfere with the application's tui
                 stdout=DEVNULL,
                 stderr=DEVNULL,
-                shell=False
             )
 
     def _make_script_hook(self, path, timeout_milliseconds):
