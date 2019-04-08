@@ -38,7 +38,9 @@ class FreqSource(Source):
         try:
             # Check if psutil.cpu_freq is available.
             # +1 for average frequency
-            self.last_measurement = [0] * (len(psutil.cpu_freq(True)) + 1)
+            self.last_measurement = [0] * len(psutil.cpu_freq(True))
+            if psutil.cpu_freq(False):
+                self.last_measurement.append(0)
         except AttributeError:
             logging.debug("cpu_freq is not available from psutil")
             self.is_available = False
