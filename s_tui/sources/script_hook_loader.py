@@ -39,8 +39,7 @@ class ScriptHookLoader:
 
         if os.path.isfile(script_path):
             return ScriptHook(script_path, timeoutMilliseconds)
-        else:
-            return None
+        return None
 
     def _source_to_script_name(self, source_name):
         return source_name.lower() + '.sh'

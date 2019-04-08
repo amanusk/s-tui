@@ -189,7 +189,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
         self.sensors_menu = SensorsMenu(self.on_sensors_menu_close,
-                                        self.controller.source_list,
+                                        self.controller.sources,
                                         self.controller.source_default_conf)
 
         # call super
@@ -359,9 +359,9 @@ class GraphView(urwid.WidgetPlaceholder):
                     self.sensors_menu.sensor_current_active_dict.items():
                 conf.add_section(source)
 
-                source_list = self.controller.source_list
+                sources = self.controller.sources
                 # TODO: consider changing sensors_list to dict
-                curr_sensor = [x for x in source_list if
+                curr_sensor = [x for x in sources if
                                x.get_source_name() == source][0]
                 logging.debug("Saving settings for %s", curr_sensor)
                 sensor_list = curr_sensor.get_sensor_list()
@@ -463,7 +463,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.graphs = OrderedDict()
         self.summaries = OrderedDict()
 
-        for source in self.controller.source_list:
+        for source in self.controller.sources:
             source_name = source.get_source_name()
             color_pallet = source.get_pallet()
             alert_pallet = source.get_alert_pallet()
@@ -541,15 +541,13 @@ class GraphController:
     The controller is generated once, and is updated according to inputs
     """
 
-    def __init__(self, args):
-
+    def _load_config(self, possible_sources, t_thresh):
         # Load and configure user config dir when controller starts
         if not user_config_dir_exists():
             user_config_dir = make_user_config_dir()
         else:
             user_config_dir = get_user_config_dir()
 
-        self.script_hooks_enabled = True
         if user_config_dir is None:
             logging.warning("Failed to find or create scripts directory,\
                              proceeding without scripting support")
@@ -565,8 +563,7 @@ class GraphController:
         else:
             logging.debug("Config file not found")
 
-        # Set refresh rate accorrding to user config
-        self.refresh_rate = '2.0'
+        # Load refresh refresh rate from config
         try:
             self.refresh_rate = str(self.conf.getfloat(
                 'GraphControll', 'refresh'))
@@ -575,8 +572,7 @@ class GraphController:
                 configparser.NoSectionError):
             logging.debug("No refresh rate configed")
 
-        # Set initial smooth graph state according to user config
-        self.smooth_graph_mode = False
+        # Change UTF8 setting from config
         try:
             if self.conf.getboolean('GraphControll', 'UTF8'):
                 self.smooth_graph_mode = True
@@ -587,10 +583,8 @@ class GraphController:
                 configparser.NoSectionError):
             logging.debug("No user config for utf8")
 
-        self.temp_thresh = args.t_thresh
-
         # Try to load high temperature threshold if configured
-        if args.t_thresh is None:
+        if t_thresh is None:
             try:
                 self.temp_thresh = self.conf.get('TempControll', 'threshold')
                 logging.debug("Temperature threshold set to %s",
@@ -599,15 +593,9 @@ class GraphController:
                     configparser.NoSectionError):
                 logging.debug("No user config for temp threshold")
 
-        possible_source = [TempSource(self.temp_thresh),
-                           FreqSource(),
-                           UtilSource(),
-                           RaplPowerSource()]
-
         # Load sensors config if available
         try:
-            sources = [x.get_source_name() for x in possible_source]
-            self.source_default_conf = defaultdict(list)
+            sources = [x.get_source_name() for x in possible_sources]
             for source in sources:
                 options = list(self.conf.items(source))
                 for option in options:
@@ -618,12 +606,32 @@ class GraphController:
                 configparser.NoSectionError):
             self.source_default_conf = defaultdict(list)
 
+    def __init__(self, args):
+        self.conf = None
+        self.script_hooks_enabled = True
+        self.script_loader = None
+
+        # Set refresh rate accorrding to user config
+        self.refresh_rate = '2.0'
+
+        # Set initial smooth graph state according to user config
+        self.smooth_graph_mode = False
+
+        self.temp_thresh = args.t_thresh
+
+        possible_sources = [TempSource(self.temp_thresh),
+                            FreqSource(),
+                            UtilSource(),
+                            RaplPowerSource()]
+
+        self.source_default_conf = defaultdict(list)
+
+        self._load_config(possible_sources, args.t_thresh)
+
         # Needed for use in view
         self.args = args
 
         # Configure stress_process
-
-        # Try if stress installed
         self.stress_exe = None
         stress_installed = False
         self.stress_exe = which('stress')
@@ -647,8 +655,6 @@ class GraphController:
                 firestarter_installed = True
 
         self.animate_alarm = None
-        self.terminal = args.terminal
-        self.json = args.json
         self.mode = GraphMode(stress_installed, firestarter_installed)
 
         self.handle_mouse = not args.no_mouse
@@ -657,7 +663,7 @@ class GraphController:
         self.stress_time = 0
 
         # construct sources
-        self.source_list = [s for s in possible_source if s.get_is_available()]
+        self.sources = [s for s in possible_sources if s.get_is_available()]
 
         self.view = GraphView(self)
         # use the first mode (no stress) as the default
@@ -759,7 +765,7 @@ class GraphController:
             with open(os.devnull, 'w') as DEVNULL:
                 try:
                     stress_proc = subprocess.Popen(stress_cmd, stdout=DEVNULL,
-                                                   stderr=DEVNULL, shell=False)
+                                                   stderr=DEVNULL, shell=True)
                     mode.set_stress_process(psutil.Process(stress_proc.pid))
                     logging.debug('Started process %s',
                                   mode.get_stress_process())

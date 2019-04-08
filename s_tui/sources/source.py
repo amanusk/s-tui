@@ -103,6 +103,7 @@ class Source:
         if self.get_edge_triggered():
             logging.debug("Hook triggered")
             for hook in [h for h in self.edge_hooks if h.is_ready()]:
+                logging.debug("Hook invoked")
                 hook.invoke()
 
 

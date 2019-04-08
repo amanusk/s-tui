@@ -22,14 +22,14 @@ from datetime import datetime, timedelta
 class Hook:
     """
     Event handler that invokes an arbitrary callback when invoked.
-    If the timeoutMilliseconds argument is greater than 0,
+    If the timeout_milliseconds argument is greater than 0,
     the hook will be suspended for n milliseconds after it's being invoked.
     """
 
-    def __init__(self, callback, timeoutMilliseconds=0, *callback_args):
+    def __init__(self, callback, timeout_milliseconds=0, *callback_args):
         self.callback = callback
         self.callback_args = callback_args
-        self.timeoutMilliseconds = timeoutMilliseconds
+        self.timeout_milliseconds = timeout_milliseconds
         self.ready_time = datetime.now()
 
     def is_ready(self):
@@ -46,13 +46,13 @@ class Hook:
         """
 
         # Don't sleep a hook if it has never run
-        if (self.timeoutMilliseconds > 0):
-            self.ready_time = self._get_ready_time(self.timeoutMilliseconds)
+        if self.timeout_milliseconds > 0:
+            self.ready_time = self._get_ready_time(self.timeout_milliseconds)
 
         self._run(self.callback_args)
 
-    def _get_ready_time(self, timeoutMilliseconds):
-        return datetime.now() + timedelta(milliseconds=timeoutMilliseconds)
+    def _get_ready_time(self, timeout_milliseconds):
+        return datetime.now() + timedelta(milliseconds=timeout_milliseconds)
 
     def _run(self, *args):
         self.callback(*args)
