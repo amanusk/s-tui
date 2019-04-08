@@ -340,11 +340,11 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.show_graphs()
 
-    def on_save_settings(self):
+    def on_save_settings(self, w=None):
         """ Calls controller save settings method """
         self.controller.save_settings()
 
-    def on_exit_program(self):
+    def on_exit_program(self, w=None):
         """ Calls controller exit_program method """
         self.controller.exit_program()
 
@@ -721,7 +721,7 @@ class GraphController:
             stress_cmd = [self.firestarter]
             self.stress_conroller.start_stress(stress_cmd)
 
-    def save_settings(self, w=None):
+    def save_settings(self):
         """ Save the current configuration to a user config file """
 
         if not user_config_dir_exists():
@@ -757,7 +757,7 @@ class GraphController:
                     conf.set(source, sensor, str(visible_sensors[sensor_id]))
             conf.write(cfgfile)
 
-    def exit_program(self, w=None):
+    def exit_program(self):
         """ Kill all stress operations upon exit"""
         self.stress_conroller.kill_stress_process()
         raise urwid.ExitMainLoop()
