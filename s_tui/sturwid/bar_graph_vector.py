@@ -50,7 +50,8 @@ class BarGraphVector(LabeledBarGraphVector):
         self.num_samples = self.MAX_SAMPLES
 
         self.graph_data = []
-        for i in range(graph_count):
+        # We must create new instances for each list
+        for _ in range(graph_count):
             self.graph_data.append([0] * self.num_samples)
         self.graph_max = 0
 
@@ -74,7 +75,7 @@ class BarGraphVector(LabeledBarGraphVector):
 
         # create several different instances of salable bar graph
         w = []
-        for i in range(graph_count):
+        for _ in range(graph_count):
             graph = ScalableBarGraph(['bg background',
                                       self.color_a, self.color_b])
             w.append(graph)
@@ -87,8 +88,17 @@ class BarGraphVector(LabeledBarGraphVector):
 
         self.color_counter_vector = [0] * graph_count
 
-    def get_current_summary(self):
-        pass
+    def _set_colors(self, colors):
+        self.color_a = colors[0]
+        self.color_b = colors[1]
+        self.smooth_a = colors[2]
+        self.smooth_b = colors[3]
+        if self.satt:
+            self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
+
+        for graph in self.bar_graph_vector:
+            graph.set_segment_attributes(
+                ['bg background', self.color_a, self.color_b], satt=self.satt)
 
     def get_graph_name(self):
         return self.graph_name
@@ -128,30 +138,6 @@ class BarGraphVector(LabeledBarGraphVector):
             graph.set_segment_attributes(
                 ['bg background', self.color_a, self.color_b], satt=self.satt)
 
-    def set_regular_colors(self):
-        self.color_a = self.regular_colors[0]
-        self.color_b = self.regular_colors[1]
-        self.smooth_a = self.regular_colors[2]
-        self.smooth_b = self.regular_colors[3]
-        if self.satt:
-            self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
-
-        for graph in self.bar_graph_vector:
-            graph.set_segment_attributes(
-                ['bg background', self.color_a, self.color_b], satt=self.satt)
-
-    def set_alert_colors(self):
-        self.color_a = self.alert_colors[0]
-        self.color_b = self.alert_colors[1]
-        self.smooth_a = self.alert_colors[2]
-        self.smooth_b = self.alert_colors[3]
-        if self.satt:
-            self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
-
-        for graph in self.bar_graph_vector:
-            graph.set_segment_attributes(
-                ['bg background', self.color_a, self.color_b], satt=self.satt)
-
     def update(self):
         if not self.get_is_available():
             return
@@ -159,14 +145,14 @@ class BarGraphVector(LabeledBarGraphVector):
         # NOTE setting edge trigger causes overhead
         try:
             if self.source.get_edge_triggered():
-                self.set_alert_colors()
+                self._set_colors(self.alert_colors)
             else:
-                self.set_regular_colors()
+                self._set_colors(self.regular_colors)
         except NotImplementedError:
             pass
 
         current_reading = self.source.get_reading_list()
-        logging.info("Reading " + str(current_reading))
+        logging.info("Reading %s", current_reading)
 
         y_label_size_max = 0
         local_top_value = []
@@ -190,7 +176,7 @@ class BarGraphVector(LabeledBarGraphVector):
             local_max = int(max(local_top_value))
         except ValueError:
             return
-        if (local_max > int(self.graph_max)):
+        if local_max > int(self.graph_max):
             update_max = True
             self.graph_max = local_max
 
@@ -224,17 +210,15 @@ class BarGraphVector(LabeledBarGraphVector):
                 graph.set_data(bars, float(self.graph_max))
                 y_label_size_max = max(y_label_size_max, graph.get_size()[0])
 
-        s = self.get_label_scale(0,
-                                 self.graph_max,
-                                 float(y_label_size_max))
-
-        self.set_y_label(s)
+        self.set_y_label(self.get_label_scale(0, self.graph_max,
+                                              float(y_label_size_max)))
         # Only create new graphs if the maximum has changed
         if update_max:
             self.set_visible_graphs()
 
     def reset(self):
         self.graph_data = []
-        for i in range(self.graph_count):
+        # Like in init, we create new instances for each list
+        for _ in range(self.graph_count):
             self.graph_data.append([0] * self.num_samples)
         self.graph_max = 0
