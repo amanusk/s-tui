@@ -179,6 +179,9 @@ class BarGraphVector(LabeledBarGraphVector):
         if local_max > int(self.graph_max):
             update_max = True
             self.graph_max = local_max
+        if self.graph_max == 0:
+            update_max = True
+            self.graph_max = 10
 
         # update the graph bars
         for graph_idx, graph in enumerate(self.bar_graph_vector):

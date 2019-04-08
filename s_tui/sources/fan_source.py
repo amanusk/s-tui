@@ -65,10 +65,10 @@ class FanSource(Source):
 
     def update(self):
         sample = psutil.sensors_fans()
-        for sensor_id, sensor in enumerate(sample):
-            for minor_sensor_id, minor_sensor in enumerate(sample[sensor]):
-                sensor_id = sensor_id + minor_sensor_id
-                self.last_measurement[sensor_id] = minor_sensor.current
+        self.last_measurement = []
+        for sensor in sample.values():
+            for minor_sensor in sensor:
+                self.last_measurement.append(int(minor_sensor.current))
 
     def get_edge_triggered(self):
         return False
