@@ -42,11 +42,13 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
+# Menues
 from s_tui.about_menu import AboutMenu
 from s_tui.help_menu import HelpMenu
 from s_tui.help_menu import HELP_MESSAGE
 from s_tui.stress_menu import StressMenu
-from s_tui.helper_functions import DEFAULT_PALETTE
+from s_tui.sensors_menu import SensorsMenu
+# Helpers
 from s_tui.helper_functions import __version__
 from s_tui.helper_functions import get_processor_name
 from s_tui.helper_functions import kill_child_processes
@@ -61,13 +63,14 @@ from s_tui.helper_functions import user_config_file_exists
 from s_tui.helper_functions import seconds_to_text
 from s_tui.helper_functions import str_to_bool
 from s_tui.helper_functions import which
+# Ui Elements
 from s_tui.sturwid.ui_elements import ViListBox
 from s_tui.sturwid.ui_elements import radio_button
 from s_tui.sturwid.ui_elements import button
-# from s_tui.TempSensorsMenu import TempSensorsMenu
-from s_tui.sensors_menu import SensorsMenu
+from s_tui.sturwid.ui_elements import DEFAULT_PALETTE
 from s_tui.sturwid.bar_graph_vector import BarGraphVector
 from s_tui.sturwid.summary_text_list import SummaryTextList
+# Sources
 from s_tui.sources.util_source import UtilSource
 from s_tui.sources.freq_source import FreqSource
 from s_tui.sources.temp_source import TempSource
@@ -88,8 +91,6 @@ VERSION_MESSAGE = \
     "s-tui " + __version__ +\
     " - (C) 2017-2019 Alex Manuskin, Gil Tsuker\n\
     Released under GNU GPLv2"
-
-INTRO_MESSAGE = HELP_MESSAGE
 
 ERROR_MESSAGE = "\n\
         Oops! s-tui has encountered a fatal error\n\
@@ -466,11 +467,6 @@ class GraphView(urwid.WidgetPlaceholder):
                 self.graphs[source_name].source
             )
 
-        fan_source = FanSource()
-        if fan_source.get_is_available():
-            self.summaries[fan_source.get_source_name()] = SummaryTextList(
-                fan_source)
-
         # Check if source is available and add it to a dict of visible graphs
         # and summaries.
         # All available summaries are always visible
@@ -588,7 +584,8 @@ class GraphController:
         possible_sources = [TempSource(self.temp_thresh),
                             FreqSource(),
                             UtilSource(),
-                            RaplPowerSource()]
+                            RaplPowerSource(),
+                            FanSource()]
 
         # Load sensors config if available
         try:
@@ -826,7 +823,7 @@ def main():
 def get_args():
 
     parser = argparse.ArgumentParser(
-        description=INTRO_MESSAGE,
+        description=HELP_MESSAGE,
         formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-d', '--debug',

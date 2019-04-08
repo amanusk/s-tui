@@ -31,9 +31,9 @@ class FanSource(Source):
         Source.__init__(self)
 
         self.name = 'Fan'
-        self.fan_speed = 0
-        self.max_speed = 1
         self.measurement_unit = 'RPM'
+        self.pallet = ('fan light', 'fan dark',
+                       'fan light smooth', 'fan dark smooth')
 
         sensors_dict = dict()
         try:
@@ -69,9 +69,6 @@ class FanSource(Source):
             for minor_sensor_id, minor_sensor in enumerate(sample[sensor]):
                 sensor_id = sensor_id + minor_sensor_id
                 self.last_measurement[sensor_id] = minor_sensor.current
-
-    def get_maximum(self):
-        return self.max_speed
 
     def get_edge_triggered(self):
         return False

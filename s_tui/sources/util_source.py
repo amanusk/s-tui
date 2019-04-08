@@ -35,26 +35,22 @@ class UtilSource(Source):
                        'util light smooth', 'util dark smooth')
 
         try:
-            self.last_measurement = [0] * psutil.cpu_count()
+            self.last_measurement = [0] * (psutil.cpu_count() + 1)
         except AttributeError:
             logging.debug("cpu_freq is not available from psutil")
             self.is_available = False
             return
 
+        self.available_sensors = ['Avg']
         for core_id in range(psutil.cpu_count()):
             self.available_sensors.append("Core " + str(core_id))
 
     def update(self):
-        try:
-            for core_id, util in enumerate(psutil.cpu_percent(interval=0.0,
-                                                              percpu=True)):
-                logging.info("Core id %s util %s", core_id, util)
-                self.last_measurement[core_id] = float(util)
-        except AttributeError:
-            logging.debug("Cpu Utilization unavailable")
-            self.is_available = False
-        except ValueError:
-            logging.debug("Utilization is not a float")
+        self.last_measurement = [psutil.cpu_percent(interval=0.0,
+                                                    percpu=False)]
+        for util in psutil.cpu_percent(interval=0.0, percpu=True):
+            logging.info("Core id util %s", util)
+            self.last_measurement.append(float(util))
 
         logging.info("Utilization recorded %s", self.last_measurement)
 

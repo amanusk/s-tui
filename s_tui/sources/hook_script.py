@@ -42,7 +42,7 @@ class ScriptHook:
         # if the script is a long-running task
         with open(os.devnull, 'w') as DEVNULL:
             subprocess.Popen(
-                ["sh", args[0][0]],
+                ["/bin/sh", args[0][0]],
                 # TODO -- Could redirect this to a separate log
                 # file
                 # but not a priority just now

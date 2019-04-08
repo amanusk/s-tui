@@ -25,7 +25,7 @@ from s_tui.sources.source import Source
 
 
 class FreqSource(Source):
-
+    """ Source class implementing CPU frequency information polling """
     def __init__(self):
         Source.__init__(self)
 
@@ -36,7 +36,9 @@ class FreqSource(Source):
 
         self.top_freq = -1
         try:
-            self.last_measurement = [0] * len(psutil.cpu_freq(True))
+            # Check if psutil.cpu_freq is available.
+            # +1 for average frequency
+            self.last_measurement = [0] * (len(psutil.cpu_freq(True)) + 1)
         except AttributeError:
             logging.debug("cpu_freq is not available from psutil")
             self.is_available = False
@@ -49,12 +51,14 @@ class FreqSource(Source):
         except ValueError:
             self.is_available = False
 
+        self.available_sensors = ['Avg']
         for core_id, _ in enumerate(psutil.cpu_freq(True)):
             self.available_sensors.append("Core " + str(core_id))
 
     def update(self):
-        for core_id, core in enumerate(psutil.cpu_freq(True)):
-            self.last_measurement[core_id] = core.current
+        self.last_measurement = [psutil.cpu_freq(False).current]
+        for core in psutil.cpu_freq(True):
+            self.last_measurement.append(core.current)
 
     def get_maximum(self):
         return self.top_freq
