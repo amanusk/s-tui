@@ -11,7 +11,7 @@ Stress-Terminal UI, s-tui,  monitors CPU temperature, frequency, power and utili
 ## *!DISCLAIMER!* ## 
 The master branch is now updated to the upcoming version 1.0-beta.   
 This adds multiple sensors for each source.   
-Some functionality might be lost and readded in the future upon request and need.   
+Some functionality might be lost and re-added in the future upon request and need.   
 Please help testing, report bugs and issues and request new features.   
 
 See [releases](https://github.com/amanusk/s-tui/releases) for previous versions.  
