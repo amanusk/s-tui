@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2018 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -176,7 +176,7 @@ class BarGraphVector(LabeledBarGraphVector):
             local_max = int(max(local_top_value))
         except ValueError:
             return
-        if local_max > int(self.graph_max):
+        if (local_max > self.graph_max or local_max < self.graph_max * 0.2):
             update_max = True
             self.graph_max = local_max
         if self.graph_max == 0:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -30,19 +30,24 @@ class Source:
         self.is_available = True
         self.available_sensors = []
         self.name = ''
-        self.pallet = ()
+        self.pallet = ('temp light', 'temp dark',
+                       'temp light smooth', 'temp dark smooth')
         self.alert_pallet = None
 
     def update(self):
+        """ Updates the last measurement, invokes hooks if present """
         self.eval_hooks()
 
     def get_maximum(self):
+        """ Returns the maximum measurement as measured so far """
         raise NotImplementedError("Get maximum is not implemented")
 
     def get_is_available(self):
+        """ Returns is_available """
         return self.is_available
 
     def reset(self):
+        """ Resets source state, e.g. current max """
         raise NotImplementedError("Reset is not implemented")
 
     def get_sensors_summary(self):
@@ -65,24 +70,31 @@ class Source:
         return graph_vector_summary
 
     def get_source_name(self):
+        """ Returns source name """
         return self.name
 
     def get_edge_triggered(self):
+        """ Returns true if a measurement was higher than some thershhold"""
         raise NotImplementedError("Get Edge triggered not implemented")
 
     def get_measurement_unit(self):
+        """ Returns measurement unit of source """
         return self.measurement_unit
 
     def get_pallet(self):
+        """ Returns the pallet of the source for graph plotting """
         return self.pallet
 
     def get_alert_pallet(self):
+        """ Returns the 'alert' pallet for graph plotting """
         return self.alert_pallet
 
     def get_sensor_list(self):
+        """ Returns list of a available sensors for source """
         return self.available_sensors
 
     def get_reading_list(self):
+        """ Returns a list of the last measurement """
         return self.last_measurement
 
     def add_edge_hook(self, hook):
@@ -112,17 +124,8 @@ class MockSource(Source):
     def get_maximum(self):
         return 20
 
-    def get_is_available(self):
-        return True
-
     def get_summary(self):
         return {'MockValue': 5, 'Tahat': 34}
-
-    def get_source_name(self):
-        return 'Mock Source'
-
-    def get_measurement_unit(self):
-        return 'K'
 
     def get_edge_triggered(self):
         raise NotImplementedError("Get Edge triggered not implemented")

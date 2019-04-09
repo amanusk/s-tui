@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -40,7 +40,7 @@ class ScriptHook:
         # Run script in a shell subprocess asynchronously so
         # as to not block main thread (graphs)
         # if the script is a long-running task
-        with open(os.devnull, 'w') as DEVNULL:
+        with open(os.devnull, 'w') as dev_null:
             subprocess.Popen(
                 ["/bin/sh", args[0][0]],
                 # TODO -- Could redirect this to a separate log
@@ -48,8 +48,8 @@ class ScriptHook:
                 # but not a priority just now
                 # Silence hook scripts so that they don't
                 # interfere with the application's tui
-                stdout=DEVNULL,
-                stderr=DEVNULL,
+                stdout=dev_null,
+                stderr=dev_null,
             )
 
     def _make_script_hook(self, path, timeout_milliseconds):

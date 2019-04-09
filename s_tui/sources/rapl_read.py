@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2018 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2019 Alex Manuskin, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,7 +20,6 @@
 from __future__ import absolute_import
 
 import logging
-import time
 import glob
 import os
 from collections import namedtuple
@@ -57,10 +56,3 @@ def rapl_read():
                 logging.warning("ignoring %r for file %r",
                                 (err, path), RuntimeWarning)
     return ret
-
-
-if __name__ == '__main__':
-    while True:
-        RESULT = rapl_read()
-        print(RESULT)
-        time.sleep(2)

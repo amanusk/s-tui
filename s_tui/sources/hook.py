@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -28,8 +28,8 @@ class Hook:
 
     def __init__(self, callback, timeout_milliseconds=0, *callback_args):
         self.callback = callback
-        self.callback_args = callback_args
         self.timeout_milliseconds = timeout_milliseconds
+        self.callback_args = callback_args
         self.ready_time = datetime.now()
 
     def is_ready(self):
@@ -47,12 +47,8 @@ class Hook:
 
         # Don't sleep a hook if it has never run
         if self.timeout_milliseconds > 0:
-            self.ready_time = self._get_ready_time(self.timeout_milliseconds)
+            self.ready_time = (
+                datetime.now() +
+                timedelta(milliseconds=self.timeout_milliseconds))
 
-        self._run(self.callback_args)
-
-    def _get_ready_time(self, timeout_milliseconds):
-        return datetime.now() + timedelta(milliseconds=timeout_milliseconds)
-
-    def _run(self, *args):
-        self.callback(*args)
+        self.callback(self.callback_args)

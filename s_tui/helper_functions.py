@@ -29,7 +29,7 @@ import time
 
 from collections import OrderedDict
 
-__version__ = "1.0.0-beta"
+__version__ = "1.0.0-beta1"
 
 _DEFAULT = object()
 PY3 = sys.version_info[0] == 3
