@@ -13,7 +13,7 @@ before_script:
   - "flake8 s_tui"
 
 script:
-  - "python -m s_tui.Tests.test_util_source"
+  - "python -m s_tui.tests.test_util_source"
   - "s-tui -t"
   - "s-tui -j"
   - "s-tui -dr"

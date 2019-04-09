@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2018 Alex Manuskin
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 import urwid
 import copy
-from s_tui.UiElements import ViListBox
+from s_tui.sturwid.ui_elements import ViListBox
 
 
 import logging
@@ -122,7 +122,7 @@ class SensorsMenu:
 
                 changed_state = (cb_sensor_visibility !=
                                  self.sensor_current_active_dict[s_name])
-            update_sensor_visibility |= changed_state
+                update_sensor_visibility |= changed_state
 
             self.sensor_current_active_dict[s_name] = cb_sensor_visibility
 

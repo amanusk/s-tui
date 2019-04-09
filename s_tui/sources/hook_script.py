@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,7 +18,7 @@
 
 import os
 import subprocess
-from s_tui.Sources.Hook import Hook
+from s_tui.sources.hook import Hook
 
 
 class ScriptHook:
@@ -26,9 +26,9 @@ class ScriptHook:
     Runs an arbitrary shell script stored in the filesystem when invoked
     """
 
-    def __init__(self, path, timeoutMilliseconds=0):
+    def __init__(self, path, timeout_milliseconds=0):
         self.path = path
-        self.hook = self._make_script_hook(path, timeoutMilliseconds)
+        self.hook = self._make_script_hook(path, timeout_milliseconds)
 
     def is_ready(self):
         return self.hook.is_ready()
@@ -40,17 +40,17 @@ class ScriptHook:
         # Run script in a shell subprocess asynchronously so
         # as to not block main thread (graphs)
         # if the script is a long-running task
-        with open(os.devnull, 'w') as DEVNULL:
+        with open(os.devnull, 'w') as dev_null:
             subprocess.Popen(
-                ["sh", args[0][0]],
+                ["/bin/sh", args[0][0]],
                 # TODO -- Could redirect this to a separate log
                 # file
                 # but not a priority just now
                 # Silence hook scripts so that they don't
                 # interfere with the application's tui
-                stdout=DEVNULL,
-                stderr=DEVNULL
+                stdout=dev_null,
+                stderr=dev_null,
             )
 
-    def _make_script_hook(self, path, timeoutMilliseconds):
-        return Hook(self._run_script, timeoutMilliseconds, path)
+    def _make_script_hook(self, path, timeout_milliseconds):
+        return Hook(self._run_script, timeout_milliseconds, path)

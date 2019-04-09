@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -24,8 +24,6 @@ get_size() - returns the tuple (row, col)
 from __future__ import absolute_import
 
 import urwid
-import logging
-logger = logging.getLogger(__name__)
 
 
 class ScalableBarGraph(urwid.BarGraph):
@@ -49,7 +47,7 @@ class ScalableBarGraph(urwid.BarGraph):
         If self.bar_width is None this implementation will stretch
         the bars across the available space specified by maxcol.
         """
-        (maxcol, maxrow) = size
+        (maxcol, _) = size
 
         if self.bar_width is not None:
             return [self.bar_width] * min(
@@ -61,7 +59,7 @@ class ScalableBarGraph(urwid.BarGraph):
         widths = []
         grow = maxcol
         remain = len(bardata)
-        for row in bardata:
+        for _ in bardata:
             w = int(float(grow) / remain + 0.5)
             widths.append(w)
             grow -= w
@@ -73,96 +71,6 @@ class ScalableBarGraph(urwid.BarGraph):
 
     def on_resize(self, new_size):
         pass  # place folder for any future implantation
-
-
-class LabeledBarGraph(urwid.Pile):
-    """Add option to add lables for X and Y axes """
-
-    def __init__(self, widget_list, focus_item=None):
-        if len(widget_list) != 4:
-            raise Exception(
-                'Must have 3 items for labeled bar graph')
-        if not isinstance(widget_list[0], ScalableBarGraph):
-            raise Exception(
-                'Item 0 must be ScalableBarGraph')
-        if not self.check_label(widget_list[1]):
-            raise Exception(
-                'Item 1 must be a valid label')
-        if not self.check_label(widget_list[2]):
-            raise Exception(
-                'Item 2 must be a valid label')
-
-        self.bar_graph = []
-        self.set_graph(widget_list[0])
-
-        self.y_label = urwid.WidgetPlaceholder(urwid.Columns([]))
-        self.set_y_label(widget_list[2])
-
-        self.x_label = urwid.WidgetPlaceholder(urwid.Columns([]))
-        self.set_x_label(widget_list[1])
-
-        self.title = urwid.WidgetPlaceholder(urwid.ListBox([]))
-        self.set_title(widget_list[3])
-
-        super(LabeledBarGraph, self).__init__([
-            ('fixed', 0 if len(widget_list[3]) == 0 else 1, self.title),
-            self.y_label,
-            ('fixed', 0 if len(widget_list[1]) == 0 else 1, self.x_label)
-        ], focus_item=focus_item)
-
-    def set_title(self, title):
-        if len(title) == 0:
-            return
-
-        self.title.original_widget = urwid.ListBox(
-            [urwid.Text(title, align="center")])
-
-    def set_x_label(self, x_label):
-        if len(x_label) == 0:
-            return
-
-        str_x_label = [str(i) for i in x_label]
-        x_label_nums = str_x_label[1:]
-
-        x_label_num_list = [urwid.ListBox([urwid.Text('  ' + str_x_label[0])])]
-
-        for num in x_label_nums:
-            x_label_num_list = x_label_num_list + \
-                [urwid.ListBox([urwid.Text(num)])]
-        x_label_num_list[-1] = (1, x_label_num_list[-1])
-
-        self.x_label.original_widget = urwid.Columns(x_label_num_list)
-
-    def set_y_label(self, y_label):
-        if len(y_label) == 0:
-            return
-
-        str_y_label = [str(i) for i in y_label]
-        y_label_nums = str_y_label[1:]
-        y_list_walker = [(1, urwid.ListBox([urwid.Text(str_y_label[0])]))]
-
-        for num in y_label_nums:
-            y_list_walker = [urwid.ListBox([urwid.Text(num)])] + y_list_walker
-
-        y_list_walker = urwid.Pile(y_list_walker, focus_item=0)
-        y_scale_len = len(max(str_y_label, key=len))
-
-        y_notation = [('fixed',  y_scale_len,        y_list_walker),
-                      ('weight', 1,                  self.bar_graph)]
-
-        self.y_label.original_widget = urwid.Columns(y_notation,
-                                                     dividechars=1)
-
-    def set_graph(self, graph):
-        self.bar_graph = graph
-
-    @staticmethod
-    def check_label(label):
-        if (len(label) >= 2 and not(None in label) or
-                len(label) == 0 or label is None):
-            return True
-
-        return False
 
 
 class LabeledBarGraphVector(urwid.WidgetPlaceholder):
@@ -199,14 +107,14 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         self.set_visible_graphs(visible_graph_list)
 
     def set_title(self, title):
-        if len(title) == 0:
+        if not title:
             return
         title_text_w = urwid.Text(title, align="center")
         list_w = urwid.SimpleFocusListWalker([title_text_w])
         self.title.original_widget = urwid.ListBox(list_w)
 
     def set_y_label(self, y_label):
-        if len(y_label) == 0:
+        if not y_label:
             text = urwid.Text("1")
             pile = urwid.Pile([urwid.ListBox([text])])
             self.y_label = ('fixed', 1, pile)
@@ -232,10 +140,9 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
 
         graph_vector_column_list = []
-        for state, graph, sub_title in \
-                zip(visible_graph_list,
-                    self.bar_graph_vector,
-                    self.sub_title_list):
+        for state, graph, sub_title in zip(visible_graph_list,
+                                           self.bar_graph_vector,
+                                           self.sub_title_list):
             if state:
                 text_w = urwid.Text(sub_title, align='center')
                 sub_title_widget = urwid.ListBox([text_w])
@@ -246,7 +153,7 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
                 graph_vector_column_list.append(('fixed', 1, vline))
 
         # if all sub graph are disabled
-        if len(graph_vector_column_list) == 0:
+        if not graph_vector_column_list:
             self.visible_graph_list = visible_graph_list
             self.original_widget = urwid.Pile([])
             return
@@ -272,7 +179,7 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
     @staticmethod
     def check_label(label):
         if (len(label) >= 2 and not(None in label) or
-                len(label) == 0 or label is None):
+                not label or label is None):
             return True
 
         return False

@@ -22,7 +22,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 import urwid
-from s_tui.UiElements import ViListBox
+from s_tui.sturwid.ui_elements import ViListBox
 
 HELP_MESSAGE = """
 TUI interface:
@@ -51,6 +51,7 @@ MESSAGE_LEN = 30
 
 
 class HelpMenu:
+    """ HelpMenu is a widget containing instructions on usage of s-tui"""
     MAX_TITLE_LEN = 90
 
     def __init__(self, return_fn):
@@ -61,7 +62,7 @@ class HelpMenu:
 
         self.time_out_ctrl = urwid.Text(self.help_message)
 
-        cancel_button = urwid.Button('Exit', on_press=self.on_cancel)
+        cancel_button = urwid.Button(('Exit'), on_press=self.on_cancel)
         cancel_button._label.align = 'center'
 
         if_buttons = urwid.Columns([cancel_button])
@@ -75,7 +76,9 @@ class HelpMenu:
         self.main_window = urwid.LineBox(ViListBox(self.titles))
 
     def get_size(self):
+        """ returns size of HelpMenu"""
         return MESSAGE_LEN + 3, self.MAX_TITLE_LEN
 
     def on_cancel(self, w):
+        """ Returns to original widget"""
         self.return_fn()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,19 +20,30 @@
 """
 
 from __future__ import print_function
-import urwid
 import re
+import logging
+
+import psutil
+import urwid
 
 
 class StressMenu:
     MAX_TITLE_LEN = 50
 
-    def __init__(self, return_fn):
+    def __init__(self, return_fn, stress_exe):
 
         self.return_fn = return_fn
 
+        self.stress_exe = stress_exe
+
         self.time_out = 'none'
         self.sqrt_workers = '1'
+        try:
+            self.sqrt_workers = str(psutil.cpu_count())
+            logging.info("num cpus %s", self.sqrt_workers)
+        except (IOError, OSError) as err:
+            logging.debug(err)
+
         self.sync_workers = '0'
         self.memory_workers = '0'
         self.malloc_byte = '256M'
@@ -113,7 +124,7 @@ class StressMenu:
         self.write_workers_ctrl.set_edit_text(self.write_workers)
         self.write_bytes_ctrl.set_edit_text(self.write_bytes)
 
-    def on_default(self, w):
+    def on_default(self, _):
         self.time_out = 'none'
         self.sqrt_workers = '1'
         self.sync_workers = '0'
@@ -131,7 +142,7 @@ class StressMenu:
     def get_size(self):
         return len(self.titles) + 5, self.MAX_TITLE_LEN
 
-    def on_save(self, w):
+    def on_save(self, _):
         self.time_out = self.get_pos_num(
             self.time_out_ctrl.get_edit_text(), 'none')
         self.sqrt_workers = self.get_pos_num(
@@ -155,24 +166,55 @@ class StressMenu:
         self.set_edit_texts()
         self.return_fn()
 
-    def on_cancel(self, w):
+    def on_cancel(self, _):
         self.set_edit_texts()
         self.return_fn()
+
+    def get_stress_cmd(self):
+        stress_cmd = [self.stress_exe]
+        if int(self.sqrt_workers) > 0:
+            stress_cmd.append('-c')
+            stress_cmd.append(self.sqrt_workers)
+
+        if int(self.sync_workers) > 0:
+            stress_cmd.append('-i')
+            stress_cmd.append(self.sync_workers)
+
+        if int(self.memory_workers) > 0:
+            stress_cmd.append('--vm')
+            stress_cmd.append(self.memory_workers)
+            stress_cmd.append('--vm-bytes')
+            stress_cmd.append(self.malloc_byte)
+            stress_cmd.append('--vm-stride')
+            stress_cmd.append(self.byte_touch_cnt)
+
+        if self.no_malloc:
+            stress_cmd.append('--vm-keep')
+
+        if int(self.write_workers) > 0:
+            stress_cmd.append('--hdd')
+            stress_cmd.append(self.write_workers)
+            stress_cmd.append('--hdd-bytes')
+            stress_cmd.append(self.write_bytes)
+
+        if self.time_out != 'none':
+            stress_cmd.append('-t')
+            stress_cmd.append(self.time_out)
+
+        return stress_cmd
 
     @staticmethod
     def get_pos_num(num, default):
         num_valid = re.match(r"\A([0-9]+)\Z", num, re.I)
         if num_valid or (num == 'none' and default == 'none'):
             return num
-        else:
-            return default
+        return default
 
     @staticmethod
     def get_valid_byte(num, default):
-        # check if the format of number is (num)(G|m|B) i.e 500GB, 200mb. 400
-        # etc..
+        """check if the format of number is (num)(G|m|B) i.e 500GB, 200mb. 400
+        etc.. """
         num_valid = re.match(r"\A([0-9]+)(M|G|m|g|)(B|b|\b)\Z", num, re.I)
         if num_valid:
             return num
-        else:
-            return default
+        return default

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
-from s_tui.Sources.ScriptHook import ScriptHook
+from s_tui.sources.hook_script import ScriptHook
 
 
 class ScriptHookLoader:
@@ -39,8 +39,7 @@ class ScriptHookLoader:
 
         if os.path.isfile(script_path):
             return ScriptHook(script_path, timeoutMilliseconds)
-        else:
-            return None
+        return None
 
     def _source_to_script_name(self, source_name):
         return source_name.lower() + '.sh'

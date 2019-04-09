@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2018 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2019 Alex Manuskin, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,42 +21,41 @@ from __future__ import absolute_import
 import logging
 import psutil
 
-from s_tui.Sources.Source import Source
-
-logger = logging.getLogger(__name__)
+from s_tui.sources.source import Source
 
 
-class FreqSource(Source):
+class UtilSource(Source):
 
     def __init__(self):
         Source.__init__(self)
 
-        self.name = 'Frequency'
-        self.measurement_unit = 'MHz'
-        self.pallet = ('freq light', 'freq dark',
-                       'freq light smooth', 'freq dark smooth')
+        self.name = 'Util'
+        self.measurement_unit = '%'
+        self.pallet = ('util light', 'util dark',
+                       'util light smooth', 'util dark smooth')
 
-        self.top_freq = -1
         try:
-            self.last_measurement = [0] * len(psutil.cpu_freq(True))
+            self.last_measurement = [0] * (psutil.cpu_count() + 1)
         except AttributeError:
             logging.debug("cpu_freq is not available from psutil")
             self.is_available = False
             return
 
-        try:
-            # If top freq not available, take the current as top
-            if max(self.last_measurement) >= 0 and self.top_freq == -1:
-                self.top_freq = max(self.last_measurement)
-        except ValueError:
-            self.is_available = False
-
-        for core_id, core in enumerate(psutil.cpu_freq(True)):
+        self.available_sensors = ['Avg']
+        for core_id in range(psutil.cpu_count()):
             self.available_sensors.append("Core " + str(core_id))
 
     def update(self):
-        for core_id, core in enumerate(psutil.cpu_freq(True)):
-            self.last_measurement[core_id] = core.current
+        self.last_measurement = [psutil.cpu_percent(interval=0.0,
+                                                    percpu=False)]
+        for util in psutil.cpu_percent(interval=0.0, percpu=True):
+            logging.info("Core id util %s", util)
+            self.last_measurement.append(float(util))
+
+        logging.info("Utilization recorded %s", self.last_measurement)
 
     def get_maximum(self):
-        return self.top_freq
+        return 100
+
+    def get_is_available(self):
+        return self.is_available

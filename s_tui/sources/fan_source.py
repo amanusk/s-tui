@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2018 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2019 Alex Manuskin, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,26 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+""" This module implements a fan source """
+
 
 from __future__ import absolute_import
 
-import time
-import psutil
-from s_tui.Sources.Source import Source
-
 import logging
-logger = logging.getLogger(__name__)
+import psutil
+from s_tui.sources.source import Source
 
 
 class FanSource(Source):
-
+    """ Source for fan information """
     def __init__(self):
         Source.__init__(self)
 
         self.name = 'Fan'
-        self.fan_speed = 0
-        self.max_speed = 1
         self.measurement_unit = 'RPM'
+        self.pallet = ('fan light', 'fan dark',
+                       'fan light smooth', 'fan dark smooth')
 
         sensors_dict = dict()
         try:
@@ -58,7 +57,7 @@ class FanSource(Source):
                 else:
                     full_name = sensor_label
 
-                logging.debug("Fan sensor name " + full_name)
+                logging.debug("Fan sensor name %s", full_name)
 
                 self.available_sensors.append(full_name)
 
@@ -66,23 +65,10 @@ class FanSource(Source):
 
     def update(self):
         sample = psutil.sensors_fans()
-        for sensor_id, sensor in enumerate(sample):
-            for minor_sensor_id, minor_sensor in enumerate(sample[sensor]):
-                sensor_stui_id = sensor_id + minor_sensor_id
-                self.last_measurement[sensor_stui_id] = minor_sensor.current
+        self.last_measurement = []
+        for sensor in sample.values():
+            for minor_sensor in sensor:
+                self.last_measurement.append(int(minor_sensor.current))
 
-    def get_maximum(self):
-        return self.max_speed
-
-    def get_sensor_name(self):
-        sensors_info = self.custom_temp.split(",")
-        sensor_major = sensors_info[0]
-        sensor_minor = sensors_info[1]
-        return sensor_major + " " + sensor_minor
-
-
-if '__main__' == __name__:
-    fan = FanSource()
-    while True:
-        print(fan.get_reading())
-        time.sleep(2)
+    def get_edge_triggered(self):
+        return False

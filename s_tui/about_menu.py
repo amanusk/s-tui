@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2018 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,16 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
-
-"""A class display the About message menu
-"""
+"""Displays the About message menu """
 
 from __future__ import print_function
 from __future__ import absolute_import
 
 import urwid
-from s_tui.UiElements import ViListBox
-from s_tui.HelperFunctions import __version__
+from s_tui.sturwid.ui_elements import ViListBox
+from s_tui.helper_functions import __version__
 
 ABOUT_MESSAGE = """
 s-tui is a monitoring tool for your CPU's temperature, frequency, utilization \
@@ -54,6 +52,7 @@ MESSAGE_LEN = 20
 
 
 class AboutMenu:
+    """Displays the About message menu """
     MAX_TITLE_LEN = 50
 
     def __init__(self, return_fn):

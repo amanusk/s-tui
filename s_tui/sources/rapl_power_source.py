@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2018 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2019 Alex Manuskin, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -24,9 +24,8 @@ from __future__ import absolute_import
 import time
 import logging
 
-from s_tui.Sources.Source import Source
-# from Source import Source
-from s_tui.Sources.rapl_read import rapl_read
+from s_tui.sources.source import Source
+from s_tui.sources.rapl_read import rapl_read
 
 LOGGER = logging.getLogger(__name__)
 
@@ -75,9 +74,9 @@ class RaplPowerSource(Source):
 
             seconds_passed = (current_measurement_time -
                               self.last_probe_time)
-            logging.debug("seconds passed " + str(seconds_passed))
+            logging.debug("seconds passed %s", seconds_passed)
             watts_used = float(joule_used) / float(seconds_passed)
-            logging.debug("watts used " + str(watts_used))
+            logging.debug("watts used %s", watts_used)
             logging.info("Joule_Used %d, seconds passed, %d", joule_used,
                          seconds_passed)
 
@@ -93,10 +92,3 @@ class RaplPowerSource(Source):
 
     def get_maximum(self):
         return self.max_power
-
-
-if __name__ == '__main__':
-    RAPL = RaplPowerSource()
-    while True:
-        print(RAPL.update())
-        time.sleep(2)

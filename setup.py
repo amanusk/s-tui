@@ -17,11 +17,11 @@
 from __future__ import absolute_import
 
 from setuptools import setup
-import s_tui.HelperFunctions as AUX
+import s_tui.helper_functions as AUX
 
 setup(
     name="s-tui",
-    packages=['s_tui', 's_tui.Sources'],
+    packages=['s_tui', 's_tui.sources', 's_tui.sturwid'],
     version=AUX.__version__,
     author="Alex Manuskin",
     author_email="alex.manuskin@gmail.com",
