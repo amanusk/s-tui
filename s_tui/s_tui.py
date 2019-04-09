@@ -272,8 +272,10 @@ class GraphView(urwid.WidgetPlaceholder):
                     self.sensors_menu.sensor_current_active_dict.items():
                 self.graphs[sensor].set_visible_graphs(visible_sensors)
                 # If not sensor is selected, do not display the graph
-                if not any(visible_sensors):
+                if sensor in self.visible_graphs and not any(visible_sensors):
                     del self.visible_graphs[sensor]
+                elif not any(visible_sensors):
+                    pass
                 # Update visible graphs if a sensor was selected
                 else:
                     self.visible_graphs[sensor] = self.graphs[sensor]
