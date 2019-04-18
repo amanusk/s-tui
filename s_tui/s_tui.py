@@ -196,6 +196,8 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.mode_buttons = []
 
+        self.stats_widget_index = None
+
         # Visible graphs are the graphs currently displayed, this is a
         # subset of the available graphs for display
         self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
@@ -205,9 +207,12 @@ class GraphView(urwid.WidgetPlaceholder):
                                       self.controller.stress_exe)
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
-        self.sensors_menu = SensorsMenu(self.on_sensors_menu_close,
-                                        self.controller.sources,
-                                        self.controller.source_default_conf)
+        self.graphs_menu = SensorsMenu(self.on_graphs_menu_close,
+                                       self.controller.sources,
+                                       self.controller.source_default_conf)
+        self.summaries_menu = SensorsMenu(self.on_summaries_menu_close,
+                                          self.controller.sources,
+                                          self.controller.source_default_conf)
 
         # call super
         urwid.WidgetPlaceholder.__init__(self, self.main_window())
@@ -230,14 +235,14 @@ class GraphView(urwid.WidgetPlaceholder):
     def update_displayed_information(self):
         """ Update all the graphs that are being displayed """
 
-        for summary in self.available_summaries.values():
-            summary.source.update()
+        for source in self.controller.sources:
+            source.update()
 
         for graph in self.visible_graphs.values():
             graph.update()
 
         # update graph summery
-        for summary in self.available_summaries.values():
+        for summary in self.visible_summaries.values():
             summary.update()
 
         # Only update clock if not is stress mode
@@ -263,13 +268,13 @@ class GraphView(urwid.WidgetPlaceholder):
         """Return to main screen"""
         self.original_widget = self.main_window_w
 
-    def on_sensors_menu_close(self, update):
+    def on_graphs_menu_close(self, update):
         """Return to main screen and update sensor that
         are active in the view"""
         logging.info("closing sensor menu, update=%s", update)
         if update:
             for sensor, visible_sensors in \
-                    self.sensors_menu.sensor_current_active_dict.items():
+                    self.graphs_menu.sensor_current_active_dict.items():
                 self.graphs[sensor].set_visible_graphs(visible_sensors)
                 # If not sensor is selected, do not display the graph
                 if sensor in self.visible_graphs and not any(visible_sensors):
@@ -280,6 +285,21 @@ class GraphView(urwid.WidgetPlaceholder):
                 else:
                     self.visible_graphs[sensor] = self.graphs[sensor]
             self.show_graphs()
+
+        self.original_widget = self.main_window_w
+
+    def on_summaries_menu_close(self, update):
+        """Return to main screen and update sensor that
+        are active in the view"""
+        logging.info("closing summaries_menu menu, update=%s", update)
+        if update:
+            for sensor, visible_sensors in \
+                    self.summaries_menu.sensor_current_active_dict.items():
+                self.visible_summaries[sensor].update_visibility(
+                    visible_sensors)
+
+        self.main_window_w.base_widget[0].body[self.stats_widget_index] =\
+            self._generate_graph_stats()
 
         self.original_widget = self.main_window_w
 
@@ -310,15 +330,25 @@ class GraphView(urwid.WidgetPlaceholder):
                                              ('relative', self.top_margin),
                                              self.about_menu.get_size()[0])
 
-    def on_sensors_menu_open(self, widget):
+    def on_graphs_menu_open(self, widget):
         """Open Sensor menu on top of existing frame"""
         self.original_widget = urwid.Overlay(
-            self.sensors_menu.main_window,
+            self.graphs_menu.main_window,
             self.original_widget,
             ('relative', self.left_margin),
-            self.sensors_menu.get_size()[1],
+            self.graphs_menu.get_size()[1],
             ('relative', self.top_margin),
-            self.sensors_menu.get_size()[0])
+            self.graphs_menu.get_size()[0])
+
+    def on_summaries_menu_open(self, widget):
+        """Open Sensor menu on top of existing frame"""
+        self.original_widget = urwid.Overlay(
+            self.summaries_menu.main_window,
+            self.original_widget,
+            ('relative', self.left_margin),
+            self.summaries_menu.get_size()[1],
+            ('relative', self.top_margin),
+            self.summaries_menu.get_size()[0])
 
     def on_mode_button(self, my_button, state):
         """Notify the controller of a new mode setting."""
@@ -365,8 +395,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # Create list of buttons
         control_options = list()
-        control_options.append(button('Sensors',
-                                      self.on_sensors_menu_open))
+        control_options.append(button('Graphs',
+                                      self.on_graphs_menu_open))
+        control_options.append(button('Summaries',
+                                      self.on_summaries_menu_open))
         if self.controller.stress_exe:
             control_options.append(button('Stress Options',
                                           self.on_stress_menu_open))
@@ -430,7 +462,7 @@ class GraphView(urwid.WidgetPlaceholder):
     def _generate_graph_stats(self):
 
         fixed_stats = []
-        for summary in self.available_summaries.values():
+        for summary in self.visible_summaries.values():
             fixed_stats += summary.get_text_item_list()
             fixed_stats += [urwid.Text('')]
 
@@ -456,7 +488,7 @@ class GraphView(urwid.WidgetPlaceholder):
             self.graphs[source_name] = BarGraphVector(
                 source, color_pallet,
                 len(source.get_sensor_list()),
-                self.sensors_menu.sensor_current_active_dict[source_name],
+                self.graphs_menu.sensor_current_active_dict[source_name],
                 alert_colors=alert_pallet
             )
             if self.controller.script_hooks_enabled:
@@ -478,10 +510,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # Do not show the graph if there is no selected sensors
         for key in self.graphs.keys():
-            if not any(self.sensors_menu.sensor_current_active_dict[key]):
+            if not any(self.graphs_menu.sensor_current_active_dict[key]):
                 del self.visible_graphs[key]
 
-        self.available_summaries = OrderedDict(
+        self.visible_summaries = OrderedDict(
             (key, val) for key, val in self.summaries.items() if
             val.get_is_available())
 
@@ -504,6 +536,10 @@ class GraphView(urwid.WidgetPlaceholder):
         widget = urwid.LineBox(widget)
         widget = urwid.AttrWrap(widget, 'line')
         self.main_window_w = widget
+
+        base = self.main_window_w.base_widget[0].body
+        self.stats_widget_index = len(base) - 1
+        logging.debug("Pile index: %s", self.stats_widget_index)
 
         return self.main_window_w
 
@@ -743,7 +779,7 @@ class GraphController:
 
             # Save settings for sensors menu
             for source, visible_sensors in \
-                    self.view.sensors_menu.sensor_current_active_dict.items():
+                    self.view.graphs_menu.sensor_current_active_dict.items():
                 conf.add_section(source)
 
                 sources = self.sources
