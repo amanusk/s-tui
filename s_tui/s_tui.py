@@ -630,9 +630,10 @@ class GraphController:
                             FanSource()]
 
         # Load sensors config if available
-        try:
-            sources = [x.get_source_name() for x in possible_sources]
-            for source in sources:
+        sources = [x.get_source_name() for x in possible_sources
+                   if x.get_is_available()]
+        for source in sources:
+            try:
                 options = list(self.conf.items(source + ",Graph"))
                 for option in options:
                     # Returns tuples of values in order
@@ -643,9 +644,9 @@ class GraphController:
                     # Returns tuples of values in order
                     self.summary_default_conf[source].append(
                         str_to_bool(option[1]))
-        except (AttributeError, ValueError, configparser.NoOptionError,
-                configparser.NoSectionError):
-            logging.debug("Error reading sensors config")
+            except (AttributeError, ValueError, configparser.NoOptionError,
+                    configparser.NoSectionError):
+                logging.debug("Error reading sensors config")
 
         return possible_sources
 
