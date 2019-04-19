@@ -16,7 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-import logging
 import urwid
 from collections import OrderedDict
 
@@ -24,12 +23,15 @@ from collections import OrderedDict
 class SummaryTextList:
     MAX_LABEL_L = 12
 
-    def __init__(self, source, alert_color=None):
+    def __init__(self, source, visible_sensors_list):
         self.source = source
-        self.alert_color = alert_color
         self.visible_summaries = OrderedDict()
-        for key in self.source.get_summary().keys():
-            self.visible_summaries[key] = True
+        keys = list(self.source.get_summary().keys())
+        # The title is the first in the list
+        self.visible_summaries[keys[0]] = any(visible_sensors_list)
+        # All others according to initial visibility
+        for key, visible in zip(keys[1:], visible_sensors_list):
+            self.visible_summaries[key] = visible
 
         # We keep a dict of all the items in the summary list
         self.summary_text_items = OrderedDict()
@@ -49,8 +51,9 @@ class SummaryTextList:
         return summery_text_list
 
     def update_visibility(self, visible_sensors):
-        logging.debug("Visibilty list %s", visible_sensors)
         keys = list(self.visible_summaries.keys())
+        self.visible_summaries[keys[0]] = any(visible_sensors)
+        # Do not change visiblity of title
         for sensor, visible in zip(keys[1:], visible_sensors):
             self.visible_summaries[sensor] = visible
 
