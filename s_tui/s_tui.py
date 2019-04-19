@@ -33,6 +33,7 @@ import timeit
 from collections import OrderedDict
 from collections import defaultdict
 import sys
+import pynvml as N
 
 import psutil
 import urwid
@@ -74,6 +75,8 @@ from s_tui.sturwid.summary_text_list import SummaryTextList
 from s_tui.sources.util_source import UtilSource
 from s_tui.sources.freq_source import FreqSource
 from s_tui.sources.temp_source import TempSource
+from s_tui.sources.nv_temp_source import NVTempSource
+from s_tui.sources.nv_freq_source import NVFreqSource
 from s_tui.sources.rapl_power_source import RaplPowerSource
 from s_tui.sources.fan_source import FanSource
 from s_tui.sources.script_hook_loader import ScriptHookLoader
@@ -583,24 +586,27 @@ class GraphController:
                 logging.debug("No user config for temp threshold")
 
         # This should be the only place where sources are configured
-        possible_sources = [TempSource(self.temp_thresh),
-                            FreqSource(),
-                            UtilSource(),
-                            RaplPowerSource(),
-                            FanSource()]
+        # possible_sources = [TempSource(self.temp_thresh),
+        #                     FreqSource(),
+        #                     UtilSource(),
+        #                     RaplPowerSource(),
+        #                     FanSource()]
+
+        possible_sources = [NVTempSource(),
+                            NVFreqSource()]
 
         # Load sensors config if available
-        try:
-            sources = [x.get_source_name() for x in possible_sources]
-            for source in sources:
-                options = list(self.conf.items(source))
-                for option in options:
-                    # Returns tuples of values in order
-                    self.source_default_conf[source].append(
-                        str_to_bool(option[1]))
-        except (AttributeError, ValueError, configparser.NoOptionError,
-                configparser.NoSectionError):
-            logging.debug("Error reading sensors config")
+        # try:
+        #     sources = [x.get_source_name() for x in possible_sources]
+        #     for source in sources:
+        #         options = list(self.conf.items(source))
+        #         for option in options:
+        #             # Returns tuples of values in order
+        #             self.source_default_conf[source].append(
+        #                 str_to_bool(option[1]))
+        # except (AttributeError, ValueError, configparser.NoOptionError,
+        #         configparser.NoSectionError):
+        #     logging.debug("Error reading sensors config")
 
         return possible_sources
 
@@ -644,6 +650,7 @@ class GraphController:
 
         self.temp_thresh = None
 
+        N.nvmlInit()
         possible_sources = self._load_config(args.t_thresh)
 
         # Needed for use in view
@@ -808,10 +815,8 @@ def main():
 
     if args.terminal or args.json:
         logging.info("Printing single line to terminal")
-        sources = [FreqSource(), TempSource(),
-                   UtilSource(),
-                   RaplPowerSource(),
-                   FanSource()]
+
+        sources = [NVTempSource()]
         if args.terminal:
             output_to_terminal(sources)
         elif args.json:
