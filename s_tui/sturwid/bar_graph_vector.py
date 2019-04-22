@@ -190,7 +190,7 @@ class BarGraphVector(LabeledBarGraphVector):
 
         # update the graph bars
         for graph_idx, graph in enumerate(self.bar_graph_vector):
-
+            bars = []
             if self.visible_graph_list[graph_idx]:
 
                 # Get the graph width (dimension 1)
