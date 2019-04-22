@@ -192,7 +192,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.clock_view = urwid.Text(ZERO_TIME, align="center")
         self.refresh_rate_ctrl = urwid.Edit((u'Refresh[s]:'),
                                             self.controller.refresh_rate)
-        self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
+        self.hline = urwid.AttrWrap(urwid.SolidFill(u' '), 'line')
 
         self.mode_buttons = []
 
@@ -369,7 +369,7 @@ class GraphView(urwid.WidgetPlaceholder):
             self.hline = urwid.AttrWrap(
                 urwid.SolidFill(u'\N{LOWER ONE QUARTER BLOCK}'), 'line')
         else:
-            self.hline = urwid.AttrWrap(urwid.SolidFill(u'_'), 'line')
+            self.hline = urwid.AttrWrap(urwid.SolidFill(u' '), 'line')
 
         for graph in self.graphs.values():
             graph.set_smooth_colors(state)
@@ -475,7 +475,7 @@ class GraphView(urwid.WidgetPlaceholder):
     def show_graphs(self):
         """Show a pile of the graph selected for dislpay"""
         elements = itertools.chain.from_iterable(
-            ([graph, ('fixed', 1, self.hline)]
+            ([graph]
              for graph in self.visible_graphs.values()))
         self.graph_place_holder.original_widget = urwid.Pile(elements)
 
@@ -529,16 +529,13 @@ class GraphView(urwid.WidgetPlaceholder):
                                                     graph_controls +
                                                     [summaries]))
 
-        vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
+        vline = urwid.AttrWrap(urwid.SolidFill(u'|'), 'line')
         widget = urwid.Columns([('fixed', 20, text_col),
                                 ('fixed', 1, vline),
                                 ('weight', 2, self.graph_place_holder)],
                                dividechars=0, focus_column=0)
 
         widget = urwid.Padding(widget, ('fixed left', 1), ('fixed right', 0))
-        widget = urwid.AttrWrap(widget, 'body')
-        widget = urwid.LineBox(widget)
-        widget = urwid.AttrWrap(widget, 'line')
         self.main_window_w = widget
 
         base = self.main_window_w.base_widget[0].body
