@@ -446,7 +446,7 @@ class GraphView(urwid.WidgetPlaceholder):
             unicode_checkbox,
             self.refresh_rate_ctrl,
             urwid.Divider(),
-            urwid.Text(('bold text', u"Summary"), align="center"),
+            urwid.Text(('bold text', u"Summaries"), align="center"),
         ]
 
         return controls
@@ -728,6 +728,7 @@ class GraphController:
         """ Starts the main loop and graph animation """
         loop = MainLoop(self.view, DEFAULT_PALETTE,
                         handle_mouse=self.handle_mouse)
+        self.view.show_graphs()
         self.animate_graph(loop)
         try:
             loop.run()
@@ -795,13 +796,18 @@ class GraphController:
                 conf.add_section(section)
 
                 sources = self.sources
+                logging.debug("Saving settings for %s", source)
+                logging.debug("Visible sensors %s", visible_sensors)
                 # TODO: consider changing sensors_list to dict
                 curr_sensor = [x for x in sources if
                                x.get_source_name() == source][0]
-                logging.debug("Saving settings for %s", curr_sensor)
                 sensor_list = curr_sensor.get_sensor_list()
                 for sensor_id, sensor in enumerate(sensor_list):
-                    conf.set(section, sensor, str(visible_sensors[sensor_id]))
+                    try:
+                        conf.set(section, sensor, str(
+                            visible_sensors[sensor_id]))
+                    except IndexError:
+                        conf.set(section, sensor, str(True))
 
             # Save settings for summaries menu
             for source, visible_sensors in \
@@ -816,7 +822,11 @@ class GraphController:
                 logging.debug("Saving settings for %s", curr_sensor)
                 sensor_list = curr_sensor.get_sensor_list()
                 for sensor_id, sensor in enumerate(sensor_list):
-                    conf.set(section, sensor, str(visible_sensors[sensor_id]))
+                    try:
+                        conf.set(section, sensor, str(
+                            visible_sensors[sensor_id]))
+                    except IndexError:
+                        conf.set(section, sensor, str(True))
             conf.write(cfgfile)
 
     def exit_program(self):

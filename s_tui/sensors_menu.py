@@ -22,13 +22,10 @@ A class displaying all available sensors
 
 from __future__ import print_function
 from __future__ import absolute_import
-import urwid
 import copy
+
+import urwid
 from s_tui.sturwid.ui_elements import ViListBox
-
-
-import logging
-logger = logging.getLogger(__name__)
 
 
 class SensorsMenu:
@@ -69,7 +66,7 @@ class SensorsMenu:
             self.active_sensors[source_name] = []
 
             # add the title at the head of the checkbox column
-            sensor_title_str = "  " + source_name + " Sensors  \n"
+            sensor_title_str = source_name
             sensor_title = urwid.Text(
                 ('bold text', sensor_title_str), 'center')
 

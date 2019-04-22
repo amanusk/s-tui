@@ -159,6 +159,11 @@ class BarGraphVector(LabeledBarGraphVector):
 
         # update visible graph data, and maximum
         for graph_idx, graph in enumerate(self.bar_graph_vector):
+            try:
+                _ = self.visible_graph_list[graph_idx]
+            except IndexError:
+                # If a new graph "Appers", append it to visibles
+                self.visible_graph_list.append(True)
             bars = []
             if self.visible_graph_list[graph_idx]:
                 self.graph_data[graph_idx] = self.append_latest_value(
@@ -185,7 +190,7 @@ class BarGraphVector(LabeledBarGraphVector):
 
         # update the graph bars
         for graph_idx, graph in enumerate(self.bar_graph_vector):
-            bars = []
+
             if self.visible_graph_list[graph_idx]:
 
                 # Get the graph width (dimension 1)

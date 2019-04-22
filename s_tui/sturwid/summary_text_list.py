@@ -45,6 +45,11 @@ class SummaryTextList:
             # This can be accessed by the update method
             self.summary_text_items[key] = value_w
             col_w = urwid.Columns([('weight', 1.5, label_w), value_w])
+            try:
+                _ = self.visible_summaries[key]
+            except KeyError:
+                # If an unkonwn key appers, add it to list
+                self.visible_summaries[key] = True
             if self.visible_summaries[key]:
                 summery_text_list.append(col_w)
 
