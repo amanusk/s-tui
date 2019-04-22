@@ -535,7 +535,7 @@ class GraphView(urwid.WidgetPlaceholder):
                                 ('weight', 2, self.graph_place_holder)],
                                dividechars=0, focus_column=0)
 
-        widget = urwid.Padding(widget, ('fixed left', 1), ('fixed right', 0))
+        widget = urwid.Padding(widget, ('fixed left', 1), ('fixed right', 1))
         self.main_window_w = widget
 
         base = self.main_window_w.base_widget[0].body
