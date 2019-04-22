@@ -770,6 +770,25 @@ class GraphController:
 
     def save_settings(self):
         """ Save the current configuration to a user config file """
+        def _save_displayed_setting(conf, submenu):
+            for source, visible_sensors in \
+                    self.view.graphs_menu.active_sensors.items():
+                section = source + "," + submenu
+                conf.add_section(section)
+
+                sources = self.sources
+                logging.debug("Saving settings for %s", source)
+                logging.debug("Visible sensors %s", visible_sensors)
+                # TODO: consider changing sensors_list to dict
+                curr_sensor = [x for x in sources if
+                               x.get_source_name() == source][0]
+                sensor_list = curr_sensor.get_sensor_list()
+                for sensor_id, sensor in enumerate(sensor_list):
+                    try:
+                        conf.set(section, sensor, str(
+                            visible_sensors[sensor_id]))
+                    except IndexError:
+                        conf.set(section, sensor, str(True))
 
         if not user_config_dir_exists():
             make_user_config_dir()
@@ -789,44 +808,8 @@ class GraphController:
                 conf.set('GraphControll', 'TTHRESH', str(
                     self.temp_thresh))
 
-            # Save settings for graphs menu
-            for source, visible_sensors in \
-                    self.view.graphs_menu.active_sensors.items():
-                section = source + ",Graph"
-                conf.add_section(section)
-
-                sources = self.sources
-                logging.debug("Saving settings for %s", source)
-                logging.debug("Visible sensors %s", visible_sensors)
-                # TODO: consider changing sensors_list to dict
-                curr_sensor = [x for x in sources if
-                               x.get_source_name() == source][0]
-                sensor_list = curr_sensor.get_sensor_list()
-                for sensor_id, sensor in enumerate(sensor_list):
-                    try:
-                        conf.set(section, sensor, str(
-                            visible_sensors[sensor_id]))
-                    except IndexError:
-                        conf.set(section, sensor, str(True))
-
-            # Save settings for summaries menu
-            for source, visible_sensors in \
-                    self.view.summary_menu.active_sensors.items():
-                section = source + ",Summary"
-                conf.add_section(section)
-
-                sources = self.sources
-                # TODO: consider changing sensors_list to dict
-                curr_sensor = [x for x in sources if
-                               x.get_source_name() == source][0]
-                logging.debug("Saving settings for %s", curr_sensor)
-                sensor_list = curr_sensor.get_sensor_list()
-                for sensor_id, sensor in enumerate(sensor_list):
-                    try:
-                        conf.set(section, sensor, str(
-                            visible_sensors[sensor_id]))
-                    except IndexError:
-                        conf.set(section, sensor, str(True))
+            _save_displayed_setting(conf, "Graphs")
+            _save_displayed_setting(conf, "Summaries")
             conf.write(cfgfile)
 
     def exit_program(self):
