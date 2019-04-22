@@ -22,13 +22,10 @@ A class displaying all available sensors
 
 from __future__ import print_function
 from __future__ import absolute_import
-import urwid
 import copy
+
+import urwid
 from s_tui.sturwid.ui_elements import ViListBox
-
-
-import logging
-logger = logging.getLogger(__name__)
 
 
 class SensorsMenu:
@@ -52,9 +49,8 @@ class SensorsMenu:
         self.sensor_status_dict = {}
         sensor_column_list = []
         self.sensor_button_dict = {}
-        self.sensor_current_active_dict = {}
+        self.active_sensors = {}
         for source in source_list:
-            # TODO use saved values for default windows that are open
             source_name = source.get_source_name()
 
             # get the saves sensor visibility list
@@ -67,10 +63,10 @@ class SensorsMenu:
                     [True] * len(source.get_sensor_list())
 
             self.sensor_button_dict[source_name] = []
-            self.sensor_current_active_dict[source_name] = []
+            self.active_sensors[source_name] = []
 
             # add the title at the head of the checkbox column
-            sensor_title_str = "  " + source_name + " Sensors  \n"
+            sensor_title_str = source_name
             sensor_title = urwid.Text(
                 ('bold text', sensor_title_str), 'center')
 
@@ -80,7 +76,7 @@ class SensorsMenu:
                         self.sensor_status_dict[source_name]):
                 cb = urwid.CheckBox(sensor, s_tatus)
                 self.sensor_button_dict[source_name].append(cb)
-                self.sensor_current_active_dict[source_name].append(s_tatus)
+                self.active_sensors[source_name].append(s_tatus)
 
             sensor_title_and_buttons = \
                 [sensor_title] + self.sensor_button_dict[source_name]
@@ -95,7 +91,7 @@ class SensorsMenu:
         self.main_window = urwid.LineBox(ViListBox(listw))
 
         max_height = 6
-        for sensor, s_tatus in self.sensor_current_active_dict.items():
+        for sensor, s_tatus in self.active_sensors.items():
             max_height = max(max_height, len(s_tatus) + 6)
 
         self.size = max_height, self.MAX_TITLE_LEN
@@ -105,7 +101,7 @@ class SensorsMenu:
 
     def set_checkbox_value(self):
         for sensor, sensor_cb in self.sensor_button_dict.items():
-            sensor_cb_next_state = self.sensor_current_active_dict[sensor]
+            sensor_cb_next_state = self.active_sensors[sensor]
             for (checkbox, state) in zip(sensor_cb, sensor_cb_next_state):
                 checkbox.set_state(state)
 
@@ -121,10 +117,10 @@ class SensorsMenu:
                 cb_sensor_visibility.append(sensor_cb.get_state())
 
                 changed_state = (cb_sensor_visibility !=
-                                 self.sensor_current_active_dict[s_name])
+                                 self.active_sensors[s_name])
                 update_sensor_visibility |= changed_state
 
-            self.sensor_current_active_dict[s_name] = cb_sensor_visibility
+            self.active_sensors[s_name] = cb_sensor_visibility
 
         self.set_checkbox_value()
         self.return_fn(update=update_sensor_visibility)
