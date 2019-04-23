@@ -631,12 +631,12 @@ class GraphController:
                    if x.get_is_available()]
         for source in sources:
             try:
-                options = list(self.conf.items(source + ",Graph"))
+                options = list(self.conf.items(source + ",Graphs"))
                 for option in options:
                     # Returns tuples of values in order
                     self.graphs_default_conf[source].append(
                         str_to_bool(option[1]))
-                options = list(self.conf.items(source + ",Summary"))
+                options = list(self.conf.items(source + ",Summaries"))
                 for option in options:
                     # Returns tuples of values in order
                     self.summary_default_conf[source].append(
