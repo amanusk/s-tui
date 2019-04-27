@@ -1,9 +1,9 @@
 The Stress Terminal UI: s-tui
 =============================
 
-|Build Status| |PyPI version| [|Downloads|
+|Build Status| |PyPI version| |Downloads|
 
-.. figure:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/stui_logo.png?raw=true
+.. figure:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui-logo-small.png?raw=true
    :alt: 
 
 Stress-Terminal UI, s-tui, monitors CPU temperature, frequency, power
@@ -12,7 +12,7 @@ and utilization in a graphical way from the terminal.
 Screenshot
 ----------
 
-.. figure:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui2.gif?raw=true
+.. figure:: https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui-1.0.gif?raw=true
    :alt: 
 
 -  `The Stress Terminal UI: s-tui <#the-stress-terminal-ui-s-tui>`__
@@ -51,12 +51,6 @@ Usage
 
     s-tui
 
-or
-
-::
-
-    sudo s-tui
-
 Simple installation
 -------------------
 
@@ -71,7 +65,10 @@ Install with:
 
     pip install s-tui --user
 
-Or if you want to install as root
+(This usuall creates an executable in ~/.local/bin/ dir. Make sure it is
+in your PATH)
+
+To install as root
 
 ::
 
@@ -100,8 +97,8 @@ Options
     * Use the arrow keys or 'hjkl' to navigate the side bar
     * Toggle between stressed and regular operation using the radio buttons in 'Modes'.
     * If you wish to alternate stress defaults, you can do it in <Stress options>
-    * Select sensors to display in the <Sensors> menu
-    * Change time between updates using the 'Refresh' field
+    * Select graphs to display in the <Graphs> menu
+    * Select summaries to display in the <Summaries> menu
     * Use the <Reset> button to reset graphs and statistics
     * If your system supports it, you can use the UTF-8 button to get a smoother graph
     * Save your current configuration with the <Save Settings> button
@@ -291,10 +288,10 @@ FAQ
 | **A**: By default, s-tui is handles mouse inputs. This causes some
   systems to crash. Try running ``s-tui --no-mouse``
 
-**Q**: I am not seeing all the stats in the sidebar. **A**: The sidebar
-is scrollable, you can scroll down with ``DOWN`` or ``j`` or scroll to
-the bottom with ``PG-DN`` or ``G``. You can also decrees the font of you
-terminal :)
+| **Q**: I am not seeing all the stats in the sidebar.
+| **A**: The sidebar is scrollable, you can scroll down with ``DOWN`` or
+  ``j`` or scroll to the bottom with ``PG-DN`` or ``G``. You can also
+  decrees the font of you terminal :)
 
 Contributing
 ------------
@@ -325,4 +322,4 @@ If you really really like this work, leave a tip :)
 .. |PyPI version| image:: https://badge.fury.io/py/s-tui.svg
    :target: https://badge.fury.io/py/s-tui
 .. |Downloads| image:: https://pepy.tech/badge/s-tui/month
-
+   :target: https://pepy.tech/project/s-tui

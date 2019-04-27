@@ -8,13 +8,6 @@
 
 Stress-Terminal UI, s-tui,  monitors CPU temperature, frequency, power and utilization in a graphical way from the terminal. 
 
-## *!DISCLAIMER!* ## 
-The master branch is now updated to the upcoming version 1.0-beta.   
-This adds multiple sensors for each source.   
-Some functionality might be lost and re-added in the future upon request and need.   
-Please help testing, report bugs and issues and request new features.   
-
-See [releases](https://github.com/amanusk/s-tui/releases) for previous versions.  
 
 ## Screenshot
 ![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui-1.0.gif?raw=true)
@@ -57,7 +50,10 @@ Install with:
 ```
 pip install s-tui --user
 ```
-Or if you want to install as root
+(This usuall creates an executable in ~/.local/bin/ dir. Make sure it is in your PATH)   
+
+
+To install as root
 ```
 sudo pip install s-tui
 ```
@@ -79,8 +75,8 @@ At the bottom, all sensors reading are presented in text form.
 * Use the arrow keys or 'hjkl' to navigate the side bar
 * Toggle between stressed and regular operation using the radio buttons in 'Modes'.
 * If you wish to alternate stress defaults, you can do it in <Stress options>
-* Select sensors to display in the <Sensors> menu
-* Change time between updates using the 'Refresh' field
+* Select graphs to display in the <Graphs> menu
+* Select summaries to display in the <Summaries> menu
 * Use the <Reset> button to reset graphs and statistics
 * If your system supports it, you can use the UTF-8 button to get a smoother graph
 * Save your current configuration with the <Save Settings> button
