@@ -31,8 +31,6 @@ and power.\n\
 Code for s-tui is available on github\n\
 https://github.com/amanusk/s-tui\n\
 \n\
-***    Please star on github :)    ***\n\
-\n\
 Help, issues and pull requests are appreciated.
 \n\
 Created by:\n\

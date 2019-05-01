@@ -112,6 +112,10 @@ class MainLoop(urwid.MainLoop):
             graph_controller.stress_conroller.kill_stress_process()
             raise urwid.ExitMainLoop()
 
+        if uinput == 'f1':
+            graph_controller.view.on_help_menu_open(
+                graph_controller.view.main_window_w)
+
         if uinput == 'esc':
             graph_controller.view.on_menu_close()
 
