@@ -133,13 +133,13 @@ Once pip is installed, install s-tui from pip:
 `(sudo) pip install s-tui`  
 
 ### Ubuntu(PPA)
-A ppa is available but is not always up to date(xenial,bionic)
+A ppa is available but is not always up to date(16.04,18.04)
 ```
 sudo add-apt-repository ppa:amanusk/python-s-tui
 sudo apt-get update
 sudo apt-get install python3-s-tui
 ```
-### Ubuntu(18.10)
+### Ubuntu(18.10 and newer)
 ```
 sudo apt install s-tui
 ```
@@ -158,7 +158,7 @@ Start by cloning the repository
 git clone https://github.com/amanusk/s-tui.git
 cd s-tui
 ```
-Install required dependencies as [root] or as (local user)
+Install required dependencies as \[root\] or as (local user)
 ```
 [sudo] pip install urwid (--user)
 [sudo] pip install psutil (--user)
@@ -198,13 +198,13 @@ s-tui uses [urwid](https://github.com/urwid/urwid) as a graphical engine. urwid 
 * s-tui tested to run on Raspberry-Pi 3,2,1
 
 ## FAQ
-__Q__: How is this different from htop?   
+__Q__: How is this different from htop?  
 __A__: s-tui is not a processes monitor like htop. The purpose is to monitor your CPU statistics and have an option to test the system under heavy load.  (Think AIDA64 stress test, not task manager).  
 
 __Q__: I am using the TTY with no X server and s-tui crashes on start  
 __A__: By default, s-tui is handles mouse inputs. This causes some systems to crash. Try running `s-tui --no-mouse` 
 
-__Q__: I am not seeing all the stats in the sidebar.   
+__Q__: I am not seeing all the stats in the sidebar.  
 __A__: The sidebar is scrollable, you can scroll down with `DOWN` or `j` or scroll to the bottom with `PG-DN` or `G`. You can also decrees the font of you terminal :)
 
 

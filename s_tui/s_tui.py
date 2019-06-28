@@ -162,7 +162,10 @@ class StressController:
 
     def kill_stress_process(self):
         """ Kills the current running stress process """
-        kill_child_processes(self.stress_process)
+        try:
+            kill_child_processes(self.stress_process)
+        except psutil.NoSuchProcess:
+            logging.debug("Stress process no longer exists")
         self.stress_process = None
 
     def start_stress(self, stress_cmd):
