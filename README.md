@@ -132,14 +132,14 @@ The latest stable version of s-tui is available via pip. To install pip on Ubunt
 Once pip is installed, install s-tui from pip:  
 `(sudo) pip install s-tui`  
 
-### Ubuntu(PPA)
+### Ubuntu (PPA)
 A ppa is available but is not always up to date(16.04,18.04)
 ```
 sudo add-apt-repository ppa:amanusk/python-s-tui
 sudo apt-get update
 sudo apt-get install python3-s-tui
 ```
-### Ubuntu(18.10 and newer)
+### Ubuntu (18.10 and newer)
 ```
 sudo apt install s-tui
 ```
