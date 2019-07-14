@@ -132,14 +132,14 @@ The latest stable version of s-tui is available via pip. To install pip on Ubunt
 Once pip is installed, install s-tui from pip:  
 `(sudo) pip install s-tui`  
 
-### Ubuntu(PPA)
+### Ubuntu (PPA)
 A ppa is available but is not always up to date(16.04,18.04)
 ```
 sudo add-apt-repository ppa:amanusk/python-s-tui
 sudo apt-get update
 sudo apt-get install python3-s-tui
 ```
-### Ubuntu(18.10 and newer)
+### Ubuntu (18.10 and newer)
 ```
 sudo apt install s-tui
 ```
@@ -205,7 +205,7 @@ __Q__: I am using the TTY with no X server and s-tui crashes on start
 __A__: By default, s-tui is handles mouse inputs. This causes some systems to crash. Try running `s-tui --no-mouse` 
 
 __Q__: I am not seeing all the stats in the sidebar.  
-__A__: The sidebar is scrollable, you can scroll down with `DOWN` or `j` or scroll to the bottom with `PG-DN` or `G`. You can also decrees the font of you terminal :)
+__A__: The sidebar is scrollable, you can scroll down with `DOWN` or `j` or scroll to the bottom with `PG-DN` or `G`. You might consider also decreasing the size of the font that you use in your terminal.:)
 
 
 ## Contributing
