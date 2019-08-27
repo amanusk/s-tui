@@ -53,7 +53,10 @@ class BarGraphVector(LabeledBarGraphVector):
         # We must create new instances for each list
         for _ in range(graph_count):
             self.graph_data.append([0] * self.num_samples)
-        self.graph_max = 0
+        try:
+            self.graph_max = int(self.source.get_top())
+        except:
+            self.graph_max = 10
 
         self.color_a = regular_colors[0]
         self.color_b = regular_colors[1]
@@ -181,12 +184,13 @@ class BarGraphVector(LabeledBarGraphVector):
             local_max = int(max(local_top_value))
         except ValueError:
             return
-        if (local_max > self.graph_max or local_max < self.graph_max * 0.2):
+        asdfasdf
+        if (local_max > self.graph_max):
             update_max = True
             self.graph_max = local_max
         if self.graph_max == 0:
             update_max = True
-            self.graph_max = 10
+            self.graph_max = self.source.get_top()
 
         # update the graph bars
         for graph_idx, graph in enumerate(self.bar_graph_vector):

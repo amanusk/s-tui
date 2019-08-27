@@ -104,3 +104,15 @@ class TempSource(Source):
 
     def get_maximum(self):
         raise NotImplementedError("Get maximum is not implemented")
+
+    def get_top(self):
+        top_temp = 10
+        available_temps = psutil.sensors_temperatures().values()
+        for temp in available_temps:
+            for temp_minor in temp:
+                try:
+                    if temp_minor.critical > top_temp:
+                        top_temp = temp_minor.critical
+                except:
+                    continue
+        return top_temp
