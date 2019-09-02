@@ -67,5 +67,5 @@ class FreqSource(Source):
         return self.max_freq
 
     def get_top(self):
-        logging.debug("Returning top %s", self.top_freq) 
+        logging.debug("Returning top %s", self.top_freq)
         return self.top_freq

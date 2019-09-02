@@ -118,6 +118,6 @@ class TempSource(Source):
                 try:
                     if temp_minor.high > top_temp:
                         top_temp = temp_minor.critical
-                except:
+                except TypeError:
                     continue
         return top_temp
