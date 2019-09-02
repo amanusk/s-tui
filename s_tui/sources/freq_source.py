@@ -27,6 +27,12 @@ from s_tui.sources.source import Source
 class FreqSource(Source):
     """ Source class implementing CPU frequency information polling """
     def __init__(self):
+        self.is_available = True
+        if not hasattr(psutil, "cpu_freq"):
+            self.is_available = False
+            logging.debug("cpu_freq is not available from psutil")
+            return
+
         Source.__init__(self)
 
         self.name = 'Frequency'
@@ -34,24 +40,19 @@ class FreqSource(Source):
         self.pallet = ('freq light', 'freq dark',
                        'freq light smooth', 'freq dark smooth')
 
-        self.top_freq = -1
-        try:
-            # Check if psutil.cpu_freq is available.
-            # +1 for average frequency
-            self.last_measurement = [0] * len(psutil.cpu_freq(True))
-            if psutil.cpu_freq(False):
-                self.last_measurement.append(0)
-        except AttributeError:
-            logging.debug("cpu_freq is not available from psutil")
-            self.is_available = False
-            return
+        # Check if psutil.cpu_freq is available.
+        # +1 for average frequency
+        self.last_measurement = [0] * len(psutil.cpu_freq(True))
+        if psutil.cpu_freq(False):
+            self.last_measurement.append(0)
 
-        try:
+        self.top_freq = psutil.cpu_freq().max
+        self.max_freq = self.top_freq
+
+        if self.top_freq == 0.0:
             # If top freq not available, take the current as top
-            if max(self.last_measurement) >= 0 and self.top_freq == -1:
-                self.top_freq = max(self.last_measurement)
-        except ValueError:
-            self.is_available = False
+            if max(self.last_measurement) >= 0:
+                self.max_freq = max(self.last_measurement)
 
         self.available_sensors = ['Avg']
         for core_id, _ in enumerate(psutil.cpu_freq(True)):
@@ -63,4 +64,8 @@ class FreqSource(Source):
             self.last_measurement.append(core.current)
 
     def get_maximum(self):
+        return self.max_freq
+
+    def get_top(self):
+        logging.debug("Returning top %s", self.top_freq) 
         return self.top_freq

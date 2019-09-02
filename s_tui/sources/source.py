@@ -44,7 +44,8 @@ class Source:
 
     def get_top(self):
         """ Returns higest theoretical value the sensors can reach """
-        raise NotImplementedError("Get top is not implemented")
+        # Return 1 as default top value
+        return 1
 
     def get_is_available(self):
         """ Returns is_available """
