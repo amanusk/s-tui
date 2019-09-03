@@ -8,6 +8,13 @@
 
 Stress-Terminal UI, s-tui,  monitors CPU temperature, frequency, power and utilization in a graphical way from the terminal. 
 
+**Please help testing the beta**  
+We are working on release 1.0, please help by reporting bugs and issues with the new version  
+Install the beta with pip  
+`sudo pip install --pre s-tui`  
+or  
+`pip install --pre --user s-tui`  
+or run directly from source (details below)
 
 ## Screenshot
 ![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui-1.0.gif?raw=true)
