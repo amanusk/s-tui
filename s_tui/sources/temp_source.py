@@ -31,6 +31,11 @@ class TempSource(Source):
     THRESHOLD_TEMP = 80
 
     def __init__(self, temp_thresh=None):
+        if not hasattr(psutil, "sensors_temperatures"):
+            self.is_available = False
+            logging.debug("cpu temperature is not available from psutil")
+            return
+
         Source.__init__(self)
 
         self.name = 'Temp'
@@ -46,7 +51,7 @@ class TempSource(Source):
         try:
             sensors_dict = OrderedDict(sorted(
                 psutil.sensors_temperatures().items()))
-        except (AttributeError, IOError):
+        except IOError:
             logging.debug("Unable to create sensors dict")
             self.is_available = False
             return
@@ -104,3 +109,15 @@ class TempSource(Source):
 
     def get_maximum(self):
         raise NotImplementedError("Get maximum is not implemented")
+
+    def get_top(self):
+        top_temp = 10
+        available_temps = psutil.sensors_temperatures().values()
+        for temp in available_temps:
+            for temp_minor in temp:
+                try:
+                    if temp_minor.high > top_temp:
+                        top_temp = temp_minor.critical
+                except TypeError:
+                    continue
+        return top_temp

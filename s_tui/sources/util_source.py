@@ -27,6 +27,11 @@ from s_tui.sources.source import Source
 class UtilSource(Source):
 
     def __init__(self):
+        if not hasattr(psutil, "cpu_percent"):
+            self.is_available = False
+            logging.debug("cpu utilization is not available from psutil")
+            return
+
         Source.__init__(self)
 
         self.name = 'Util'
@@ -34,12 +39,7 @@ class UtilSource(Source):
         self.pallet = ('util light', 'util dark',
                        'util light smooth', 'util dark smooth')
 
-        try:
-            self.last_measurement = [0] * (psutil.cpu_count() + 1)
-        except AttributeError:
-            logging.debug("cpu_freq is not available from psutil")
-            self.is_available = False
-            return
+        self.last_measurement = [0] * (psutil.cpu_count() + 1)
 
         self.available_sensors = ['Avg']
         for core_id in range(psutil.cpu_count()):
@@ -54,8 +54,9 @@ class UtilSource(Source):
 
         logging.info("Utilization recorded %s", self.last_measurement)
 
-    def get_maximum(self):
-        return 100
-
     def get_is_available(self):
         return self.is_available
+
+    def get_top(self):
+        # Util can only be as high as 100%
+        return 100

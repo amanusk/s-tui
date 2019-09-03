@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from s_tui.sturwid.complex_bar_graph import LabeledBarGraphVector
 from s_tui.sturwid.complex_bar_graph import ScalableBarGraph
 import logging
+import math
 logger = logging.getLogger(__name__)
 
 
@@ -53,7 +54,9 @@ class BarGraphVector(LabeledBarGraphVector):
         # We must create new instances for each list
         for _ in range(graph_count):
             self.graph_data.append([0] * self.num_samples)
-        self.graph_max = 0
+
+        # Set max to 1 as default
+        self.graph_max = 1
 
         self.color_a = regular_colors[0]
         self.color_b = regular_colors[1]
@@ -177,16 +180,14 @@ class BarGraphVector(LabeledBarGraphVector):
                 local_top_value.append(max(visible_graph_data))
 
         update_max = False
-        try:
-            local_max = int(max(local_top_value))
-        except ValueError:
-            return
-        if (local_max > self.graph_max or local_max < self.graph_max * 0.2):
+        if self.graph_max == 1:
+            self.graph_max = self.source.get_top()
+            update_max = True
+
+        local_max = math.ceil(max(local_top_value))
+        if (local_max > self.graph_max):
             update_max = True
             self.graph_max = local_max
-        if self.graph_max == 0:
-            update_max = True
-            self.graph_max = 10
 
         # update the graph bars
         for graph_idx, graph in enumerate(self.bar_graph_vector):
@@ -229,4 +230,4 @@ class BarGraphVector(LabeledBarGraphVector):
         # Like in init, we create new instances for each list
         for _ in range(self.graph_count):
             self.graph_data.append([0] * self.num_samples)
-        self.graph_max = 0
+        self.graph_max = 1
