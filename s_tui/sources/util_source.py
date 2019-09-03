@@ -58,4 +58,5 @@ class UtilSource(Source):
         return self.is_available
 
     def get_top(self):
+        # Util can only be as high as 100%
         return 100

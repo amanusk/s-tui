@@ -92,3 +92,6 @@ class RaplPowerSource(Source):
 
     def get_maximum(self):
         return self.max_power
+
+    def get_top(self):
+        return 1

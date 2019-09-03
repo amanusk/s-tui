@@ -77,3 +77,6 @@ class FanSource(Source):
 
     def get_edge_triggered(self):
         return False
+
+    def get_top(self):
+        return 1
