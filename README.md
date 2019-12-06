@@ -114,6 +114,14 @@ s-tui is a great for monitoring. If you would like to stress your system, instal
 sudo apt-get install stress
 ```
 
+Alternatively, you can install stress using pip:
+
+```
+pip install stress
+```
+
+This is useful if you installed s-tui via pip.
+
 ## Configuration
 
 s-tui is a self-contained application which can run out-of-the-box and doesn't need config files to drive its core features. However, additional features like running scripts when a certain threshold has been exceeded (e.g. CPU temperature) does necessitate creating a config directory. This directory will be made in `~/.config/s-tui` by default.
