@@ -19,6 +19,7 @@
 
 from __future__ import absolute_import
 
+import warnings
 import logging
 from collections import OrderedDict
 import psutil
@@ -31,6 +32,7 @@ class TempSource(Source):
     THRESHOLD_TEMP = 80
 
     def __init__(self, temp_thresh=None):
+        warnings.filterwarnings('ignore', '.*FileNotFound.*',)
         if not hasattr(psutil, "sensors_temperatures"):
             self.is_available = False
             logging.debug("cpu temperature is not available from psutil")
@@ -120,4 +122,4 @@ class TempSource(Source):
                         top_temp = temp_minor.critical
                 except TypeError:
                     continue
-        return top_temp
+        return min(top_temp, 99)
