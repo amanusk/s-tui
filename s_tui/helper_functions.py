@@ -94,9 +94,12 @@ def output_to_terminal(sources):
     for source in sources:
         if source.get_is_available():
             source.update()
-            results.update(source.get_summary())
+            source_name = source.get_source_name()
+            results[source_name] = source.get_sensors_summary()
     for key, value in results.items():
-        sys.stdout.write(str(key) + ": " + str(value) + ", ")
+        sys.stdout.write(str(key) + ": ")
+        for skey, svalue in value.items():
+            sys.stdout.write(str(skey) + ": " + str(svalue) + ", ")
     sys.stdout.write("\n")
     sys.exit()
 
