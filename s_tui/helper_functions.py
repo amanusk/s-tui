@@ -60,6 +60,13 @@ def get_processor_name():
         )
         str_value = process.stdout.read()
         return str_value
+    elif platform.system() == "Darwin":
+        cmd = ['sysctl', '-n', 'machdep.cpu.brand_string']
+        process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+        str_value = process.stdout.read()
+        return str_value
 
     return platform.processor()
 
