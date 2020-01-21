@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2017-2018 Alex Manuskin
+# Copyright (C) 2017-2020 Alex Manuskin
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -24,9 +24,10 @@ setup(
     packages=['s_tui', 's_tui.sources', 's_tui.sturwid'],
     version=AUX.__version__,
     author="Alex Manuskin",
-    author_email="alex.manuskin@gmail.com",
+    author_email="amanusk@tuta.io",
     description="Stress Terminal UI stress test and monitoring tool",
-    long_description=open('README.rst', 'r').read(),
+    long_description=open('README.md', 'r').read(),
+    long_description_content_type='text/markdown',
     license="GPLv2",
     url="https://github.com/amanusk/s-tui",
     keywords=['stress', 'monitoring', 'TUI'],  # arbitrary keywords

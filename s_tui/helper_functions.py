@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2020 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@ import time
 
 from collections import OrderedDict
 
-__version__ = "1.0.0-beta2"
+__version__ = "1.0.0-beta3"
 
 _DEFAULT = object()
 PY3 = sys.version_info[0] == 3
