@@ -8,34 +8,35 @@
 
 Stress-Terminal UI, s-tui,  monitors CPU temperature, frequency, power and utilization in a graphical way from the terminal. 
 
-**Please help testing the beta**  
-We are working on release 1.0, please help by reporting bugs and issues with the new version  
-Install the beta with pip  
-`sudo pip install --pre s-tui`  
-or  
-`pip install --pre --user s-tui`  
-or run directly from source (details below)
-
 ## Screenshot
 ![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui-1.0.gif?raw=true)
 
-* [The Stress Terminal UI: s-tui](#the-stress-terminal-ui-s-tui)
-  * [Screenshot](#screenshot)
-  * [What it does](#what-it-does)
-  * [Usage](#usage)
-  * [Simple installation](#simple-installation)
-	 * [pip (x86   ARM)](#pip-x86--arm)
-  * [Options](#options)
-  * [Dependencies](#dependencies)
-  * [More installation methods](#more-installation-methods)
-	 * [Ubuntu](#ubuntu)
-	 * [Arch-Linux](#arch-linux)
-  * [Run from source](#run-from-source)
-  * [Compatibility](#compatibility)
-  * [FAQ](#faq)
-  * [Contributing](#contributing)
-  * [Tip](#tip)
 
+Table of Contents
+=================
+
+   * [The Stress Terminal UI: s-tui](#the-stress-terminal-ui-s-tui)
+      * [Screenshot](#screenshot)
+      * [What it does](#what-it-does)
+      * [Usage](#usage)
+      * [Simple installation](#simple-installation)
+         * [pip (x86   ARM)](#pip-x86--arm)
+      * [More installation methods](#more-installation-methods)
+         * [Ubuntu (18.10 and newer)](#ubuntu-1810-and-newer)
+         * [Ubuntu (18.04, 16.04)](#ubuntu-1804-1604)
+         * [Arch-Linux, Manjaro](#arch-linux-manjaro)
+         * [OpenSUSE](#opensuse)
+      * [Options](#options)
+      * [Dependencies](#dependencies)
+      * [Configuration](#configuration)
+         * [Saving a configuration](#saving-a-configuration)
+         * [Adding threshold scripts](#adding-threshold-scripts)
+      * [Run from source code](#run-from-source-code)
+         * [OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)](#optional-integration-of-firestarter-via-submodule-does-not-work-on-all-systems)
+      * [Compatibility](#compatibility)
+      * [FAQ](#faq)
+      * [Contributing](#contributing)
+      * [Tip](#tip)
 
 ## What it does
 * Monitoring your CPU temperature/utilization/frequency/power
@@ -65,11 +66,40 @@ To install as root
 sudo pip install s-tui
 ```
 
-If you are installing s-tui on a Raspberry-Pi you might need to install `python-dev` first
+You might need to install `python-dev` first
 
 Installation in virtualenv with [pipsi](https://github.com/mitsuhiko/pipsi):
 ```
 pipsi install s-tui
+```
+
+## More installation methods
+### Ubuntu (18.10 and newer)
+```
+sudo apt install s-tui
+```
+
+### Ubuntu (18.04, 16.04)
+A PPA is available but is not up to date
+```
+sudo add-apt-repository ppa:amanusk/python-s-tui
+sudo apt-get update
+sudo apt-get install python3-s-tui
+```
+
+### Arch-Linux, Manjaro
+`s-tui` is in the arch repository  
+```
+sudo pacman -S s-tui
+```
+
+`s-tui-git` follows the master branch. Maintained by [@MauroMombelli](https://github.com/MauroMombelli)  
+Install with:  
+`yay -S s-tui-git`
+
+### OpenSUSE
+```
+sudo zypper install s-tui
 ```
 
 ## Options
@@ -132,32 +162,6 @@ If s-tui finds a script in the hooks directory with the name of a source it supp
 
 Note that at the moment only CPU temperature threshold hooks are supported.
 
-## More installation methods
-### Ubuntu
-The latest stable version of s-tui is available via pip. To install pip on Ubuntu run:  
-`sudo apt-get install gcc python-dev python-pip`  
-Once pip is installed, install s-tui from pip:  
-`(sudo) pip install s-tui`  
-
-### Ubuntu (PPA)
-A ppa is available but is not always up to date(16.04,18.04)
-```
-sudo add-apt-repository ppa:amanusk/python-s-tui
-sudo apt-get update
-sudo apt-get install python3-s-tui
-```
-### Ubuntu (18.10 and newer)
-```
-sudo apt install s-tui
-```
-
-### Arch-Linux
-AUR packages of s-tui are available
-
-`s-tui` is the latest stable release version. Maintained by [@DonOregano](https://github.com/DonOregano)  
-`s-tui-git` follows the master branch. Maintained by [@MauroMombelli](https://github.com/MauroMombelli)  
-install with  
-`yay -S s-tui`
 
 ## Run from source code
 Start by cloning the repository
@@ -202,7 +206,7 @@ s-tui uses [psutil](https://github.com/giampaolo/psutil) to probe hardware infor
 s-tui uses [urwid](https://github.com/urwid/urwid) as a graphical engine. urwid only works with UNIX-like systems
 
 * Power read is supported on Intel Core CPUs of the second generation and newer (Sandy Bridge)  
-* s-tui tested to run on Raspberry-Pi 3,2,1
+* s-tui tested to run on Raspberry-Pi 4,3,2,1
 
 ## FAQ
 __Q__: How is this different from htop?  
@@ -225,10 +229,6 @@ To open a Pull Request, please see [CONTRIBUTING](https://github.com/amanusk/s-t
 
 ## Tip
 If you like this work, please star in on GitHub. 
-
-If you really like it, share it with your friends and co-workers.
-
-If you really really like this work, leave a tip :)
 
 BTC: `1PPhYgecwvAN7utN2EotgTfy2mmLqzF8m3`  
 ETH: `0xc169699A825066f2F07E0b29C4082094b32A3F3e`
