@@ -24,7 +24,7 @@ Table of Contents
       * [More installation methods](#more-installation-methods)
          * [Ubuntu (18.10 and newer)](#ubuntu-1810-and-newer)
          * [Ubuntu (18.04, 16.04)](#ubuntu-1804-1604)
-         * [Arch-Linux, Manjaro](#arch-linux-manjaro)
+         * [Arch Linux, Manjaro](#arch-linux-manjaro)
          * [OpenSUSE](#opensuse)
       * [Options](#options)
       * [Dependencies](#dependencies)
@@ -87,14 +87,15 @@ sudo apt-get update
 sudo apt-get install python3-s-tui
 ```
 
-### Arch-Linux, Manjaro
-`s-tui` is in the arch repository  
+### Arch Linux, Manjaro
+`s-tui` is in the Arch repository:
 ```
 sudo pacman -S s-tui
 ```
 
-`s-tui-git` follows the master branch. Maintained by [@MauroMombelli](https://github.com/MauroMombelli)  
-Install with:  
+`s-tui-git` follows the master branch, maintained by [@MauroMombelli](https://github.com/MauroMombelli)
+
+Install it with:
 `yay -S s-tui-git`
 
 ### OpenSUSE
@@ -232,4 +233,3 @@ If you like this work, please star in on GitHub.
 
 BTC: `1PPhYgecwvAN7utN2EotgTfy2mmLqzF8m3`  
 ETH: `0xc169699A825066f2F07E0b29C4082094b32A3F3e`
-
