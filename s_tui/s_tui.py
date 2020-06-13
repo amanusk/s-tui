@@ -248,12 +248,19 @@ class GraphView(urwid.WidgetPlaceholder):
                     any(self.summary_menu.active_sensors[source_name])):
                 source.update()
 
+
         for graph in self.visible_graphs.values():
-            graph.update()
+            try:
+                graph.update()
+            except:
+                logging.error("Graph update failed")
 
         # update graph summery
         for summary in self.visible_summaries.values():
-            summary.update()
+            try:
+                summary.update()
+            except:
+                logging.error("Summary update failed")
 
         # Only update clock if not is stress mode
         if self.controller.stress_conroller.get_current_mode() != 'Monitor':
