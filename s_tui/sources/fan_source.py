@@ -28,7 +28,7 @@ from s_tui.sources.source import Source
 class FanSource(Source):
     """ Source for fan information """
     def __init__(self):
-        if (not hasattr(psutil, "sensors_fans") or not psutil.sensors_fans()):
+        if (not hasattr(psutil, "sensors_fans") and psutil.sensors_fans()):
             self.is_available = False
             logging.debug("Fans sensors is not available from psutil")
             return

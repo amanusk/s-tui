@@ -27,7 +27,7 @@ from s_tui.sources.source import Source
 class UtilSource(Source):
 
     def __init__(self):
-        if (not hasattr(psutil, "cpu_percent") or not psutil.cpu_percent()):
+        if (not hasattr(psutil, "cpu_percent") and psutil.cpu_percent()):
             self.is_available = False
             logging.debug("cpu utilization is not available from psutil")
             return
