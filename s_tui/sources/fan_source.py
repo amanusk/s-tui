@@ -73,6 +73,8 @@ class FanSource(Source):
         self.last_measurement = []
         for sensor in sample.values():
             for minor_sensor in sensor:
+                if (minor_sensor.current > 20000):
+                    continue
                 self.last_measurement.append(int(minor_sensor.current))
 
     def get_edge_triggered(self):
