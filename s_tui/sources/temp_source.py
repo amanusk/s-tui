@@ -95,7 +95,8 @@ class TempSource(Source):
         self.last_measurement = []
         for sensor in sample:
             for minor_sensor in sample[sensor]:
-                if (minor_sensor.current <= 1.0 or minor_sensor >= 200.0):
+                if (minor_sensor.current <= 1.0 or
+                        minor_sensor.current >= 200.0):
                     continue
                 self.last_measurement.append(minor_sensor.current)
 
