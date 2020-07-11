@@ -640,6 +640,8 @@ class GraphController:
             except (AttributeError, ValueError, configparser.NoOptionError,
                     configparser.NoSectionError):
                 logging.debug("No user config for temp threshold")
+        else:
+            self.temp_thresh = t_thresh
 
         # This should be the only place where sources are configured
         possible_sources = [TempSource(self.temp_thresh),

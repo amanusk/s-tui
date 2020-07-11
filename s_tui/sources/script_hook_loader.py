@@ -18,6 +18,7 @@
 
 import os
 from s_tui.sources.hook_script import ScriptHook
+import logging
 
 
 class ScriptHookLoader:
