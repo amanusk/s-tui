@@ -143,9 +143,10 @@ def get_user_config_dir():
 
     return config_path
 
+
 def get_config_dir():
     """
-    Return the path to the user s-tui config directory
+    Return the path to the user home config directory
     """
     user_home = os.getenv('XDG_CONFIG_HOME')
     if user_home is None or not user_home:
@@ -176,9 +177,10 @@ def user_config_dir_exists():
     """
     return os.path.isdir(get_user_config_dir())
 
+
 def config_dir_exists():
     """
-    Check whether the config dir exists or not
+    Check whether the home config dir exists or not
     """
     return os.path.isdir(get_config_dir())
 
