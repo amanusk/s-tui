@@ -443,16 +443,23 @@ class GraphView(urwid.WidgetPlaceholder):
                 "[N/A] UTF-8")
 
         install_stress_message = urwid.Text("")
-        if not self.controller.stress_exe:
+        if not self.controller.firestarter and not self.controller.stress_exe:
             install_stress_message = urwid.Text(
                 ('button normal', u"(N/A) install stress"))
 
+        clock_widget = []
+        # if self.controller.stress_exe or self.controller.firestarter:
+        if self.controller.stress_exe or self.controller.firestarter:
+            clock_widget = [
+                urwid.Text(('bold text', u"Stress Timer"), align="center"),
+                self.clock_view
+                ]
+
         controls = [urwid.Text(('bold text', u"Modes"), align="center")]
         controls += self.mode_buttons
+        controls += [install_stress_message]
+        controls += clock_widget
         controls += [
-            install_stress_message,
-            urwid.Text(('bold text', u"Stress Timer"), align="center"),
-            self.clock_view,
             urwid.Divider(),
             urwid.Text(('bold text', u"Control Options"), align="center"),
             animate_controls,
@@ -633,6 +640,8 @@ class GraphController:
             except (AttributeError, ValueError, configparser.NoOptionError,
                     configparser.NoSectionError):
                 logging.debug("No user config for temp threshold")
+        else:
+            self.temp_thresh = t_thresh
 
         # This should be the only place where sources are configured
         possible_sources = [TempSource(self.temp_thresh),
@@ -783,8 +792,13 @@ class GraphController:
     def save_settings(self):
         """ Save the current configuration to a user config file """
         def _save_displayed_setting(conf, submenu):
-            for source, visible_sensors in \
-                    self.view.graphs_menu.active_sensors.items():
+            items = []
+            if (submenu == "Graphs"):
+                items = self.view.graphs_menu.active_sensors.items()
+            elif (submenu == "Summaries"):
+                items = self.view.summary_menu.active_sensors.items()
+
+            for source, visible_sensors in items:
                 section = source + "," + submenu
                 conf.add_section(section)
 
