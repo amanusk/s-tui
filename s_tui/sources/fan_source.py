@@ -73,7 +73,8 @@ class FanSource(Source):
         self.last_measurement = []
         for sensor in sample.values():
             for minor_sensor in sensor:
-                if (minor_sensor.current > 20000):
+                # Ignore unreasonalbe fan speeds
+                if (minor_sensor.current > 10000):
                     continue
                 self.last_measurement.append(int(minor_sensor.current))
 
