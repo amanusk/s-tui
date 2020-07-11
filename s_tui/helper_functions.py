@@ -143,6 +143,18 @@ def get_user_config_dir():
 
     return config_path
 
+def get_config_dir():
+    """
+    Return the path to the user s-tui config directory
+    """
+    user_home = os.getenv('XDG_CONFIG_HOME')
+    if user_home is None or not user_home:
+        config_path = os.path.expanduser(os.path.join('~', '.config'))
+    else:
+        config_path = user_home
+
+    return config_path
+
 
 def get_user_config_file():
     """
@@ -164,6 +176,12 @@ def user_config_dir_exists():
     """
     return os.path.isdir(get_user_config_dir())
 
+def config_dir_exists():
+    """
+    Check whether the config dir exists or not
+    """
+    return os.path.isdir(get_config_dir())
+
 
 def user_config_file_exists():
     """
@@ -176,7 +194,14 @@ def make_user_config_dir():
     """
     Create the user s-tui config directory if it doesn't exist
     """
+    config_dir = get_config_dir()
     config_path = get_user_config_dir()
+
+    if not config_dir_exists():
+        try:
+            os.mkdir(config_dir)
+        except OSError:
+            return None
 
     if not user_config_dir_exists():
         try:
