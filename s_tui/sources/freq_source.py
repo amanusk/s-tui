@@ -28,7 +28,8 @@ class FreqSource(Source):
     """ Source class implementing CPU frequency information polling """
     def __init__(self):
         self.is_available = True
-        if not hasattr(psutil, "cpu_freq"):
+        if (not hasattr(psutil, "cpu_freq") and
+                psutil.cpu_freq()):
             self.is_available = False
             logging.debug("cpu_freq is not available from psutil")
             return

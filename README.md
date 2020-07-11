@@ -6,62 +6,66 @@
 
 ![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui-logo-small.png?raw=true)
 
-Stress-Terminal UI, s-tui,  monitors CPU temperature, frequency, power and utilization in a graphical way from the terminal. 
+Stress-Terminal UI, s-tui, monitors CPU temperature, frequency, power and utilization in a graphical way from the terminal.
 
 ## Screenshot
+
 ![](https://github.com/amanusk/s-tui/blob/master/ScreenShots/s-tui-1.0.gif?raw=true)
 
+# Table of Contents
 
-Table of Contents
-=================
-
-   * [The Stress Terminal UI: s-tui](#the-stress-terminal-ui-s-tui)
-      * [Screenshot](#screenshot)
-      * [What it does](#what-it-does)
-      * [Usage](#usage)
-      * [Simple installation](#simple-installation)
-         * [pip (x86   ARM)](#pip-x86--arm)
-      * [More installation methods](#more-installation-methods)
-         * [Ubuntu (18.10 and newer)](#ubuntu-1810-and-newer)
-         * [Ubuntu (18.04, 16.04)](#ubuntu-1804-1604)
-         * [Arch Linux, Manjaro](#arch-linux-manjaro)
-         * [OpenSUSE](#opensuse)
-      * [Options](#options)
-      * [Dependencies](#dependencies)
-      * [Configuration](#configuration)
-         * [Saving a configuration](#saving-a-configuration)
-         * [Adding threshold scripts](#adding-threshold-scripts)
-      * [Run from source code](#run-from-source-code)
-         * [OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)](#optional-integration-of-firestarter-via-submodule-does-not-work-on-all-systems)
-      * [Compatibility](#compatibility)
-      * [FAQ](#faq)
-      * [Contributing](#contributing)
-      * [Tip](#tip)
+- [The Stress Terminal UI: s-tui](#the-stress-terminal-ui-s-tui)
+  - [Screenshot](#screenshot)
+  - [What it does](#what-it-does)
+  - [Usage](#usage)
+  - [Simple installation](#simple-installation)
+    - [pip (x86 ARM)](#pip-x86--arm)
+  - [More installation methods](#more-installation-methods)
+    - [Ubuntu (18.10 and newer)](#ubuntu-1810-and-newer)
+    - [Ubuntu (18.04, 16.04)](#ubuntu-1804-1604)
+    - [Arch Linux, Manjaro](#arch-linux-manjaro)
+    - [OpenSUSE](#opensuse)
+  - [Options](#options)
+  - [Dependencies](#dependencies)
+  - [Configuration](#configuration)
+    - [Saving a configuration](#saving-a-configuration)
+    - [Adding threshold scripts](#adding-threshold-scripts)
+  - [Run from source code](#run-from-source-code)
+    - [OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)](#optional-integration-of-firestarter-via-submodule-does-not-work-on-all-systems)
+  - [Compatibility](#compatibility)
+  - [FAQ](#faq)
+  - [Contributing](#contributing)
+  - [Tip](#tip)
 
 ## What it does
-* Monitoring your CPU temperature/utilization/frequency/power
-* Shows performance dips caused by thermal throttling 
-* Requires no X-server
-* Built in options for stressing the CPU (stress/stress-ng/FIRESTARTER)
 
+- Monitoring your CPU temperature/utilization/frequency/power
+- Shows performance dips caused by thermal throttling
+- Requires no X-server
+- Built in options for stressing the CPU (stress/stress-ng/FIRESTARTER)
 
 ## Usage
+
 ```
 s-tui
 ```
 
 ## Simple installation
+
 ### pip (x86 + ARM)
+
 The most up to date version of s-tui is available with pip.
 
 Install with:
+
 ```
 pip install s-tui --user
 ```
-(This usuall creates an executable in ~/.local/bin/ dir. Make sure it is in your PATH)   
 
+(This usuall creates an executable in ~/.local/bin/ dir. Make sure it is in your PATH)
 
 To install as root
+
 ```
 sudo pip install s-tui
 ```
@@ -69,18 +73,23 @@ sudo pip install s-tui
 You might need to install `python-dev` first
 
 Installation in virtualenv with [pipsi](https://github.com/mitsuhiko/pipsi):
+
 ```
 pipsi install s-tui
 ```
 
 ## More installation methods
+
 ### Ubuntu (18.10 and newer)
+
 ```
 sudo apt install s-tui
 ```
 
 ### Ubuntu (18.04, 16.04)
+
 A PPA is available but is not up to date
+
 ```
 sudo add-apt-repository ppa:amanusk/python-s-tui
 sudo apt-get update
@@ -88,7 +97,9 @@ sudo apt-get install python3-s-tui
 ```
 
 ### Arch Linux, Manjaro
+
 `s-tui` is in the Arch repository:
+
 ```
 sudo pacman -S s-tui
 ```
@@ -99,11 +110,13 @@ Install it with:
 `yay -S s-tui-git`
 
 ### OpenSUSE
+
 ```
 sudo zypper install s-tui
 ```
 
 ## Options
+
 ```
 TUI interface:
 
@@ -140,7 +153,9 @@ optional arguments:
 ```
 
 ## Dependencies
+
 s-tui is a great for monitoring. If you would like to stress your system, install stress. Stress options will then show up in s-tui (optional)
+
 ```
 sudo apt-get install stress
 ```
@@ -149,46 +164,55 @@ sudo apt-get install stress
 
 s-tui is a self-contained application which can run out-of-the-box and doesn't need config files to drive its core features. However, additional features like running scripts when a certain threshold has been exceeded (e.g. CPU temperature) does necessitate creating a config directory. This directory will be made in `~/.config/s-tui` by default.
 
-
 ### Saving a configuration
+
 Selecting \<Save Settings\> will save the current configuration to `~/.config/s-tui/s-tui.conf`. If you would like to restore defaults, simply remove the file.
 
 ### Adding threshold scripts
 
 s-tui gives you the ability to run arbitrary shell scripts when a certain threshold is surpassed, like your CPU temperature. You can define this custom behaviour by adding a shell file to the directory `~/.config/s-tui/hooks.d` with one of the following names, depending on what threshold you're interesting in reacting to:
 
-* `temperaturesource.sh`: triggered when the CPU temperature threshold is exceeded
+- `tempsource.sh`: triggered when the CPU temperature threshold is exceeded
 
 If s-tui finds a script in the hooks directory with the name of a source it supports, it will run that script every 30 seconds as long as the current value of the source remains above the threshold.
 
 Note that at the moment only CPU temperature threshold hooks are supported.
 
-
 ## Run from source code
+
 Start by cloning the repository
+
 ```
 git clone https://github.com/amanusk/s-tui.git
 cd s-tui
 ```
+
 Install required dependencies as \[root\] or as (local user)
+
 ```
 [sudo] pip install urwid (--user)
 [sudo] pip install psutil (--user)
 ```
+
 Install stress (optional)
+
 ```
 sudo apt-get install stress
 ```
 
 Run the .py file
+
 ```
 python -m s_tui.s_tui
 ```
+
 ### OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)
+
 [FIRESTARTER](https://github.com/tud-zih-energy/FIRESTARTER) is a great tool to stress your system to the extreme.
 If you would like, you can integrate FIRESTARTER submodule into s-tui.
 
 To build FIRESTARTER:
+
 ```
 git submodule init
 git submodule update
@@ -196,29 +220,32 @@ cd ./FIRESTARTER
 ./code-generator.py
 make
 ```
+
 Once you have completed these steps, you can either:
-* Install FIRESTARTER to make it accessible to s-tui, e.g make a soft-link to FIRESTARTER in /usr/local/bin.
-* Run s-tui from the main project directory with `python -m s_tui.s_tui`  
-An option to run FIRESTARTER will then be available in s-tui
+
+- Install FIRESTARTER to make it accessible to s-tui, e.g make a soft-link to FIRESTARTER in /usr/local/bin.
+- Run s-tui from the main project directory with `python -m s_tui.s_tui`  
+  An option to run FIRESTARTER will then be available in s-tui
 
 ## Compatibility
+
 s-tui uses [psutil](https://github.com/giampaolo/psutil) to probe hardware information. If your hardware is not supported, you might not see all the information.
 
 s-tui uses [urwid](https://github.com/urwid/urwid) as a graphical engine. urwid only works with UNIX-like systems
 
-* Power read is supported on Intel Core CPUs of the second generation and newer (Sandy Bridge)  
-* s-tui tested to run on Raspberry-Pi 4,3,2,1
+- Power read is supported on Intel Core CPUs of the second generation and newer (Sandy Bridge)
+- s-tui tested to run on Raspberry-Pi 4,3,2,1
 
 ## FAQ
-__Q__: How is this different from htop?  
-__A__: s-tui is not a processes monitor like htop. The purpose is to monitor your CPU statistics and have an option to test the system under heavy load.  (Think AIDA64 stress test, not task manager).  
 
-__Q__: I am using the TTY with no X server and s-tui crashes on start  
-__A__: By default, s-tui is handles mouse inputs. This causes some systems to crash. Try running `s-tui --no-mouse` 
+**Q**: How is this different from htop?  
+**A**: s-tui is not a processes monitor like htop. The purpose is to monitor your CPU statistics and have an option to test the system under heavy load. (Think AIDA64 stress test, not task manager).
 
-__Q__: I am not seeing all the stats in the sidebar.  
-__A__: The sidebar is scrollable, you can scroll down with `DOWN` or `j` or scroll to the bottom with `PG-DN` or `G`. You might consider also decreasing the size of the font that you use in your terminal.:)
+**Q**: I am using the TTY with no X server and s-tui crashes on start  
+**A**: By default, s-tui is handles mouse inputs. This causes some systems to crash. Try running `s-tui --no-mouse`
 
+**Q**: I am not seeing all the stats in the sidebar.  
+**A**: The sidebar is scrollable, you can scroll down with `DOWN` or `j` or scroll to the bottom with `PG-DN` or `G`. You might consider also decreasing the size of the font that you use in your terminal.:)
 
 ## Contributing
 
@@ -229,7 +256,8 @@ If you notice a bug, please report it as a new issue, using the provided templat
 To open a Pull Request, please see [CONTRIBUTING](https://github.com/amanusk/s-tui/blob/master/CONTRIBUTING.md) for more information.
 
 ## Tip
-If you like this work, please star in on GitHub. 
+
+If you like this work, please star in on GitHub.
 
 BTC: `1PPhYgecwvAN7utN2EotgTfy2mmLqzF8m3`  
 ETH: `0xc169699A825066f2F07E0b29C4082094b32A3F3e`

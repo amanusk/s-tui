@@ -56,8 +56,7 @@ class RaplPowerSource(Source):
             name = item.label
             sensor_count = multi_sensors.count(name)
             multi_sensors.append(name)
-            if 'package' not in name:
-                name += ",Pkg" + str(sensor_count)
+            name += "," + str(sensor_count)
             self.available_sensors.append(name)
 
     def update(self):

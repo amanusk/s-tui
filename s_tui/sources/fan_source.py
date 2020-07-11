@@ -28,7 +28,7 @@ from s_tui.sources.source import Source
 class FanSource(Source):
     """ Source for fan information """
     def __init__(self):
-        if not hasattr(psutil, "sensors_fans"):
+        if (not hasattr(psutil, "sensors_fans") and psutil.sensors_fans()):
             self.is_available = False
             logging.debug("Fans sensors is not available from psutil")
             return
@@ -73,6 +73,8 @@ class FanSource(Source):
         self.last_measurement = []
         for sensor in sample.values():
             for minor_sensor in sensor:
+                if (minor_sensor.current > 20000):
+                    continue
                 self.last_measurement.append(int(minor_sensor.current))
 
     def get_edge_triggered(self):

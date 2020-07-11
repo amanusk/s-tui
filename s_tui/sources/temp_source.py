@@ -33,7 +33,8 @@ class TempSource(Source):
 
     def __init__(self, temp_thresh=None):
         warnings.filterwarnings('ignore', '.*FileNotFound.*',)
-        if not hasattr(psutil, "sensors_temperatures"):
+        if (not hasattr(psutil, "sensors_temperatures") and
+                psutil.sensors_temperatures()):
             self.is_available = False
             logging.debug("cpu temperature is not available from psutil")
             return
@@ -62,6 +63,8 @@ class TempSource(Source):
             sensor_name = "".join(key.title().split(" "))
             for sensor_idx, sensor in enumerate(value):
                 sensor_label = sensor.label
+                if (sensor.current <= 1.0 or sensor.current >= 127.0):
+                    continue
 
                 full_name = ""
                 if not sensor_label:
@@ -70,9 +73,7 @@ class TempSource(Source):
                     full_name = ("".join(sensor_label.title().split(" ")))
                     sensor_count = multi_sensors.count(full_name)
                     multi_sensors.append(full_name)
-                    if ('package' not in full_name.lower() and
-                            'physical' not in full_name.lower()):
-                        full_name += ",Pkg" + str(sensor_count)
+                    full_name += "," + str(sensor_count)
 
                 logging.debug("Temp sensor name %s", full_name)
                 self.available_sensors.append(full_name)
@@ -92,6 +93,9 @@ class TempSource(Source):
         self.last_measurement = []
         for sensor in sample:
             for minor_sensor in sample[sensor]:
+                if (minor_sensor.current <= 1.0 or
+                        minor_sensor.current >= 127.0):
+                    continue
                 self.last_measurement.append(minor_sensor.current)
 
         if self.last_measurement:
