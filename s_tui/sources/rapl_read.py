@@ -22,6 +22,7 @@ from __future__ import absolute_import
 import logging
 import glob
 import os
+import re
 from collections import namedtuple
 from s_tui.helper_functions import cat
 
@@ -32,27 +33,84 @@ MICRO_JOULE_IN_JOULE = 1000000.0
 RaplStats = namedtuple('rapl', ['label', 'current', 'max'])
 
 
-def rapl_read():
-    """ Read power stats and return dictionary"""
-    basenames = glob.glob('/sys/class/powercap/intel-rapl:*/')
-    basenames = sorted(set({x for x in basenames}))
+class RaplReader:
+    def __init__(self):
+        basenames = glob.glob('/sys/class/powercap/intel-rapl:*/')
+        self.basenames = sorted(set({x for x in basenames}))
 
-    pjoin = os.path.join
-    ret = list()
-    for path in basenames:
-        name = None
-        try:
-            name = cat(pjoin(path, 'name'), fallback=None, binary=False)
-        except (IOError, OSError, ValueError) as err:
-            logging.warning("ignoring %r for file %r",
-                            (err, path), RuntimeWarning)
-            continue
-        if name:
+    def read_power(self):
+        """ Read power stats and return dictionary"""
+
+        pjoin = os.path.join
+        ret = list()
+        for path in self.basenames:
+            name = None
             try:
-                current = cat(pjoin(path, 'energy_uj'))
-                max_reading = 0.0
-                ret.append(RaplStats(name, float(current), max_reading))
+                name = cat(pjoin(path, 'name'), fallback=None, binary=False)
             except (IOError, OSError, ValueError) as err:
                 logging.warning("ignoring %r for file %r",
                                 (err, path), RuntimeWarning)
-    return ret
+                continue
+            if name:
+                try:
+                    current = cat(pjoin(path, 'energy_uj'))
+                    max_reading = 0.0
+                    ret.append(RaplStats(name, float(current), max_reading))
+                except (IOError, OSError, ValueError) as err:
+                    logging.warning("ignoring %r for file %r",
+                                    (err, path), RuntimeWarning)
+        return ret
+
+    @staticmethod
+    def available():
+        return os.path.exists("/sys/class/powercap/intel-rapl")
+
+
+class AMDEnergyReader:
+    def __init__(self):
+        inputs = list(zip((cat(filename, binary=False) for filename in sorted(
+                                           glob.glob('/sys/devices/platform/amd_energy.0/hwmon/hwmon*/energy*_label'))),
+                           sorted(glob.glob('/sys/devices/platform/amd_energy.0/hwmon/hwmon*/energy*_input'))))
+
+        # How many socket does the system have?
+        socket_number = sum(1 for label, _ in inputs if 'socket' in label)
+        inputs.sort(key=lambda x: self.get_input_position(x[0], socket_number))
+
+        self.inputs = [(self.get_pretty_label(label), inp) for label, inp in inputs]
+        #for i in range(len(self.inputs)):
+        #    self.inputs[i] = (self.get_pretty_label(self.inputs[i][0]), self.inputs[i][1])
+
+    @staticmethod
+    def match_label(label):
+        return re.search(r'E(core|socket)([0-9]+)', label)
+
+    @staticmethod
+    def get_input_position(label, socket_number):
+        num = int(AMDEnergyReader.match_label(label).group(2))
+        if 'socket' in label:
+            return num
+        else:
+            return num + socket_number
+
+    @staticmethod
+    def get_pretty_label(label):
+        m = AMDEnergyReader.match_label(label)
+        return f"{m.group(1).capitalize()} {int(m.group(2))}"
+
+    def read_power(self):
+        ret = []
+        for label, inp in self.inputs:
+            value = cat(inp)
+            ret.append(RaplStats(label, float(value), 0.0))
+        return ret
+
+    @staticmethod
+    def available():
+        return os.path.exists("/sys/devices/platform/amd_energy.0")
+
+
+def get_power_reader():
+    for ReaderType in (RaplReader, AMDEnergyReader):
+        if ReaderType.available():
+            return ReaderType()
+    return None
