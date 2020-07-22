@@ -25,7 +25,7 @@ import time
 import logging
 
 from s_tui.sources.source import Source
-from s_tui.sources.rapl_read import rapl_read
+from s_tui.sources.rapl_read import get_power_reader
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,12 +42,14 @@ class RaplPowerSource(Source):
         self.pallet = ('power light', 'power dark',
                        'power light smooth', 'power dark smooth')
 
-        self.last_probe_time = time.time()
-        self.last_probe = rapl_read()
-        if not self.last_probe:
+        self.reader = get_power_reader()
+        if not self.reader:
             self.is_available = False
             logging.debug("Power reading is not available")
             return
+
+        self.last_probe_time = time.time()
+        self.last_probe = self.reader.read_power()
         self.max_power = 1
         self.last_measurement = [0] * len(self.last_probe)
 
@@ -62,7 +64,7 @@ class RaplPowerSource(Source):
     def update(self):
         if not self.is_available:
             return
-        current_measurement_value = rapl_read()
+        current_measurement_value = self.reader.read_power()
         current_measurement_time = time.time()
 
         for m_idx, _ in enumerate(self.last_probe):
