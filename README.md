@@ -234,6 +234,7 @@ s-tui uses [psutil](https://github.com/giampaolo/psutil) to probe hardware infor
 s-tui uses [urwid](https://github.com/urwid/urwid) as a graphical engine. urwid only works with UNIX-like systems
 
 - Power read is supported on Intel Core CPUs of the second generation and newer (Sandy Bridge)
+  and on AMD Family 17h CPUs through the [amd_energy](https://www.kernel.org/doc/html/latest/hwmon/amd_energy.html) driver.
 - s-tui tested to run on Raspberry-Pi 4,3,2,1
 
 ## FAQ
