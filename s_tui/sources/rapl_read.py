@@ -95,7 +95,7 @@ class AMDEnergyReader:
     @staticmethod
     def get_pretty_label(label):
         m = AMDEnergyReader.match_label(label)
-        return f"{m.group(1).capitalize()} {int(m.group(2))}"
+        return "%s %d" % (m.group(1).capitalize(), int(m.group(2)))
 
     def read_power(self):
         ret = []
