@@ -28,6 +28,7 @@ from s_tui.helper_functions import cat
 
 
 INTER_RAPL_DIR = '/sys/class/powercap/intel-rapl/'
+AMD_ENERGY_DIR_GLOB = '/sys/devices/platform/amd_energy.0/hwmon/hwmon*/'
 MICRO_JOULE_IN_JOULE = 1000000.0
 
 RaplStats = namedtuple('rapl', ['label', 'current', 'max'])
@@ -69,14 +70,16 @@ class RaplReader:
 class AMDEnergyReader:
     def __init__(self):
         inputs = list(zip((cat(filename, binary=False) for filename in sorted(
-                                           glob.glob('/sys/devices/platform/amd_energy.0/hwmon/hwmon*/energy*_label'))),
-                           sorted(glob.glob('/sys/devices/platform/amd_energy.0/hwmon/hwmon*/energy*_input'))))
+            glob.glob(AMD_ENERGY_DIR_GLOB + 'energy*_label'))),
+                          sorted(glob.glob(AMD_ENERGY_DIR_GLOB +
+                                           'energy*_input'))))
 
         # How many socket does the system have?
         socket_number = sum(1 for label, _ in inputs if 'socket' in label)
         inputs.sort(key=lambda x: self.get_input_position(x[0], socket_number))
 
-        self.inputs = [(self.get_pretty_label(label), inp) for label, inp in inputs]
+        self.inputs = \
+            [(self.get_pretty_label(label), inp) for label, inp in inputs]
 
     @staticmethod
     def match_label(label):
