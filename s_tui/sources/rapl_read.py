@@ -69,17 +69,16 @@ class RaplReader:
 
 class AMDEnergyReader:
     def __init__(self):
-        inputs = list(zip((cat(filename, binary=False) for filename in sorted(
-            glob.glob(AMD_ENERGY_DIR_GLOB + 'energy*_label'))),
-                          sorted(glob.glob(AMD_ENERGY_DIR_GLOB +
-                                           'energy*_input'))))
+        self.inputs = list(zip((cat(filename, binary=False) for filename in
+                                sorted(glob.glob(AMD_ENERGY_DIR_GLOB +
+                                                 'energy*_label'))),
+                               sorted(glob.glob(AMD_ENERGY_DIR_GLOB +
+                                                'energy*_input'))))
 
         # How many socket does the system have?
-        socket_number = sum(1 for label, _ in inputs if 'socket' in label)
-        inputs.sort(key=lambda x: self.get_input_position(x[0], socket_number))
-
-        self.inputs = \
-            [(self.get_pretty_label(label), inp) for label, inp in inputs]
+        socket_number = sum(1 for label, _ in self.inputs if 'socket' in label)
+        self.inputs.sort(
+            key=lambda x: self.get_input_position(x[0], socket_number))
 
     @staticmethod
     def match_label(label):
@@ -92,11 +91,6 @@ class AMDEnergyReader:
             return num
         else:
             return num + socket_number
-
-    @staticmethod
-    def get_pretty_label(label):
-        m = AMDEnergyReader.match_label(label)
-        return "%s %d" % (m.group(1).capitalize(), int(m.group(2)))
 
     def read_power(self):
         ret = []
