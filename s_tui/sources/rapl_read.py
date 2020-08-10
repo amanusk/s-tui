@@ -77,8 +77,6 @@ class AMDEnergyReader:
         inputs.sort(key=lambda x: self.get_input_position(x[0], socket_number))
 
         self.inputs = [(self.get_pretty_label(label), inp) for label, inp in inputs]
-        #for i in range(len(self.inputs)):
-        #    self.inputs[i] = (self.get_pretty_label(self.inputs[i][0]), self.inputs[i][1])
 
     @staticmethod
     def match_label(label):
