@@ -93,7 +93,11 @@ def output_to_csv(sources, csv_writeable_file):
         csv_dict.update({'Time': time.strftime("%Y-%m-%d_%H:%M:%S")})
         summaries = [val for key, val in sources.items()]
         for summarie in summaries:
-            csv_dict.update(summarie.source.get_sensors_summary())
+            update_dict = dict()
+            for prob, val in summarie.source.get_sensors_summary().items():
+                prob = summarie.source.get_source_name() + ":" + prob
+                update_dict[prob] = val
+            csv_dict.update(update_dict)
 
         fieldnames = [key for key, val in csv_dict.items()]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
