@@ -8,11 +8,6 @@ stui:
 	pyinstaller s_tui/s_tui.py -F -n s-tui
 	mv dist/s-tui .
 
-
-# Convert the markdown file to .rst file. Markdown for github, rst for PyPi
-readme:
-	pandoc --from markdown --to rst README.md > README.rst
-
 # Remove files created by pyinstaller
 del:
 	rm -rf ./s_tui/dist/ ./build/ ./s_tui/s*.spec ./s_tui/*.pyc ./s_tui/*.log s-tui.spec dist/

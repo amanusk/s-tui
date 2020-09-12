@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2020 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -89,11 +89,11 @@ class StressMenu:
 
         self.titles = [title,
                        self.time_out_ctrl,
-                       urwid.Divider(u'\u2500'),
+                       urwid.Divider(u'-'),
                        self.sqrt_workers_ctrl,
-                       urwid.Divider(u'\u2500'),
+                       urwid.Divider(u'-'),
                        self.sync_workers_ctrl,
-                       urwid.Divider(u'\u2500'),
+                       urwid.Divider(u'-'),
                        self.memory_workers_ctrl,
                        urwid.Divider(),
                        self.malloc_byte_ctrl,
@@ -103,11 +103,11 @@ class StressMenu:
                        self.malloc_delay_ctrl,
                        urwid.Divider(),
                        self.no_malloc_ctrl,
-                       urwid.Divider(u'\u2500'),
+                       urwid.Divider(u'-'),
                        self.write_workers_ctrl,
                        urwid.Divider(),
                        self.write_bytes_ctrl,
-                       urwid.Divider(u'\u2500'),
+                       urwid.Divider(u'-'),
                        if_buttons]
 
         self.main_window = urwid.LineBox(urwid.ListBox(self.titles))

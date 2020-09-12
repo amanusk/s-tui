@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2020 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -35,7 +35,8 @@ At the bottom, all sensors reading are presented in text form.\n\
 'Modes'.\n\
 * If you wish to alternate stress defaults, you can do it in <Stress \
 options>\n\
-* Select sensors to display in the <Sensors> menu \n\
+* Select graphs to display in the <Graphs> menu \n\
+* Select summaries to display in the <Summaries> menu \n\
 * Change time between updates using the 'Refresh' field\n\
 * Use the <Reset> button to reset graphs and statistics\n\
 * If your system supports it, you can use the UTF-8 button to get a smoother \

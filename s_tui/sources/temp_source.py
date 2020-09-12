@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2019 Alex Manuskin, Gil Tzuker, Maor Veitsman
+# Copyright (C) 2017-2020 Alex Manuskin, Gil Tzuker, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,6 +19,7 @@
 
 from __future__ import absolute_import
 
+import warnings
 import logging
 from collections import OrderedDict
 import psutil
@@ -31,6 +32,13 @@ class TempSource(Source):
     THRESHOLD_TEMP = 80
 
     def __init__(self, temp_thresh=None):
+        warnings.filterwarnings('ignore', '.*FileNotFound.*',)
+        if (not hasattr(psutil, "sensors_temperatures") and
+                psutil.sensors_temperatures()):
+            self.is_available = False
+            logging.debug("cpu temperature is not available from psutil")
+            return
+
         Source.__init__(self)
 
         self.name = 'Temp'
@@ -46,7 +54,7 @@ class TempSource(Source):
         try:
             sensors_dict = OrderedDict(sorted(
                 psutil.sensors_temperatures().items()))
-        except (AttributeError, IOError):
+        except IOError:
             logging.debug("Unable to create sensors dict")
             self.is_available = False
             return
@@ -55,6 +63,8 @@ class TempSource(Source):
             sensor_name = "".join(key.title().split(" "))
             for sensor_idx, sensor in enumerate(value):
                 sensor_label = sensor.label
+                if (sensor.current <= 1.0 or sensor.current >= 127.0):
+                    continue
 
                 full_name = ""
                 if not sensor_label:
@@ -63,9 +73,7 @@ class TempSource(Source):
                     full_name = ("".join(sensor_label.title().split(" ")))
                     sensor_count = multi_sensors.count(full_name)
                     multi_sensors.append(full_name)
-                    if ('package' not in full_name.lower() and
-                            'physical' not in full_name.lower()):
-                        full_name += ",Pkg" + str(sensor_count)
+                    full_name += "," + str(sensor_count)
 
                 logging.debug("Temp sensor name %s", full_name)
                 self.available_sensors.append(full_name)
@@ -85,6 +93,9 @@ class TempSource(Source):
         self.last_measurement = []
         for sensor in sample:
             for minor_sensor in sample[sensor]:
+                if (minor_sensor.current <= 1.0 or
+                        minor_sensor.current >= 127.0):
+                    continue
                 self.last_measurement.append(minor_sensor.current)
 
         if self.last_measurement:
@@ -104,3 +115,15 @@ class TempSource(Source):
 
     def get_maximum(self):
         raise NotImplementedError("Get maximum is not implemented")
+
+    def get_top(self):
+        top_temp = 10
+        available_temps = psutil.sensors_temperatures().values()
+        for temp in available_temps:
+            for temp_minor in temp:
+                try:
+                    if temp_minor.high > top_temp:
+                        top_temp = temp_minor.critical
+                except TypeError:
+                    continue
+        return min(top_temp, 99)

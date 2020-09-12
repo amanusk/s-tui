@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2019 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2020 Alex Manuskin, Gil Tzuker, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+""" This module implements a Nvidia Fan source """
 
 from __future__ import absolute_import
+
 
 import pynvml as N
 from s_tui.sources.source import Source
@@ -28,15 +30,22 @@ def _decode(b):
     return b
 
 
-class NVFreqSource(Source):
-    """ Source class implementing CPU frequency information polling """
-    def __init__(self):
+class NVTempSource(Source):
+    """ This class inherits a source and implements a temprature source """
+    THRESHOLD_TEMP = 80
+
+    def __init__(self, temp_thresh=None):
         Source.__init__(self)
 
-        self.name = 'Frequency'
-        self.measurement_unit = 'MHz'
-        self.pallet = ('freq light', 'freq dark',
-                       'freq light smooth', 'freq dark smooth')
+        self.name = 'Temp'
+        self.measurement_unit = 'C'
+        self.max_last_temp = 0
+        self.pallet = ('temp light', 'temp dark',
+                       'temp light smooth', 'temp dark smooth')
+        self.alert_pallet = ('high temp light', 'high temp dark',
+                             'high temp light smooth', 'high temp dark smooth')
+
+        self.temp_thresh = 80
 
         device_count = N.nvmlDeviceGetCount()
 
@@ -53,11 +62,22 @@ class NVFreqSource(Source):
         self.last_measurement = []
         for index in range(device_count):
             handle = N.nvmlDeviceGetHandleByIndex(index)
-            freq = N.nvmlDeviceGetClockInfo(handle, 3)
-            self.last_measurement.append(freq)
+            temperature = N.nvmlDeviceGetTemperature(handle,
+                                                     N.NVML_TEMPERATURE_GPU)
+            self.last_measurement.append(temperature)
+
+    def get_edge_triggered(self):
+        return self.max_last_temp > self.temp_thresh
+
+    def get_max_triggered(self):
+        """ Returns whether the current temperature threshold is exceeded"""
+        return self.max_temp > self.temp_thresh
+
+    def reset(self):
+        self.max_temp = 10
 
     def get_maximum(self):
-        return self.top_freq
+        raise NotImplementedError("Get maximum is not implemented")
 
     def get_top(self):
-        return 1
+        return 100

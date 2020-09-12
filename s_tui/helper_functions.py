@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2020 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,6 +21,7 @@
 import os
 import logging
 import platform
+import subprocess
 import re
 import csv
 import sys
@@ -29,7 +30,7 @@ import time
 
 from collections import OrderedDict
 
-__version__ = "1.0.0-beta1"
+__version__ = "1.1.0"
 
 _DEFAULT = object()
 PY3 = sys.version_info[0] == 3
@@ -52,6 +53,20 @@ def get_processor_name():
             for line in all_info:
                 if b'model name' in line:
                     return re.sub(b'.*model name.*:', b'', line, 1)
+    elif platform.system() == "FreeBSD":
+        cmd = ["sysctl", "-n", "hw.model"]
+        process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+        str_value = process.stdout.read()
+        return str_value
+    elif platform.system() == "Darwin":
+        cmd = ['sysctl', '-n', 'machdep.cpu.brand_string']
+        process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+        str_value = process.stdout.read()
+        return str_value
 
     return platform.processor()
 
@@ -78,7 +93,11 @@ def output_to_csv(sources, csv_writeable_file):
         csv_dict.update({'Time': time.strftime("%Y-%m-%d_%H:%M:%S")})
         summaries = [val for key, val in sources.items()]
         for summarie in summaries:
-            csv_dict.update(summarie.source.get_sensors_summary())
+            update_dict = dict()
+            for prob, val in summarie.source.get_sensors_summary().items():
+                prob = summarie.source.get_source_name() + ":" + prob
+                update_dict[prob] = val
+            csv_dict.update(update_dict)
 
         fieldnames = [key for key, val in csv_dict.items()]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -94,9 +113,12 @@ def output_to_terminal(sources):
     for source in sources:
         if source.get_is_available():
             source.update()
-            results.update(source.get_summary())
+            source_name = source.get_source_name()
+            results[source_name] = source.get_sensors_summary()
     for key, value in results.items():
-        sys.stdout.write(str(key) + ": " + str(value) + ", ")
+        sys.stdout.write(str(key) + ": ")
+        for skey, svalue in value.items():
+            sys.stdout.write(str(skey) + ": " + str(svalue) + ", ")
     sys.stdout.write("\n")
     sys.exit()
 
@@ -126,6 +148,19 @@ def get_user_config_dir():
     return config_path
 
 
+def get_config_dir():
+    """
+    Return the path to the user home config directory
+    """
+    user_home = os.getenv('XDG_CONFIG_HOME')
+    if user_home is None or not user_home:
+        config_path = os.path.expanduser(os.path.join('~', '.config'))
+    else:
+        config_path = user_home
+
+    return config_path
+
+
 def get_user_config_file():
     """
     Return the path to the user s-tui config directory
@@ -147,6 +182,13 @@ def user_config_dir_exists():
     return os.path.isdir(get_user_config_dir())
 
 
+def config_dir_exists():
+    """
+    Check whether the home config dir exists or not
+    """
+    return os.path.isdir(get_config_dir())
+
+
 def user_config_file_exists():
     """
     Check whether the user s-tui config file exists or not
@@ -158,7 +200,14 @@ def make_user_config_dir():
     """
     Create the user s-tui config directory if it doesn't exist
     """
+    config_dir = get_config_dir()
     config_path = get_user_config_dir()
+
+    if not config_dir_exists():
+        try:
+            os.mkdir(config_dir)
+        except OSError:
+            return None
 
     if not user_config_dir_exists():
         try:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2019 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2020 Alex Manuskin, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -28,6 +28,11 @@ from s_tui.sources.source import Source
 class FanSource(Source):
     """ Source for fan information """
     def __init__(self):
+        if (not hasattr(psutil, "sensors_fans") and psutil.sensors_fans()):
+            self.is_available = False
+            logging.debug("Fans sensors is not available from psutil")
+            return
+
         Source.__init__(self)
 
         self.name = 'Fan'
@@ -38,7 +43,7 @@ class FanSource(Source):
         sensors_dict = dict()
         try:
             sensors_dict = psutil.sensors_fans()
-        except (AttributeError, IOError):
+        except IOError:
             logging.debug("Unable to create sensors dict")
             self.is_available = False
             return
@@ -68,7 +73,13 @@ class FanSource(Source):
         self.last_measurement = []
         for sensor in sample.values():
             for minor_sensor in sensor:
+                # Ignore unreasonalbe fan speeds
+                if (minor_sensor.current > 10000):
+                    continue
                 self.last_measurement.append(int(minor_sensor.current))
 
     def get_edge_triggered(self):
         return False
+
+    def get_top(self):
+        return 1

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2020 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -30,8 +30,6 @@ and power.\n\
 
 Code for s-tui is available on github\n\
 https://github.com/amanusk/s-tui\n\
-\n\
-***    Please star on github :)    ***\n\
 \n\
 Help, issues and pull requests are appreciated.
 \n\

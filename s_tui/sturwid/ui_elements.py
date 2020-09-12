@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2020 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -92,9 +92,9 @@ class ViListBox(urwid.ListBox):
         return super(ViListBox, self).keypress(size, key)
 
 
-def radio_button(g, l, fn):
+def radio_button(group, label, fn):
     """ Inheriting radio button of urwid """
-    w = urwid.RadioButton(g, l, False, on_state_change=fn)
+    w = urwid.RadioButton(group, label, False, on_state_change=fn)
     w = urwid.AttrWrap(w, 'button normal', 'button select')
     return w
 

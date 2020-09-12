@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2020 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -137,7 +137,7 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         if visible_graph_list is None:
             visible_graph_list = self.visible_graph_list
 
-        vline = urwid.AttrWrap(urwid.SolidFill(u'\u2502'), 'line')
+        vline = urwid.AttrWrap(urwid.SolidFill(u'|'), 'line')
 
         graph_vector_column_list = []
         for state, graph, sub_title in zip(visible_graph_list,

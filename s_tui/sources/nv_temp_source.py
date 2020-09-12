@@ -78,3 +78,6 @@ class NVTempSource(Source):
 
     def get_maximum(self):
         raise NotImplementedError("Get maximum is not implemented")
+
+    def get_top(self):
+        return 100

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2019 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2020 Alex Manuskin, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ import time
 import logging
 
 from s_tui.sources.source import Source
-from s_tui.sources.rapl_read import rapl_read
+from s_tui.sources.rapl_read import get_power_reader
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,12 +42,14 @@ class RaplPowerSource(Source):
         self.pallet = ('power light', 'power dark',
                        'power light smooth', 'power dark smooth')
 
-        self.last_probe_time = time.time()
-        self.last_probe = rapl_read()
-        if not self.last_probe:
+        self.reader = get_power_reader()
+        if not self.reader:
             self.is_available = False
             logging.debug("Power reading is not available")
             return
+
+        self.last_probe_time = time.time()
+        self.last_probe = self.reader.read_power()
         self.max_power = 1
         self.last_measurement = [0] * len(self.last_probe)
 
@@ -56,14 +58,13 @@ class RaplPowerSource(Source):
             name = item.label
             sensor_count = multi_sensors.count(name)
             multi_sensors.append(name)
-            if 'package' not in name:
-                name += ",Pkg" + str(sensor_count)
+            name += "," + str(sensor_count)
             self.available_sensors.append(name)
 
     def update(self):
         if not self.is_available:
             return
-        current_measurement_value = rapl_read()
+        current_measurement_value = self.reader.read_power()
         current_measurement_time = time.time()
 
         for m_idx, _ in enumerate(self.last_probe):
@@ -92,3 +93,6 @@ class RaplPowerSource(Source):
 
     def get_maximum(self):
         return self.max_power
+
+    def get_top(self):
+        return 1

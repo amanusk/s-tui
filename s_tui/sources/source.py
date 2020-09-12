@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017-2019 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2020 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -41,6 +41,10 @@ class Source:
     def get_maximum(self):
         """ Returns the maximum measurement as measured so far """
         raise NotImplementedError("Get maximum is not implemented")
+
+    def get_top(self):
+        """ Returns higest theoretical value the sensors can reach """
+        raise NotImplementedError("get_top is not implemented")
 
     def get_is_available(self):
         """ Returns is_available """
