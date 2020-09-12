@@ -15,13 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
-""" This module implements a Nvidia Fan source """
+""" This module implements a Nvidia Power source """
 
 from __future__ import absolute_import
 
 
 import pynvml as N
 from s_tui.sources.source import Source
+import logging
 
 
 def _decode(b):
@@ -30,16 +31,18 @@ def _decode(b):
     return b
 
 
-class NVFanSource(Source):
+class NVPowerSource(Source):
     """ This class inherits a source and implements a fan source """
 
     def __init__(self, temp_thresh=None):
         Source.__init__(self)
 
-        self.name = 'Fan'
-        self.measurement_unit = '%'
-        self.pallet = ('fan light', 'fan dark',
-                       'fan light smooth', 'fan dark smooth')
+        self.name = 'Power'
+        self.measurement_unit = 'W'
+        self.pallet = ('power light', 'power dark',
+                       'power light smooth', 'power dark smooth')
+
+        self.max_power = 1
 
         device_count = N.nvmlDeviceGetCount()
 
@@ -55,14 +58,11 @@ class NVFanSource(Source):
         self.last_measurement = []
         for index in range(device_count):
             handle = N.nvmlDeviceGetHandleByIndex(index)
-            fan = N.nvmlDeviceGetFanSpeed(handle)
-            self.last_measurement.append(fan)
-
-    def get_edge_triggered(self):
-        return False
+            power = N.nvmlDeviceGetPowerUsage(handle) / 1000
+            self.last_measurement.append(power)
 
     def get_maximum(self):
-        raise NotImplementedError("Get maximum is not implemented")
+        return self.max_power
 
     def get_top(self):
-        return 100
+        return 1

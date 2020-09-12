@@ -45,7 +45,6 @@ class NVFreqSource(Source):
             name = _decode(N.nvmlDeviceGetName(handle))
             self.available_sensors.append(" ".join(str(name).split(" ")[1:]))
 
-        print(self.available_sensors)
         self.last_measurement = [0] * len(self.available_sensors)
 
     def update(self):

@@ -76,7 +76,10 @@ from s_tui.sources.util_source import UtilSource
 from s_tui.sources.freq_source import FreqSource
 from s_tui.sources.temp_source import TempSource
 from s_tui.sources.nv_temp_source import NVTempSource
+from s_tui.sources.nv_util_source import NVUtilSource
 from s_tui.sources.nv_freq_source import NVFreqSource
+from s_tui.sources.nv_power_source import NVPowerSource
+from s_tui.sources.nv_fan_source import NVFanSource
 from s_tui.sources.rapl_power_source import RaplPowerSource
 from s_tui.sources.fan_source import FanSource
 from s_tui.sources.script_hook_loader import ScriptHookLoader
@@ -451,12 +454,6 @@ class GraphView(urwid.WidgetPlaceholder):
                 ('button normal', u"(N/A) install stress"))
 
         clock_widget = []
-        # if self.controller.stress_exe or self.controller.firestarter:
-        if self.controller.stress_exe or self.controller.firestarter:
-            clock_widget = [
-                urwid.Text(('bold text', u"Stress Timer"), align="center"),
-                self.clock_view
-                ]
 
         controls = [urwid.Text(('bold text', u"Modes"), align="center")]
         controls += self.mode_buttons
@@ -486,6 +483,12 @@ class GraphView(urwid.WidgetPlaceholder):
             logging.info("CPU name not available")
         return [urwid.Text(('bold text', "CPU Detected"),
                            align="center"), cpu_name, urwid.Divider()]
+
+    @staticmethod
+    def _get_title():
+        """Read and display processor name """
+        return [urwid.Text(('bold text', "NV-TUI"),
+                           align="center"), urwid.Divider()]
 
     def _generate_summaries(self):
 
@@ -546,7 +549,7 @@ class GraphView(urwid.WidgetPlaceholder):
             (key, val) for key, val in self.summaries.items() if
             val.get_is_available())
 
-        cpu_stats = self._generate_cpu_stats()
+        cpu_stats = self._get_title()
         graph_controls = self._generate_graph_controls()
         summaries = self._generate_summaries()
 
@@ -654,7 +657,10 @@ class GraphController:
         #                     FanSource()]
 
         possible_sources = [NVTempSource(),
-                            NVFreqSource()]
+                            NVFreqSource(),
+                            NVUtilSource(),
+                            NVPowerSource(),
+                            NVFanSource()]
 
         # Load sensors config if available
         sources = [x.get_source_name() for x in possible_sources
@@ -702,7 +708,7 @@ class GraphController:
                 self.firestarter = firestarter_exe
                 firestarter_installed = True
 
-        return StressController(stress_installed, firestarter_installed)
+        return StressController(False, False)
 
     def __init__(self, args):
         self.conf = None
