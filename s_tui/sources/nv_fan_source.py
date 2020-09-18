@@ -48,6 +48,15 @@ class NVFanSource(Source):
             name = _decode(N.nvmlDeviceGetName(handle))
             self.available_sensors.append(" ".join(str(name).split(" ")[1:]))
 
+        self.is_available = False
+        for index in range(device_count):
+            handle = N.nvmlDeviceGetHandleByIndex(index)
+            try:
+                N.nvmlDeviceGetFanSpeed(handle)
+                self.is_available = True
+            except N.NVMLError:
+                pass
+
         self.last_measurement = [0] * len(self.available_sensors)
 
     def update(self):
@@ -55,8 +64,11 @@ class NVFanSource(Source):
         self.last_measurement = []
         for index in range(device_count):
             handle = N.nvmlDeviceGetHandleByIndex(index)
-            fan = N.nvmlDeviceGetFanSpeed(handle)
-            self.last_measurement.append(fan)
+            try:
+                fan = N.nvmlDeviceGetFanSpeed(handle)
+                self.last_measurement.append(fan)
+            except N.NVMLError:
+                fan = 0
 
     def get_edge_triggered(self):
         return False
