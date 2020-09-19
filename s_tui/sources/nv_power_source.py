@@ -50,7 +50,7 @@ class NVPowerSource(Source):
             name = _decode(N.nvmlDeviceGetName(handle))
             self.available_sensors.append(" ".join(str(name).split(" ")[1:]))
 
-        self.is_available = False
+        self.is_available = True
         for index in range(device_count):
             handle = N.nvmlDeviceGetHandleByIndex(index)
             try:
@@ -64,16 +64,13 @@ class NVPowerSource(Source):
     def update(self):
         device_count = N.nvmlDeviceGetCount()
         self.last_measurement = []
-        self.is_available = False
         for index in range(device_count):
             handle = N.nvmlDeviceGetHandleByIndex(index)
             try:
                 power = N.nvmlDeviceGetPowerUsage(handle) / 1000
-                self.last_measurement.append(power)
-                self.is_available = True
             except N.NVMLError:
                 power = 0
-                self.is_available = False
+            self.last_measurement.append(power)
 
     def get_maximum(self):
         return self.max_power
