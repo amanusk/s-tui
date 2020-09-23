@@ -24,12 +24,21 @@ import glob
 import os
 import re
 from collections import namedtuple
+from multiprocessing import cpu_count
+from sys import byteorder
 from s_tui.helper_functions import cat
 
 
 INTER_RAPL_DIR = '/sys/class/powercap/intel-rapl/'
 AMD_ENERGY_DIR_GLOB = '/sys/devices/platform/amd_energy.0/hwmon/hwmon*/'
 MICRO_JOULE_IN_JOULE = 1000000.0
+
+
+UNIT_MSR = 0xC0010299
+CORE_MSR = 0xC001029A
+PACKAGE_MSR = 0xC001029B
+ENERGY_UNIT_MASK = 0x1F00
+
 
 RaplStats = namedtuple('rapl', ['label', 'current', 'max'])
 
@@ -104,8 +113,72 @@ class AMDEnergyReader:
         return os.path.exists("/sys/devices/platform/amd_energy.0")
 
 
+class AMDRaplMsrReader:
+    def __init__(self):
+        self.core_msr_files = {}
+        self.package_msr_files = {}
+        for i in range(cpu_count()):
+            curr_core_id = int(cat("/sys/devices/system/cpu/cpu" + str(i) +
+                                   "/topology/core_id", binary=False))
+            if curr_core_id not in self.core_msr_files:
+                self.core_msr_files[curr_core_id] = "/dev/cpu/" + \
+                                                    str(i) + "/msr"
+
+            curr_package_id = int(cat("/sys/devices/system/cpu/cpu" + str(i) +
+                                      "/topology/physical_package_id",
+                                      binary=False))
+            if curr_package_id not in self.package_msr_files:
+                self.package_msr_files[curr_package_id] = "/dev/cpu/" + \
+                                                          str(i) + "/msr"
+
+    @staticmethod
+    def read_msr(filename, register):
+        f = open(filename, "rb")
+        f.seek(register)
+        res = int.from_bytes(f.read(8), byteorder)
+        f.close()
+        return res
+
+    def read_power(self):
+        ret = []
+        for i, filename in self.package_msr_files.items():
+            unit_msr = self.read_msr(filename, UNIT_MSR)
+            energy_factor = 0.5 ** ((unit_msr & ENERGY_UNIT_MASK) >> 8)
+            package_msr = self.read_msr(filename, PACKAGE_MSR)
+            ret.append(RaplStats("Package " + str(i + 1), package_msr *
+                                 energy_factor * MICRO_JOULE_IN_JOULE, 0.0))
+
+        for i, filename in self.core_msr_files.items():
+            unit_msr = self.read_msr(filename, UNIT_MSR)
+            energy_factor = 0.5 ** ((unit_msr & ENERGY_UNIT_MASK) >> 8)
+            core_msr = self.read_msr(filename, CORE_MSR)
+            ret.append(RaplStats("Core " + str(i + 1), core_msr * energy_factor
+                                 * MICRO_JOULE_IN_JOULE, 0.0))
+
+        return ret
+
+    @staticmethod
+    def available():
+        cpuinfo = cat("/proc/cpuinfo", binary=False)
+        # The reader only supports family 17h CPUs
+        m = re.search(r"vendor_id[\s]+: ([A-Za-z]+)", cpuinfo)
+        if m[1] != "AuthenticAMD":
+            return False
+
+        m = re.search(r"cpu family[\s]+: ([0-9]+)", cpuinfo)
+        if int(m[1]) != 0x17:
+            return False
+
+        # Check whether MSRs are available and we have permission to read them
+        try:
+            open("/dev/cpu/0/msr")
+            return True
+        except (FileNotFoundError, PermissionError):
+            return False
+
+
 def get_power_reader():
-    for ReaderType in (RaplReader, AMDEnergyReader):
+    for ReaderType in (RaplReader, AMDEnergyReader, AMDRaplMsrReader):
         if ReaderType.available():
             return ReaderType()
     return None
