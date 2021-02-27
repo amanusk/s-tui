@@ -36,6 +36,7 @@ import sys
 
 import psutil
 import urwid
+import urwid.curses_display
 
 try:
     import configparser
@@ -748,7 +749,9 @@ class GraphController:
     def main(self):
         """ Starts the main loop and graph animation """
         loop = MainLoop(self.view, DEFAULT_PALETTE,
-                        handle_mouse=self.handle_mouse)
+                        handle_mouse=self.handle_mouse,
+                        # screen=urwid.curses_display.Screen()
+                        )
         self.view.show_graphs()
         self.animate_graph(loop)
         try:
@@ -886,6 +889,12 @@ def main():
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(log_formatter)
         root_logger.addHandler(file_handler)
+        root_logger.setLevel(level)
+    else:
+        level = logging.ERROR
+        log_formatter = logging.Formatter(
+            "%(asctime)s [%(funcName)s()] [%(levelname)-5.5s]  %(message)s")
+        root_logger = logging.getLogger()
         root_logger.setLevel(level)
 
     if args.terminal or args.json:
