@@ -25,6 +25,7 @@ Stress-Terminal UI, s-tui, monitors CPU temperature, frequency, power and utiliz
     - [Ubuntu (18.04, 16.04)](#ubuntu-1804-1604)
     - [Arch Linux, Manjaro](#arch-linux-manjaro)
     - [OpenSUSE](#opensuse)
+    - [Fedora](#fedora)
   - [Options](#options)
   - [Dependencies](#dependencies)
   - [Configuration](#configuration)
@@ -113,6 +114,14 @@ Install it with:
 
 ```
 sudo zypper install s-tui
+```
+
+### Fedora
+
+`s-tui` is in the Fedora [repository](https://src.fedoraproject.org/rpms/s-tui):
+
+```
+sudo dnf install s-tui
 ```
 
 ## Options
