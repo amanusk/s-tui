@@ -162,6 +162,9 @@ class AMDRaplMsrReader:
         cpuinfo = cat("/proc/cpuinfo", binary=False)
         # The reader only supports family 17h CPUs
         m = re.search(r"vendor_id[\s]+: ([A-Za-z]+)", cpuinfo)
+        if not m:
+            return False
+
         if m[1] != "AuthenticAMD":
             return False
 
