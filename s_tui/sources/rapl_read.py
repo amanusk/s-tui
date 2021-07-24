@@ -162,15 +162,31 @@ class AMDRaplMsrReader:
         cpuinfo = cat("/proc/cpuinfo", binary=False)
         # The reader only supports family 17h CPUs
         m = re.search(r"vendor_id[\s]+: ([A-Za-z]+)", cpuinfo)
-        if not m:
+
+        if not m or m is None:
             return False
 
-        if m[1] != "AuthenticAMD":
+        if m.group(1) != "AuthenticAMD":
             return False
 
         m = re.search(r"cpu family[\s]+: ([0-9]+)", cpuinfo)
         if int(m[1]) != 0x17:
             return False
+
+        # with open("/proc/cpuinfo", "rb") as cpuinfo:
+        #     all_info = cpuinfo.readlines()
+        #     for line in all_info:
+        #         if b"vendor_id" in line:
+        #             print("Verndor id", line)
+        #             if b"AuthenticAMD" not in line:
+        #                 return False
+
+        #     for line in all_info:
+        #         if b"cpu family" in line:
+        #             print("cpu family", line)
+        #             m = re.search("cpu family[\s]+: ([0-9]+)", cpuinfo)
+        #             if int(m[1]) != 0x17:
+        #                 return False
 
         # Check whether MSRs are available and we have permission to read them
         try:
