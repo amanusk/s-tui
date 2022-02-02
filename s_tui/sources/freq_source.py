@@ -37,7 +37,7 @@ class FreqSource(Source):
         Source.__init__(self)
 
         self.name = 'Frequency'
-        self.measurement_unit = 'MHz'
+        self.measurement_unit = 'GHz'
         self.pallet = ('freq light', 'freq dark',
                        'freq light smooth', 'freq dark smooth')
 
