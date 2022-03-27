@@ -33,8 +33,10 @@ class TempSource(Source):
 
     def __init__(self, temp_thresh=None):
         warnings.filterwarnings('ignore', '.*FileNotFound.*',)
-        if (not hasattr(psutil, "sensors_temperatures") and
-                psutil.sensors_temperatures()):
+        try:
+            if psutil.sensors_temperatures():
+                self.is_available = True
+        except AttributeError:
             self.is_available = False
             logging.debug("cpu temperature is not available from psutil")
             return

@@ -159,18 +159,21 @@ class AMDRaplMsrReader:
 
     @staticmethod
     def available():
-        cpuinfo = cat("/proc/cpuinfo", binary=False)
-        # The reader only supports family 17h CPUs
-        m = re.search(r"vendor_id[\s]+: ([A-Za-z]+)", cpuinfo)
+        try:
+            cpuinfo = cat("/proc/cpuinfo", binary=False)
+            # The reader only supports family 17h CPUs
+            m = re.search(r"vendor_id[\s]+: ([A-Za-z]+)", cpuinfo)
 
-        if not m or m is None:
-            return False
+            if not m or m is None:
+                return False
 
-        if m.group(1) != "AuthenticAMD":
-            return False
+            if m.group(1) != "AuthenticAMD":
+                return False
 
-        m = re.search(r"cpu family[\s]+: ([0-9]+)", cpuinfo)
-        if int(m[1]) != 0x17:
+            m = re.search(r"cpu family[\s]+: ([0-9]+)", cpuinfo)
+            if int(m[1]) != 0x17:
+                return False
+        except (FileNotFoundError, PermissionError):
             return False
 
         # with open("/proc/cpuinfo", "rb") as cpuinfo:
