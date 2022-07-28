@@ -952,7 +952,7 @@ def get_args():
                         help="High Temperature threshold. Default: 80")
     parser.add_argument('-r', '--refresh-rate', dest="refresh_rate",
                         default="2.0",
-                        help="Refresh rate. Default: 2.0")
+                        help="Refresh rate in seconds. Default: 2.0")
     args = parser.parse_args()
     return args
 
