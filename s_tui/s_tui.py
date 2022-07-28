@@ -704,7 +704,7 @@ class GraphController:
         self.script_hooks_enabled = True
         self.script_loader = None
 
-        self.refresh_rate = '2.0'
+        self.refresh_rate = args.refresh_rate
 
         self.smooth_graph_mode = False
 
@@ -950,6 +950,9 @@ def get_args():
     parser.add_argument('-tt', '--t_thresh',
                         default=None,
                         help="High Temperature threshold. Default: 80")
+    parser.add_argument('-r', '--refresh-rate', dest="refresh_rate",
+                        default="2.0",
+                        help="Refresh rate. Default: 2.0")
     args = parser.parse_args()
     return args
 
