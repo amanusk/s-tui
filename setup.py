@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2017-2020 Alex Manuskin
+# Copyright (C) 2017-2022 Alex Manuskin
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -44,6 +44,6 @@ setup(
     ],
     install_requires=[
         'urwid>=2.0.1',
-        'psutil>=5.6.0',
+        'psutil>=5.9.1',
     ],
 )
