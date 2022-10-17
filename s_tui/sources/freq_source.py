@@ -37,7 +37,7 @@ class FreqSource(Source):
         Source.__init__(self)
 
         self.name = 'Frequency'
-        self.measurement_unit = 'MHz'
+        self.measurement_unit = 'GHz'
         self.pallet = ('freq light', 'freq dark',
                        'freq light smooth', 'freq dark smooth')
 
@@ -68,5 +68,6 @@ class FreqSource(Source):
         return self.max_freq
 
     def get_top(self):
+        # Divide top frequency by 1000, as psutil only returns ghz instead of mhz (as of psutil v5.9.1)
         logging.debug("Returning top %s", self.top_freq)
-        return self.top_freq
+        return self.top_freq / 1000
