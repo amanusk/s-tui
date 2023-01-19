@@ -42,7 +42,7 @@ Stress-Terminal UI, s-tui, monitors CPU temperature, frequency, power and utiliz
 - Monitoring your CPU temperature/utilization/frequency/power
 - Shows performance dips caused by thermal throttling
 - Requires no X-server
-- Built in options for stressing the CPU (stress/stress-ng/FIRESTARTER)
+- Built-in options for stressing the CPU (stress/stress-ng/FIRESTARTER)
 
 ## Usage
 
@@ -62,7 +62,7 @@ Install with:
 pip install s-tui --user
 ```
 
-(This usuall creates an executable in ~/.local/bin/ dir. Make sure it is in your PATH)
+(This usually creates an executable in ~/.local/bin/ dir. Make sure it is in your PATH)
 
 To install as root
 
@@ -162,7 +162,7 @@ optional arguments:
 
 ## Dependencies
 
-s-tui is a great for monitoring. If you would like to stress your system, install stress. Stress options will then show up in s-tui (optional)
+s-tui is great for monitoring. If you would like to stress your system, install stress. Stress options will then show up in s-tui (optional)
 
 ```
 sudo apt-get install stress
@@ -170,7 +170,7 @@ sudo apt-get install stress
 
 ## Configuration
 
-s-tui is a self-contained application which can run out-of-the-box and doesn't need config files to drive its core features. However, additional features like running scripts when a certain threshold has been exceeded (e.g. CPU temperature) does necessitate creating a config directory. This directory will be made in `~/.config/s-tui` by default.
+s-tui is a self-contained application that can run out-of-the-box and doesn't need config files to drive its core features. However, additional features like running scripts when a certain threshold has been exceeded (e.g. CPU temperature) does necessitate creating a config directory. This directory will be made in `~/.config/s-tui` by default.
 
 ### Saving a configuration
 
@@ -178,7 +178,7 @@ Selecting \<Save Settings\> will save the current configuration to `~/.config/s-
 
 ### Adding threshold scripts
 
-s-tui gives you the ability to run arbitrary shell scripts when a certain threshold is surpassed, like your CPU temperature. You can define this custom behaviour by adding a shell file to the directory `~/.config/s-tui/hooks.d` with one of the following names, depending on what threshold you're interesting in reacting to:
+s-tui gives you the ability to run arbitrary shell scripts when a certain threshold is surpassed, like your CPU temperature. You can define this custom behaviour by adding a shell file to the directory `~/.config/s-tui/hooks.d` with one of the following names, depending on what threshold you're interested in reacting to:
 
 - `tempsource.sh`: triggered when the CPU temperature threshold is exceeded
 
@@ -266,7 +266,7 @@ To open a Pull Request, please see [CONTRIBUTING](https://github.com/amanusk/s-t
 
 ## Tip
 
-If you like this work, please star in on GitHub.
+If you like this work, please star it on GitHub.
 
 BTC: `1PPhYgecwvAN7utN2EotgTfy2mmLqzF8m3`  
 ETH: `0xc169699A825066f2F07E0b29C4082094b32A3F3e`
