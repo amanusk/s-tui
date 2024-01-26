@@ -48,7 +48,7 @@ class Source:
         raise NotImplementedError("Get maximum is not implemented")
 
     def get_top(self):
-        """Returns higest theoretical value the sensors can reach"""
+        """Returns highest theoretical value the sensors can reach"""
         raise NotImplementedError("get_top is not implemented")
 
     def get_is_available(self):

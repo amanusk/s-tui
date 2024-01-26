@@ -115,7 +115,7 @@ class BarGraphVector(LabeledBarGraphVector):
         return self.source.get_is_available()
 
     def get_label_scale(self, min_val, max_val, size):
-        """Dynamically change the scale of the graph (y lable)"""
+        """Dynamically change the scale of the graph (y label)"""
         if size < self.SCALE_DENSITY:
             label_cnt = 1
         else:
@@ -171,7 +171,7 @@ class BarGraphVector(LabeledBarGraphVector):
             try:
                 _ = self.visible_graph_list[graph_idx]
             except IndexError:
-                # If a new graph "Appers", append it to visibles
+                # If a new graph "Appears", append it to visible
                 self.visible_graph_list.append(True)
             bars = []
             if self.visible_graph_list[graph_idx]:

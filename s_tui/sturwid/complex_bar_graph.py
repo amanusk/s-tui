@@ -27,7 +27,7 @@ import urwid
 
 
 class ScalableBarGraph(urwid.BarGraph):
-    """Scale the graph acording to screen size"""
+    """Scale the graph according to screen size"""
 
     _size = (0, 0)
 

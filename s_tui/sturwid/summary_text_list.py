@@ -47,7 +47,7 @@ class SummaryTextList:
             try:
                 _ = self.visible_summaries[key]
             except KeyError:
-                # If an unkonwn key appers, add it to list
+                # If an unknown key appears, add it to list
                 self.visible_summaries[key] = True
             if self.visible_summaries[key]:
                 summery_text_list.append(col_w)
@@ -57,7 +57,7 @@ class SummaryTextList:
     def update_visibility(self, visible_sensors):
         keys = list(self.visible_summaries.keys())
         self.visible_summaries[keys[0]] = any(visible_sensors)
-        # Do not change visiblity of title
+        # Do not change visibility of title
         for sensor, visible in zip(keys[1:], visible_sensors):
             self.visible_summaries[sensor] = visible
 
