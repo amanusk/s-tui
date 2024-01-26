@@ -202,7 +202,7 @@ class AMDRaplMsrReader:
         #     all_info = cpuinfo.readlines()
         #     for line in all_info:
         #         if b"vendor_id" in line:
-        #             print("Verndor id", line)
+        #             print("Vendor id", line)
         #             if b"AuthenticAMD" not in line:
         #                 return False
 

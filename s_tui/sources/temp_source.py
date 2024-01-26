@@ -28,7 +28,7 @@ from s_tui.sources.source import Source
 
 
 class TempSource(Source):
-    """This class inherits a source and implements a temprature source"""
+    """This class inherits a source and implements a temperature source"""
 
     THRESHOLD_TEMP = 80
 

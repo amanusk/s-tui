@@ -43,7 +43,7 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-# Menues
+# Menus
 from s_tui.about_menu import AboutMenu
 from s_tui.help_menu import HelpMenu
 from s_tui.help_menu import HELP_MESSAGE
@@ -110,13 +110,13 @@ class MainLoop(urwid.MainLoop):
 
     def signal_handler(self, frame):
         """signal handler for properly exiting Ctrl+C"""
-        graph_controller.stress_conroller.kill_stress_process()
+        graph_controller.stress_controller.kill_stress_process()
         raise urwid.ExitMainLoop()
 
     def unhandled_input(self, uinput):
         logging.debug("Caught %s", uinput)
         if uinput == "q":
-            graph_controller.stress_conroller.kill_stress_process()
+            graph_controller.stress_controller.kill_stress_process()
             raise urwid.ExitMainLoop()
 
         if uinput == "f1":
@@ -276,7 +276,7 @@ class GraphView(urwid.WidgetPlaceholder):
                 pass
 
         # Only update clock if not is stress mode
-        if self.controller.stress_conroller.get_current_mode() != "Monitor":
+        if self.controller.stress_controller.get_current_mode() != "Monitor":
             self.clock_view.set_text(
                 seconds_to_text(
                     (timeit.default_timer() - self.controller.stress_start_time)
@@ -424,7 +424,7 @@ class GraphView(urwid.WidgetPlaceholder):
     def _generate_graph_controls(self):
         """Display sidebar controls. i.e. buttons, and controls"""
         # setup mode radio buttons
-        stress_modes = self.controller.stress_conroller.get_modes()
+        stress_modes = self.controller.stress_controller.get_modes()
         group = []
         for mode in stress_modes:
             self.mode_buttons.append(radio_button(group, mode, self.on_mode_button))
@@ -453,7 +453,7 @@ class GraphView(urwid.WidgetPlaceholder):
             unicode_checkbox = urwid.CheckBox(
                 "UTF-8", state=default_smooth, on_state_change=self.on_unicode_checkbox
             )
-            # Init the state of the graph accoding to the selected mode
+            # Init the state of the graph according to the selected mode
             self.on_unicode_checkbox(state=default_smooth)
         else:
             unicode_checkbox = urwid.Text("[N/A] UTF-8")
@@ -514,7 +514,7 @@ class GraphView(urwid.WidgetPlaceholder):
         return urwid.Pile(fixed_stats)
 
     def show_graphs(self):
-        """Show a pile of the graph selected for dislpay"""
+        """Show a pile of the graph selected for display"""
         elements = itertools.chain.from_iterable(
             ([graph] for graph in self.visible_graphs.values())
         )
@@ -641,7 +641,7 @@ class GraphController:
 
         # Load refresh refresh rate from config
         try:
-            self.refresh_rate = str(self.conf.getfloat("GraphControll", "refresh"))
+            self.refresh_rate = str(self.conf.getfloat("GraphControl", "refresh"))
             logging.debug("User refresh rate: %s", self.refresh_rate)
         except (
             AttributeError,
@@ -649,15 +649,15 @@ class GraphController:
             configparser.NoOptionError,
             configparser.NoSectionError,
         ):
-            logging.debug("No refresh rate configed")
+            logging.debug("No refresh rate configured")
 
         # Change UTF8 setting from config
         try:
-            if self.conf.getboolean("GraphControll", "UTF8"):
+            if self.conf.getboolean("GraphControl", "UTF8"):
                 self.smooth_graph_mode = True
             else:
                 logging.debug(
-                    "UTF8 selected as %s", self.conf.get("GraphControll", "UTF8")
+                    "UTF8 selected as %s", self.conf.get("GraphControl", "UTF8")
                 )
         except (
             AttributeError,
@@ -670,7 +670,7 @@ class GraphController:
         # Try to load high temperature threshold if configured
         if t_thresh is None:
             try:
-                self.temp_thresh = self.conf.get("GraphControll", "TTHRESH")
+                self.temp_thresh = self.conf.get("GraphControl", "TTHRESH")
                 logging.debug("Temperature threshold set to %s", self.temp_thresh)
             except (
                 AttributeError,
@@ -760,7 +760,7 @@ class GraphController:
         # Needed for use in view
         self.args = args
 
-        self.stress_conroller = self._config_stress()
+        self.stress_controller = self._config_stress()
 
         self.handle_mouse = not args.no_mouse
 
@@ -785,7 +785,7 @@ class GraphController:
 
     def set_mode(self, mode):
         """Allow our view to set the mode."""
-        self.stress_conroller.set_mode(mode)
+        self.stress_controller.set_mode(mode)
         self.update_stress_mode()
 
     def main(self):
@@ -822,19 +822,19 @@ class GraphController:
     def update_stress_mode(self):
         """Updates stress mode according to radio buttons state"""
 
-        self.stress_conroller.kill_stress_process()
+        self.stress_controller.kill_stress_process()
 
         # Start a new clock upon starting a new stress test
         self.view.clock_view.set_text(ZERO_TIME)
         self.stress_start_time = timeit.default_timer()
 
-        if self.stress_conroller.get_current_mode() == "Stress":
+        if self.stress_controller.get_current_mode() == "Stress":
             stress_cmd = self.view.stress_menu.get_stress_cmd()
-            self.stress_conroller.start_stress(stress_cmd)
+            self.stress_controller.start_stress(stress_cmd)
 
-        elif self.stress_conroller.get_current_mode() == "FIRESTARTER":
+        elif self.stress_controller.get_current_mode() == "FIRESTARTER":
             stress_cmd = [self.firestarter]
-            self.stress_conroller.start_stress(stress_cmd)
+            self.stress_controller.start_stress(stress_cmd)
 
     def save_settings(self):
         """Save the current configuration to a user config file"""
@@ -868,14 +868,14 @@ class GraphController:
         conf = configparser.ConfigParser()
         config_file = get_user_config_file()
         with open(config_file, "w") as cfgfile:
-            conf.add_section("GraphControll")
+            conf.add_section("GraphControl")
             # Save the configured refresh rete
-            conf.set("GraphControll", "refresh", str(self.refresh_rate))
+            conf.set("GraphControl", "refresh", str(self.refresh_rate))
             # Save the configured UTF8 setting
-            conf.set("GraphControll", "UTF8", str(self.smooth_graph_mode))
+            conf.set("GraphControl", "UTF8", str(self.smooth_graph_mode))
             # Save the configured t_thresh
             if self.temp_thresh:
-                conf.set("GraphControll", "TTHRESH", str(self.temp_thresh))
+                conf.set("GraphControl", "TTHRESH", str(self.temp_thresh))
 
             _save_displayed_setting(conf, "Graphs")
             _save_displayed_setting(conf, "Summaries")
@@ -883,7 +883,7 @@ class GraphController:
 
     def exit_program(self):
         """Kill all stress operations upon exit"""
-        self.stress_conroller.kill_stress_process()
+        self.stress_controller.kill_stress_process()
         raise urwid.ExitMainLoop()
 
     def animate_graph(self, loop, user_data=None):
