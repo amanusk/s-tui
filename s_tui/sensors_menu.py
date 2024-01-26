@@ -35,14 +35,13 @@ class SensorsMenu:
         pass
 
     def __init__(self, return_fn, source_list, default_source_conf):
-
         self.return_fn = return_fn
 
         # create the cancel and apply buttons, and put the in an urwid column
-        cancel_button = urwid.Button('Cancel', on_press=self.on_cancel)
-        cancel_button._label.align = 'center'
-        apply_button = urwid.Button('Apply', on_press=self.on_apply)
-        apply_button._label.align = 'center'
+        cancel_button = urwid.Button("Cancel", on_press=self.on_cancel)
+        cancel_button._label.align = "center"
+        apply_button = urwid.Button("Apply", on_press=self.on_apply)
+        apply_button._label.align = "center"
 
         if_buttons = urwid.Columns([apply_button, cancel_button])
 
@@ -56,30 +55,32 @@ class SensorsMenu:
             # get the saves sensor visibility list
             if default_source_conf[source_name]:
                 # print(str(default_source_conf[source_name]))
-                self.sensor_status_dict[source_name] =\
-                    copy.deepcopy(default_source_conf[source_name])
+                self.sensor_status_dict[source_name] = copy.deepcopy(
+                    default_source_conf[source_name]
+                )
             else:
-                self.sensor_status_dict[source_name] =\
-                    [True] * len(source.get_sensor_list())
+                self.sensor_status_dict[source_name] = [True] * len(
+                    source.get_sensor_list()
+                )
 
             self.sensor_button_dict[source_name] = []
             self.active_sensors[source_name] = []
 
             # add the title at the head of the checkbox column
             sensor_title_str = source_name
-            sensor_title = urwid.Text(
-                ('bold text', sensor_title_str), 'center')
+            sensor_title = urwid.Text(("bold text", sensor_title_str), "center")
 
             # create the checkbox buttons with the saved visibility
-            for sensor, s_tatus in \
-                    zip(source.get_sensor_list(),
-                        self.sensor_status_dict[source_name]):
+            for sensor, s_tatus in zip(
+                source.get_sensor_list(), self.sensor_status_dict[source_name]
+            ):
                 cb = urwid.CheckBox(sensor, s_tatus)
                 self.sensor_button_dict[source_name].append(cb)
                 self.active_sensors[source_name].append(s_tatus)
 
-            sensor_title_and_buttons = \
-                [sensor_title] + self.sensor_button_dict[source_name]
+            sensor_title_and_buttons = [sensor_title] + self.sensor_button_dict[
+                source_name
+            ]
             listw = urwid.SimpleFocusListWalker(sensor_title_and_buttons)
 
             sensor_column_list.append(urwid.Pile(listw))
@@ -102,7 +103,7 @@ class SensorsMenu:
     def set_checkbox_value(self):
         for sensor, sensor_cb in self.sensor_button_dict.items():
             sensor_cb_next_state = self.active_sensors[sensor]
-            for (checkbox, state) in zip(sensor_cb, sensor_cb_next_state):
+            for checkbox, state in zip(sensor_cb, sensor_cb_next_state):
                 checkbox.set_state(state)
 
     def on_cancel(self, w):
@@ -116,8 +117,7 @@ class SensorsMenu:
             for sensor_cb in sensor_buttons:
                 cb_sensor_visibility.append(sensor_cb.get_state())
 
-                changed_state = (cb_sensor_visibility !=
-                                 self.active_sensors[s_name])
+                changed_state = cb_sensor_visibility != self.active_sensors[s_name]
                 update_sensor_visibility |= changed_state
 
             self.active_sensors[s_name] = cb_sensor_visibility

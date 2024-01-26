@@ -29,8 +29,8 @@ from sys import byteorder
 from s_tui.helper_functions import cat
 
 
-INTER_RAPL_DIR = '/sys/class/powercap/intel-rapl/'
-AMD_ENERGY_DIR_GLOB = '/sys/devices/platform/amd_energy.0/hwmon/hwmon*/'
+INTER_RAPL_DIR = "/sys/class/powercap/intel-rapl/"
+AMD_ENERGY_DIR_GLOB = "/sys/devices/platform/amd_energy.0/hwmon/hwmon*/"
 MICRO_JOULE_IN_JOULE = 1000000.0
 
 
@@ -40,35 +40,35 @@ PACKAGE_MSR = 0xC001029B
 ENERGY_UNIT_MASK = 0x1F00
 
 
-RaplStats = namedtuple('rapl', ['label', 'current', 'max'])
+RaplStats = namedtuple("rapl", ["label", "current", "max"])
 
 
 class RaplReader:
     def __init__(self):
-        basenames = glob.glob('/sys/class/powercap/intel-rapl:*/')
+        basenames = glob.glob("/sys/class/powercap/intel-rapl:*/")
         self.basenames = sorted(set({x for x in basenames}))
 
     def read_power(self):
-        """ Read power stats and return dictionary"""
+        """Read power stats and return dictionary"""
 
         pjoin = os.path.join
         ret = list()
         for path in self.basenames:
             name = None
             try:
-                name = cat(pjoin(path, 'name'), fallback=None, binary=False)
+                name = cat(pjoin(path, "name"), fallback=None, binary=False)
             except (IOError, OSError, ValueError) as err:
-                logging.warning("ignoring %r for file %r",
-                                (err, path), RuntimeWarning)
+                logging.warning("ignoring %r for file %r", (err, path), RuntimeWarning)
                 continue
             if name:
                 try:
-                    current = cat(pjoin(path, 'energy_uj'))
+                    current = cat(pjoin(path, "energy_uj"))
                     max_reading = 0.0
                     ret.append(RaplStats(name, float(current), max_reading))
                 except (IOError, OSError, ValueError) as err:
-                    logging.warning("ignoring %r for file %r",
-                                    (err, path), RuntimeWarning)
+                    logging.warning(
+                        "ignoring %r for file %r", (err, path), RuntimeWarning
+                    )
         return ret
 
     @staticmethod
@@ -78,25 +78,30 @@ class RaplReader:
 
 class AMDEnergyReader:
     def __init__(self):
-        self.inputs = list(zip((cat(filename, binary=False) for filename in
-                                sorted(glob.glob(AMD_ENERGY_DIR_GLOB +
-                                                 'energy*_label'))),
-                               sorted(glob.glob(AMD_ENERGY_DIR_GLOB +
-                                                'energy*_input'))))
+        self.inputs = list(
+            zip(
+                (
+                    cat(filename, binary=False)
+                    for filename in sorted(
+                        glob.glob(AMD_ENERGY_DIR_GLOB + "energy*_label")
+                    )
+                ),
+                sorted(glob.glob(AMD_ENERGY_DIR_GLOB + "energy*_input")),
+            )
+        )
 
         # How many socket does the system have?
-        socket_number = sum(1 for label, _ in self.inputs if 'socket' in label)
-        self.inputs.sort(
-            key=lambda x: self.get_input_position(x[0], socket_number))
+        socket_number = sum(1 for label, _ in self.inputs if "socket" in label)
+        self.inputs.sort(key=lambda x: self.get_input_position(x[0], socket_number))
 
     @staticmethod
     def match_label(label):
-        return re.search(r'E(core|socket)([0-9]+)', label)
+        return re.search(r"E(core|socket)([0-9]+)", label)
 
     @staticmethod
     def get_input_position(label, socket_number):
         num = int(AMDEnergyReader.match_label(label).group(2))
-        if 'socket' in label:
+        if "socket" in label:
             return num
         else:
             return num + socket_number
@@ -118,18 +123,25 @@ class AMDRaplMsrReader:
         self.core_msr_files = {}
         self.package_msr_files = {}
         for i in range(cpu_count()):
-            curr_core_id = int(cat("/sys/devices/system/cpu/cpu" + str(i) +
-                                   "/topology/core_id", binary=False))
+            curr_core_id = int(
+                cat(
+                    "/sys/devices/system/cpu/cpu" + str(i) + "/topology/core_id",
+                    binary=False,
+                )
+            )
             if curr_core_id not in self.core_msr_files:
-                self.core_msr_files[curr_core_id] = "/dev/cpu/" + \
-                                                    str(i) + "/msr"
+                self.core_msr_files[curr_core_id] = "/dev/cpu/" + str(i) + "/msr"
 
-            curr_package_id = int(cat("/sys/devices/system/cpu/cpu" + str(i) +
-                                      "/topology/physical_package_id",
-                                      binary=False))
+            curr_package_id = int(
+                cat(
+                    "/sys/devices/system/cpu/cpu"
+                    + str(i)
+                    + "/topology/physical_package_id",
+                    binary=False,
+                )
+            )
             if curr_package_id not in self.package_msr_files:
-                self.package_msr_files[curr_package_id] = "/dev/cpu/" + \
-                                                          str(i) + "/msr"
+                self.package_msr_files[curr_package_id] = "/dev/cpu/" + str(i) + "/msr"
 
     @staticmethod
     def read_msr(filename, register):
@@ -145,15 +157,25 @@ class AMDRaplMsrReader:
             unit_msr = self.read_msr(filename, UNIT_MSR)
             energy_factor = 0.5 ** ((unit_msr & ENERGY_UNIT_MASK) >> 8)
             package_msr = self.read_msr(filename, PACKAGE_MSR)
-            ret.append(RaplStats("Package " + str(i + 1), package_msr *
-                                 energy_factor * MICRO_JOULE_IN_JOULE, 0.0))
+            ret.append(
+                RaplStats(
+                    "Package " + str(i + 1),
+                    package_msr * energy_factor * MICRO_JOULE_IN_JOULE,
+                    0.0,
+                )
+            )
 
         for i, filename in self.core_msr_files.items():
             unit_msr = self.read_msr(filename, UNIT_MSR)
             energy_factor = 0.5 ** ((unit_msr & ENERGY_UNIT_MASK) >> 8)
             core_msr = self.read_msr(filename, CORE_MSR)
-            ret.append(RaplStats("Core " + str(i + 1), core_msr * energy_factor
-                                 * MICRO_JOULE_IN_JOULE, 0.0))
+            ret.append(
+                RaplStats(
+                    "Core " + str(i + 1),
+                    core_msr * energy_factor * MICRO_JOULE_IN_JOULE,
+                    0.0,
+                )
+            )
 
         return ret
 

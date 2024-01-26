@@ -23,3 +23,5 @@ env*/*
 pyenv*
 *.loop
 *.spec
+venv/
+.venv/

@@ -26,7 +26,8 @@ from s_tui.sources.source import Source
 
 
 class FanSource(Source):
-    """ Source for fan information """
+    """Source for fan information"""
+
     def __init__(self):
         try:
             if psutil.sensors_fans():
@@ -38,10 +39,9 @@ class FanSource(Source):
 
         Source.__init__(self)
 
-        self.name = 'Fan'
-        self.measurement_unit = 'RPM'
-        self.pallet = ('fan light', 'fan dark',
-                       'fan light smooth', 'fan dark smooth')
+        self.name = "Fan"
+        self.measurement_unit = "RPM"
+        self.pallet = ("fan light", "fan dark", "fan light smooth", "fan dark smooth")
 
         sensors_dict = dict()
         try:
@@ -77,7 +77,7 @@ class FanSource(Source):
         for sensor in sample.values():
             for minor_sensor in sensor:
                 # Ignore unreasonalbe fan speeds
-                if (minor_sensor.current > 10000):
+                if minor_sensor.current > 10000:
                     continue
                 self.last_measurement.append(int(minor_sensor.current))
 

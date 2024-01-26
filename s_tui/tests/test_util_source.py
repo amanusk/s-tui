@@ -9,8 +9,8 @@ class TestUtilSource(unittest.TestCase):
 
     def test_util_summary(self):
         util_source = UtilSource()
-        self.assertEqual(util_source.get_source_name(), 'Util')
+        self.assertEqual(util_source.get_source_name(), "Util")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

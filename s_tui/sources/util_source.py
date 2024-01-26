@@ -25,29 +25,31 @@ from s_tui.sources.source import Source
 
 
 class UtilSource(Source):
-
     def __init__(self):
-        if (not hasattr(psutil, "cpu_percent") and psutil.cpu_percent()):
+        if not hasattr(psutil, "cpu_percent") and psutil.cpu_percent():
             self.is_available = False
             logging.debug("cpu utilization is not available from psutil")
             return
 
         Source.__init__(self)
 
-        self.name = 'Util'
-        self.measurement_unit = '%'
-        self.pallet = ('util light', 'util dark',
-                       'util light smooth', 'util dark smooth')
+        self.name = "Util"
+        self.measurement_unit = "%"
+        self.pallet = (
+            "util light",
+            "util dark",
+            "util light smooth",
+            "util dark smooth",
+        )
 
         self.last_measurement = [0] * (psutil.cpu_count() + 1)
 
-        self.available_sensors = ['Avg']
+        self.available_sensors = ["Avg"]
         for core_id in range(psutil.cpu_count()):
             self.available_sensors.append("Core " + str(core_id))
 
     def update(self):
-        self.last_measurement = [psutil.cpu_percent(interval=0.0,
-                                                    percpu=False)]
+        self.last_measurement = [psutil.cpu_percent(interval=0.0, percpu=False)]
         for util in psutil.cpu_percent(interval=0.0, percpu=True):
             logging.info("Core id util %s", util)
             self.last_measurement.append(float(util))

@@ -25,21 +25,25 @@ from s_tui.sources.source import Source
 
 
 class FreqSource(Source):
-    """ Source class implementing CPU frequency information polling """
+    """Source class implementing CPU frequency information polling"""
+
     def __init__(self):
         self.is_available = True
-        if (not hasattr(psutil, "cpu_freq") and
-                psutil.cpu_freq()):
+        if not hasattr(psutil, "cpu_freq") and psutil.cpu_freq():
             self.is_available = False
             logging.debug("cpu_freq is not available from psutil")
             return
 
         Source.__init__(self)
 
-        self.name = 'Frequency'
-        self.measurement_unit = 'MHz'
-        self.pallet = ('freq light', 'freq dark',
-                       'freq light smooth', 'freq dark smooth')
+        self.name = "Frequency"
+        self.measurement_unit = "MHz"
+        self.pallet = (
+            "freq light",
+            "freq dark",
+            "freq light smooth",
+            "freq dark smooth",
+        )
 
         # Check if psutil.cpu_freq is available.
         # +1 for average frequency
@@ -55,7 +59,7 @@ class FreqSource(Source):
             if max(self.last_measurement) >= 0:
                 self.max_freq = max(self.last_measurement)
 
-        self.available_sensors = ['Avg']
+        self.available_sensors = ["Avg"]
         for core_id, _ in enumerate(psutil.cpu_freq(True)):
             self.available_sensors.append("Core " + str(core_id))
 

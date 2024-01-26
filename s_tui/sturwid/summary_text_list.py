@@ -37,14 +37,13 @@ class SummaryTextList:
         self.summary_text_items = OrderedDict()
 
     def get_text_item_list(self):
-
         summery_text_list = []
         for key, val in self.source.get_summary().items():
-            label_w = urwid.Text(str(key[0:self.MAX_LABEL_L]))
-            value_w = urwid.Text(str(val), align='right')
+            label_w = urwid.Text(str(key[0 : self.MAX_LABEL_L]))
+            value_w = urwid.Text(str(val), align="right")
             # This can be accessed by the update method
             self.summary_text_items[key] = value_w
-            col_w = urwid.Columns([('weight', 1.5, label_w), value_w])
+            col_w = urwid.Columns([("weight", 1.5, label_w), value_w])
             try:
                 _ = self.visible_summaries[key]
             except KeyError:

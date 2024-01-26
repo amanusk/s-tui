@@ -22,27 +22,28 @@ from s_tui.sturwid.complex_bar_graph import LabeledBarGraphVector
 from s_tui.sturwid.complex_bar_graph import ScalableBarGraph
 import logging
 import math
+
 logger = logging.getLogger(__name__)
 
 
 class BarGraphVector(LabeledBarGraphVector):
-
     @staticmethod
     def append_latest_value(values, new_val):
-
         values.append(new_val)
         return values[1:]
 
     MAX_SAMPLES = 300
     SCALE_DENSITY = 5
 
-    def __init__(self,
-                 source,
-                 regular_colors,
-                 graph_count,
-                 visible_graph_list,
-                 alert_colors=None,
-                 bar_width=1):
+    def __init__(
+        self,
+        source,
+        regular_colors,
+        graph_count,
+        visible_graph_list,
+        alert_colors=None,
+        bar_width=1,
+    ):
         self.source = source
         self.graph_count = graph_count
         self.graph_name = self.source.get_source_name()
@@ -73,18 +74,18 @@ class BarGraphVector(LabeledBarGraphVector):
 
         y_label = []
 
-        graph_title = self.graph_name + ' [' + self.measurement_unit + ']'
+        graph_title = self.graph_name + " [" + self.measurement_unit + "]"
         sub_title_list = self.source.get_sensor_list()
 
         # create several different instances of salable bar graph
         w = []
         for _ in range(graph_count):
-            graph = ScalableBarGraph(['bg background',
-                                      self.color_a, self.color_b])
+            graph = ScalableBarGraph(["bg background", self.color_a, self.color_b])
             w.append(graph)
 
         super(BarGraphVector, self).__init__(
-            graph_title, sub_title_list, y_label, w, visible_graph_list)
+            graph_title, sub_title_list, y_label, w, visible_graph_list
+        )
 
         for graph in self.bar_graph_vector:
             graph.set_bar_width(bar_width)
@@ -101,7 +102,8 @@ class BarGraphVector(LabeledBarGraphVector):
 
         for graph in self.bar_graph_vector:
             graph.set_segment_attributes(
-                ['bg background', self.color_a, self.color_b], satt=self.satt)
+                ["bg background", self.color_a, self.color_b], satt=self.satt
+            )
 
     def get_graph_name(self):
         return self.graph_name
@@ -120,12 +122,15 @@ class BarGraphVector(LabeledBarGraphVector):
             label_cnt = int(size / self.SCALE_DENSITY)
         try:
             if max_val >= 100:
-                label = [int((min_val + i * (max_val - min_val) / label_cnt))
-                         for i in range(label_cnt + 1)]
+                label = [
+                    int((min_val + i * (max_val - min_val) / label_cnt))
+                    for i in range(label_cnt + 1)
+                ]
             else:
-                label = [round((min_val + i *
-                                (max_val - min_val) / label_cnt), 1)
-                         for i in range(label_cnt + 1)]
+                label = [
+                    round((min_val + i * (max_val - min_val) / label_cnt), 1)
+                    for i in range(label_cnt + 1)
+                ]
             return label
         except ZeroDivisionError:
             logging.debug("Side label creation divided by 0")
@@ -139,7 +144,8 @@ class BarGraphVector(LabeledBarGraphVector):
 
         for graph in self.bar_graph_vector:
             graph.set_segment_attributes(
-                ['bg background', self.color_a, self.color_b], satt=self.satt)
+                ["bg background", self.color_a, self.color_b], satt=self.satt
+            )
 
     def update(self):
         if not self.get_is_available():
@@ -170,7 +176,8 @@ class BarGraphVector(LabeledBarGraphVector):
             bars = []
             if self.visible_graph_list[graph_idx]:
                 self.graph_data[graph_idx] = self.append_latest_value(
-                    self.graph_data[graph_idx], current_reading[graph_idx])
+                    self.graph_data[graph_idx], current_reading[graph_idx]
+                )
 
                 # Get the graph width (dimension 1)
                 num_displayed_bars = graph.get_size()[1]
@@ -185,7 +192,7 @@ class BarGraphVector(LabeledBarGraphVector):
             update_max = True
 
         local_max = math.ceil(max(local_top_value))
-        if (local_max > self.graph_max):
+        if local_max > self.graph_max:
             update_max = True
             self.graph_max = local_max
 
@@ -193,13 +200,13 @@ class BarGraphVector(LabeledBarGraphVector):
         for graph_idx, graph in enumerate(self.bar_graph_vector):
             bars = []
             if self.visible_graph_list[graph_idx]:
-
                 # Get the graph width (dimension 1)
                 num_displayed_bars = graph.get_size()[1]
                 # Iterate over all the information in the graph
                 if self.color_counter_vector[graph_idx] % 2 == 0:
-                    for n in range(self.MAX_SAMPLES - num_displayed_bars,
-                                   self.MAX_SAMPLES):
+                    for n in range(
+                        self.MAX_SAMPLES - num_displayed_bars, self.MAX_SAMPLES
+                    ):
                         value = round(self.graph_data[graph_idx][n], 1)
                         # toggle between two bar types
                         if n & 1:
@@ -207,8 +214,9 @@ class BarGraphVector(LabeledBarGraphVector):
                         else:
                             bars.append([value, 0])
                 else:
-                    for n in range(self.MAX_SAMPLES - num_displayed_bars,
-                                   self.MAX_SAMPLES):
+                    for n in range(
+                        self.MAX_SAMPLES - num_displayed_bars, self.MAX_SAMPLES
+                    ):
                         value = round(self.graph_data[graph_idx][n], 1)
                         if n & 1:
                             bars.append([value, 0])
@@ -219,8 +227,9 @@ class BarGraphVector(LabeledBarGraphVector):
                 graph.set_data(bars, float(self.graph_max))
                 y_label_size_max = max(y_label_size_max, graph.get_size()[0])
 
-        self.set_y_label(self.get_label_scale(0, self.graph_max,
-                                              float(y_label_size_max)))
+        self.set_y_label(
+            self.get_label_scale(0, self.graph_max, float(y_label_size_max))
+        )
         # Only create new graphs if the maximum has changed
         if update_max:
             self.set_visible_graphs()

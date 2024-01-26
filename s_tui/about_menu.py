@@ -43,34 +43,31 @@ April 2017\n\
 \n\
 """
 
-ABOUT_MESSAGE += "s-tui " + __version__ +\
-    " Released under GNU GPLv2 "
+ABOUT_MESSAGE += "s-tui " + __version__ + " Released under GNU GPLv2 "
 
 MESSAGE_LEN = 20
 
 
 class AboutMenu:
-    """Displays the About message menu """
+    """Displays the About message menu"""
+
     MAX_TITLE_LEN = 50
 
     def __init__(self, return_fn):
-
         self.return_fn = return_fn
 
         self.about_message = ABOUT_MESSAGE
 
         self.time_out_ctrl = urwid.Text(self.about_message)
 
-        cancel_button = urwid.Button('Exit', on_press=self.on_cancel)
-        cancel_button._label.align = 'center'
+        cancel_button = urwid.Button("Exit", on_press=self.on_cancel)
+        cancel_button._label.align = "center"
 
         if_buttons = urwid.Columns([cancel_button])
 
-        title = urwid.Text(('bold text', u"  About Menu  \n"), 'center')
+        title = urwid.Text(("bold text", "  About Menu  \n"), "center")
 
-        self.titles = [title,
-                       self.time_out_ctrl,
-                       if_buttons]
+        self.titles = [title, self.time_out_ctrl, if_buttons]
 
         self.main_window = urwid.LineBox(ViListBox(self.titles))
 
