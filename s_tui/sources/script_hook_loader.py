@@ -26,7 +26,7 @@ class ScriptHookLoader:
     """
 
     def __init__(self, dir_path):
-        self.scripts_dir_path = os.path.join(dir_path, 'hooks.d')
+        self.scripts_dir_path = os.path.join(dir_path, "hooks.d")
 
     def load_script(self, source_name, timeoutMilliseconds=0):
         """
@@ -34,12 +34,13 @@ class ScriptHookLoader:
         of timeoutMilliseconds
         """
 
-        script_path = os.path.join(self.scripts_dir_path,
-                                   self._source_to_script_name(source_name))
+        script_path = os.path.join(
+            self.scripts_dir_path, self._source_to_script_name(source_name)
+        )
 
         if os.path.isfile(script_path):
             return ScriptHook(script_path, timeoutMilliseconds)
         return None
 
     def _source_to_script_name(self, source_name):
-        return source_name.lower() + '.sh'
+        return source_name.lower() + ".sh"

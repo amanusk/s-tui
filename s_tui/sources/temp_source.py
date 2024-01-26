@@ -28,11 +28,15 @@ from s_tui.sources.source import Source
 
 
 class TempSource(Source):
-    """ This class inherits a source and implements a temprature source """
+    """This class inherits a source and implements a temprature source"""
+
     THRESHOLD_TEMP = 80
 
     def __init__(self, temp_thresh=None):
-        warnings.filterwarnings('ignore', '.*FileNotFound.*',)
+        warnings.filterwarnings(
+            "ignore",
+            ".*FileNotFound.*",
+        )
         try:
             if psutil.sensors_temperatures():
                 self.is_available = True
@@ -43,19 +47,26 @@ class TempSource(Source):
 
         Source.__init__(self)
 
-        self.name = 'Temp'
-        self.measurement_unit = 'C'
+        self.name = "Temp"
+        self.measurement_unit = "C"
         self.max_last_temp = 0
-        self.pallet = ('temp light', 'temp dark',
-                       'temp light smooth', 'temp dark smooth')
-        self.alert_pallet = ('high temp light', 'high temp dark',
-                             'high temp light smooth', 'high temp dark smooth')
+        self.pallet = (
+            "temp light",
+            "temp dark",
+            "temp light smooth",
+            "temp dark smooth",
+        )
+        self.alert_pallet = (
+            "high temp light",
+            "high temp dark",
+            "high temp light smooth",
+            "high temp dark smooth",
+        )
 
         self.max_temp = 10
         sensors_dict = None
         try:
-            sensors_dict = OrderedDict(sorted(
-                psutil.sensors_temperatures().items()))
+            sensors_dict = OrderedDict(sorted(psutil.sensors_temperatures().items()))
         except IOError:
             logging.debug("Unable to create sensors dict")
             self.is_available = False
@@ -65,14 +76,14 @@ class TempSource(Source):
             sensor_name = "".join(key.title().split(" "))
             for sensor_idx, sensor in enumerate(value):
                 sensor_label = sensor.label
-                if (sensor.current <= 1.0 or sensor.current >= 127.0):
+                if sensor.current <= 1.0 or sensor.current >= 127.0:
                     continue
 
                 full_name = ""
                 if not sensor_label:
                     full_name = sensor_name + "," + str(sensor_idx)
                 else:
-                    full_name = ("".join(sensor_label.title().split(" ")))
+                    full_name = "".join(sensor_label.title().split(" "))
                     sensor_count = multi_sensors.count(full_name)
                     multi_sensors.append(full_name)
                     full_name += "," + str(sensor_count)
@@ -87,16 +98,14 @@ class TempSource(Source):
         if temp_thresh is not None:
             if int(temp_thresh) > 0:
                 self.temp_thresh = int(temp_thresh)
-                logging.debug("Updated custom threshold to %s",
-                              self.temp_thresh)
+                logging.debug("Updated custom threshold to %s", self.temp_thresh)
 
     def update(self):
         sample = OrderedDict(sorted(psutil.sensors_temperatures().items()))
         self.last_measurement = []
         for sensor in sample:
             for minor_sensor in sample[sensor]:
-                if (minor_sensor.current <= 1.0 or
-                        minor_sensor.current >= 127.0):
+                if minor_sensor.current <= 1.0 or minor_sensor.current >= 127.0:
                     continue
                 self.last_measurement.append(minor_sensor.current)
 
@@ -109,7 +118,7 @@ class TempSource(Source):
         return self.max_last_temp > self.temp_thresh
 
     def get_max_triggered(self):
-        """ Returns whether the current temperature threshold is exceeded"""
+        """Returns whether the current temperature threshold is exceeded"""
         return self.max_temp > self.temp_thresh
 
     def reset(self):

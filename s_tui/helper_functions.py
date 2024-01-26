@@ -30,7 +30,7 @@ import time
 
 from collections import OrderedDict
 
-__version__ = "1.1.4"
+__version__ = "1.1.5"
 
 _DEFAULT = object()
 PY3 = sys.version_info[0] == 3
@@ -46,24 +46,28 @@ else:
 
 
 def get_processor_name():
-    """ Returns the processor name in the system """
+    """Returns the processor name in the system"""
     if platform.system() == "Linux":
         with open("/proc/cpuinfo", "rb") as cpuinfo:
             all_info = cpuinfo.readlines()
             for line in all_info:
-                if b'model name' in line:
-                    return re.sub(b'.*model name.*:', b'', line, 1)
+                if b"model name" in line:
+                    return re.sub(b".*model name.*:", b"", line, 1)
     elif platform.system() == "FreeBSD":
         cmd = ["sysctl", "-n", "hw.model"]
         process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         str_value = process.stdout.read()
         return str_value
     elif platform.system() == "Darwin":
-        cmd = ['sysctl', '-n', 'machdep.cpu.brand_string']
+        cmd = ["sysctl", "-n", "machdep.cpu.brand_string"]
         process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         str_value = process.stdout.read()
         return str_value
@@ -72,25 +76,25 @@ def get_processor_name():
 
 
 def kill_child_processes(parent_proc):
-    """ Kills a process and all its children """
+    """Kills a process and all its children"""
     logging.debug("Killing stress process")
     try:
         for proc in parent_proc.children(recursive=True):
-            logging.debug('Killing %s', proc)
+            logging.debug("Killing %s", proc)
             proc.kill()
         parent_proc.kill()
     except AttributeError:
-        logging.debug('No such process')
-        logging.debug('Could not kill process')
+        logging.debug("No such process")
+        logging.debug("Could not kill process")
 
 
 def output_to_csv(sources, csv_writeable_file):
     """Print statistics to csv file"""
     file_exists = os.path.isfile(csv_writeable_file)
 
-    with open(csv_writeable_file, 'a') as csvfile:
+    with open(csv_writeable_file, "a") as csvfile:
         csv_dict = OrderedDict()
-        csv_dict.update({'Time': time.strftime("%Y-%m-%d_%H:%M:%S")})
+        csv_dict.update({"Time": time.strftime("%Y-%m-%d_%H:%M:%S")})
         summaries = [val for key, val in sources.items()]
         for summarie in summaries:
             update_dict = dict()
@@ -139,11 +143,11 @@ def get_user_config_dir():
     """
     Return the path to the user s-tui config directory
     """
-    user_home = os.getenv('XDG_CONFIG_HOME')
+    user_home = os.getenv("XDG_CONFIG_HOME")
     if user_home is None or not user_home:
-        config_path = os.path.expanduser(os.path.join('~', '.config', 's-tui'))
+        config_path = os.path.expanduser(os.path.join("~", ".config", "s-tui"))
     else:
-        config_path = os.path.join(user_home, 's-tui')
+        config_path = os.path.join(user_home, "s-tui")
 
     return config_path
 
@@ -152,9 +156,9 @@ def get_config_dir():
     """
     Return the path to the user home config directory
     """
-    user_home = os.getenv('XDG_CONFIG_HOME')
+    user_home = os.getenv("XDG_CONFIG_HOME")
     if user_home is None or not user_home:
-        config_path = os.path.expanduser(os.path.join('~', '.config'))
+        config_path = os.path.expanduser(os.path.join("~", ".config"))
     else:
         config_path = user_home
 
@@ -165,12 +169,13 @@ def get_user_config_file():
     """
     Return the path to the user s-tui config directory
     """
-    user_home = os.getenv('XDG_CONFIG_HOME')
+    user_home = os.getenv("XDG_CONFIG_HOME")
     if user_home is None or not user_home:
-        config_path = os.path.expanduser(os.path.join('~', '.config',
-                                                      's-tui', 's-tui.conf'))
+        config_path = os.path.expanduser(
+            os.path.join("~", ".config", "s-tui", "s-tui.conf")
+        )
     else:
-        config_path = os.path.join(user_home, 's-tui', 's-tui.conf')
+        config_path = os.path.join(user_home, "s-tui", "s-tui.conf")
 
     return config_path
 
@@ -212,7 +217,7 @@ def make_user_config_dir():
     if not user_config_dir_exists():
         try:
             os.mkdir(config_path)
-            os.mkdir(os.path.join(config_path, 'hooks.d'))
+            os.mkdir(os.path.join(config_path, "hooks.d"))
         except OSError:
             return None
 
@@ -220,24 +225,25 @@ def make_user_config_dir():
 
 
 def seconds_to_text(secs):
-    """ Converts seconds to a string of hours:minutes:seconds """
-    hours = (secs)//3600
-    minutes = (secs - hours*3600)//60
-    seconds = secs - hours*3600 - minutes*60
+    """Converts seconds to a string of hours:minutes:seconds"""
+    hours = (secs) // 3600
+    minutes = (secs - hours * 3600) // 60
+    seconds = secs - hours * 3600 - minutes * 60
     return "%02d:%02d:%02d" % (hours, minutes, seconds)
 
 
 def str_to_bool(string):
-    """ Converts a string to a boolean """
-    if string == 'True':
+    """Converts a string to a boolean"""
+    if string == "True":
         return True
-    if string == 'False':
+    if string == "False":
         return False
     raise ValueError
 
 
 def which(program):
-    """ Find the path of an executable """
+    """Find the path of an executable"""
+
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
@@ -264,8 +270,8 @@ def _open_text(fname, **kwargs):
     On Python 2 this is just an alias for open(name, 'rt').
     """
     if PY3:
-        kwargs.setdefault('encoding', ENCODING)
-        kwargs.setdefault('errors', ENCODING_ERRS)
+        kwargs.setdefault("encoding", ENCODING)
+        kwargs.setdefault("errors", ENCODING_ERRS)
     return open(fname, "rt", **kwargs)
 
 

@@ -47,8 +47,8 @@ class Hook:
 
         # Don't sleep a hook if it has never run
         if self.timeout_milliseconds > 0:
-            self.ready_time = (
-                datetime.now() +
-                timedelta(milliseconds=self.timeout_milliseconds))
+            self.ready_time = datetime.now() + timedelta(
+                milliseconds=self.timeout_milliseconds
+            )
 
         self.callback(self.callback_args)

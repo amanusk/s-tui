@@ -21,29 +21,26 @@ import s_tui.helper_functions as AUX
 
 setup(
     name="s-tui",
-    packages=['s_tui', 's_tui.sources', 's_tui.sturwid'],
+    packages=["s_tui", "s_tui.sources", "s_tui.sturwid"],
     version=AUX.__version__,
     author="Alex Manuskin",
-    author_email="amanusk@tuta.io",
+    author_email="amanusk@pm.me",
     description="Stress Terminal UI stress test and monitoring tool",
-    long_description=open('README.md', 'r').read(),
-    long_description_content_type='text/markdown',
+    long_description=open("README.md", "r").read(),
+    long_description_content_type="text/markdown",
     license="GPLv2",
     url="https://github.com/amanusk/s-tui",
-    keywords=['stress', 'monitoring', 'TUI'],  # arbitrary keywords
-
-    entry_points={
-        'console_scripts': ['s-tui=s_tui.s_tui:main']
-    },
+    keywords=["stress", "monitoring", "TUI"],  # arbitrary keywords
+    entry_points={"console_scripts": ["s-tui=s_tui.s_tui:main"]},
     classifiers=[
-        'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
-        'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 3',
-        'Topic :: System :: Monitoring',
+        "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 3",
+        "Topic :: System :: Monitoring",
     ],
     install_requires=[
-        'urwid>=2.0.1',
-        'psutil>=5.9.1',
+        "urwid>=2.0.1",
+        "psutil>=5.9.1",
     ],
 )
