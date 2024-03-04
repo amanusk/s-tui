@@ -1,7 +1,7 @@
 # A make file for creating a s-tui executable.
 # This requires pandoc and pyinstaller
 
-all: stui del readme
+all: stui del
 
 # Create s-tui executable
 stui:
