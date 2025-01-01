@@ -18,16 +18,15 @@
 """ Helper functions module with common useful functions """
 
 
-import os
-import logging
-import platform
-import subprocess
-import re
 import csv
-import sys
 import json
+import logging
+import os
+import platform
+import re
+import subprocess
+import sys
 import time
-
 from collections import OrderedDict
 
 __version__ = "1.1.6"
@@ -52,7 +51,7 @@ def get_processor_name():
             all_info = cpuinfo.readlines()
             for line in all_info:
                 if b"model name" in line:
-                    return re.sub(b".*model name.*:", b"", line, 1)
+                    return re.sub(rb".*model name.*:", b"", line, count=1)
     elif platform.system() == "FreeBSD":
         cmd = ["sysctl", "-n", "hw.model"]
         process = subprocess.Popen(
@@ -60,8 +59,7 @@ def get_processor_name():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        str_value = process.stdout.read()
-        return str_value
+        return process.stdout.read()
     elif platform.system() == "Darwin":
         cmd = ["sysctl", "-n", "machdep.cpu.brand_string"]
         process = subprocess.Popen(
@@ -69,8 +67,7 @@ def get_processor_name():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        str_value = process.stdout.read()
-        return str_value
+        return process.stdout.read()
 
     return platform.processor()
 
@@ -92,14 +89,14 @@ def output_to_csv(sources, csv_writeable_file):
     """Print statistics to csv file"""
     file_exists = os.path.isfile(csv_writeable_file)
 
-    with open(csv_writeable_file, "a") as csvfile:
+    with open(csv_writeable_file, "a", encoding="utf-8") as csvfile:
         csv_dict = OrderedDict()
         csv_dict.update({"Time": time.strftime("%Y-%m-%d_%H:%M:%S")})
         summaries = [val for key, val in sources.items()]
         for summarie in summaries:
-            update_dict = dict()
-            for prob, val in summarie.source.get_sensors_summary().items():
-                prob = summarie.source.get_source_name() + ":" + prob
+            update_dict = {}
+            for prob_, val in summarie.source.get_sensors_summary().items():
+                prob = summarie.source.get_source_name() + ":" + prob_
                 update_dict[prob] = val
             csv_dict.update(update_dict)
 

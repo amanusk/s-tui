@@ -19,15 +19,15 @@
 
 from __future__ import absolute_import
 
-import logging
 import glob
+import logging
 import os
 import re
 from collections import namedtuple
 from multiprocessing import cpu_count
 from sys import byteorder
-from s_tui.helper_functions import cat
 
+from s_tui.helper_functions import cat
 
 INTER_RAPL_DIR = "/sys/class/powercap/intel-rapl/"
 AMD_ENERGY_DIR_GLOB = "/sys/devices/platform/amd_energy.0/hwmon/hwmon*/"
@@ -46,13 +46,13 @@ RaplStats = namedtuple("rapl", ["label", "current", "max"])
 class RaplReader:
     def __init__(self):
         basenames = glob.glob("/sys/class/powercap/intel-rapl:*/")
-        self.basenames = sorted(set({x for x in basenames}))
+        self.basenames = sorted(set(basenames))
 
     def read_power(self):
         """Read power stats and return dictionary"""
 
         pjoin = os.path.join
-        ret = list()
+        ret = []
         for path in self.basenames:
             name = None
             try:
@@ -86,7 +86,7 @@ class AMDEnergyReader:
                         glob.glob(AMD_ENERGY_DIR_GLOB + "energy*_label")
                     )
                 ),
-                sorted(glob.glob(AMD_ENERGY_DIR_GLOB + "energy*_input")),
+                sorted(glob.glob(AMD_ENERGY_DIR_GLOB + "energy*_input")), strict=False,
             )
         )
 
@@ -103,8 +103,7 @@ class AMDEnergyReader:
         num = int(AMDEnergyReader.match_label(label).group(2))
         if "socket" in label:
             return num
-        else:
-            return num + socket_number
+        return num + socket_number
 
     def read_power(self):
         ret = []
@@ -215,7 +214,7 @@ class AMDRaplMsrReader:
 
         # Check whether MSRs are available and we have permission to read them
         try:
-            open("/dev/cpu/0/msr")
+            open("/dev/cpu/0/msr", encoding="utf-8")
             return True
         except (FileNotFoundError, PermissionError):
             return False

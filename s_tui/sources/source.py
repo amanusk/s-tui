@@ -17,8 +17,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 """ This module implements a parent source class for s-tui"""
 
-from collections import OrderedDict
 import logging
+from collections import OrderedDict
 
 
 class Source:

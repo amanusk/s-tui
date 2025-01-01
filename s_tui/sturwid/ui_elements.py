@@ -92,11 +92,9 @@ class ViListBox(urwid.ListBox):
 def radio_button(group, label, fn):
     """Inheriting radio button of urwid"""
     w = urwid.RadioButton(group, label, False, on_state_change=fn)
-    w = urwid.AttrWrap(w, "button normal", "button select")
-    return w
+    return urwid.AttrWrap(w, "button normal", "button select")
 
 
 def button(t, fn, data=None):
     w = urwid.Button(t, fn, data)
-    w = urwid.AttrWrap(w, "button normal", "button select")
-    return w
+    return urwid.AttrWrap(w, "button normal", "button select")

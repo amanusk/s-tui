@@ -19,9 +19,10 @@
 """A class display the help message menu
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
+
 import urwid
+
 from s_tui.sturwid.ui_elements import ViListBox
 
 HELP_MESSAGE = """

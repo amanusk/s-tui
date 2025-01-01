@@ -17,12 +17,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 """Displays the About message menu """
 
-from __future__ import print_function
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import urwid
-from s_tui.sturwid.ui_elements import ViListBox
+
 from s_tui.helper_functions import __version__
+from s_tui.sturwid.ui_elements import ViListBox
 
 ABOUT_MESSAGE = """
 s-tui is a monitoring tool for your CPU's temperature, frequency, utilization \
