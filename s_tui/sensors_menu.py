@@ -42,9 +42,14 @@ class SensorsMenu:
         cancel_button._label.align = "center"
         apply_button = urwid.Button("Apply", on_press=self.on_apply)
         apply_button._label.align = "center"
+        uncheckall_button = urwid.Button("Uncheck all", on_press=self.on_uncheckall)
+        uncheckall_button._label.align = "center"
+        checkall_button = urwid.Button("Check all", on_press=self.on_checkall)
+        checkall_button._label.align = "center"
 
         if_buttons = urwid.Columns([apply_button, cancel_button])
-
+        if_buttons2 = urwid.Columns([checkall_button, uncheckall_button])
+        
         self.sensor_status_dict = {}
         sensor_column_list = []
         self.sensor_button_dict = {}
@@ -87,7 +92,7 @@ class SensorsMenu:
 
         sensor_select_widget = urwid.Columns(sensor_column_list)
 
-        list_temp = [sensor_select_widget, if_buttons]
+        list_temp = [sensor_select_widget, if_buttons, if_buttons2]
         listw = urwid.SimpleFocusListWalker(list_temp)
         self.main_window = urwid.LineBox(ViListBox(listw))
 
@@ -124,3 +129,14 @@ class SensorsMenu:
 
         self.set_checkbox_value()
         self.return_fn(update=update_sensor_visibility)
+
+    def setall_cb(self, w, state):
+        for sensor, sensor_cb in self.sensor_button_dict.items():
+            for checkbox in sensor_cb:
+                checkbox.set_state(state)
+
+    def on_uncheckall(self, w):
+        self.setall_cb(self, False)
+
+    def on_checkall(self, w):
+        self.setall_cb(self, True)
