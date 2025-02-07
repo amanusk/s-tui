@@ -48,7 +48,7 @@ class SensorsMenu:
         checkall_button._label.align = "center"
 
         if_buttons = urwid.Columns([apply_button, cancel_button])
-        if_buttons2 = urwid.Columns([checkall_button, uncheckall_button])
+        if_buttons_check = urwid.Columns([checkall_button, uncheckall_button])
         
         self.sensor_status_dict = {}
         sensor_column_list = []
@@ -92,7 +92,7 @@ class SensorsMenu:
 
         sensor_select_widget = urwid.Columns(sensor_column_list)
 
-        list_temp = [sensor_select_widget, if_buttons, if_buttons2]
+        list_temp = [sensor_select_widget, if_buttons_check, if_buttons]
         listw = urwid.SimpleFocusListWalker(list_temp)
         self.main_window = urwid.LineBox(ViListBox(listw))
 
