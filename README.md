@@ -22,6 +22,7 @@ Stress-Terminal UI, s-tui, monitors CPU temperature, frequency, power and utiliz
   - [More installation methods](#more-installation-methods)
     - [Ubuntu (18.10 and newer)](#ubuntu-1810-and-newer)
     - [Ubuntu (18.04, 16.04)](#ubuntu-1804-1604)
+    - [Debian (10 and newer)](#debian-10-and-newer)
     - [Arch Linux, Manjaro](#arch-linux-manjaro)
     - [OpenSUSE](#opensuse)
     - [Fedora](#fedora)
@@ -95,6 +96,13 @@ sudo add-apt-repository ppa:amanusk/python-s-tui
 sudo apt-get update
 sudo apt-get install python3-s-tui
 ```
+
+### Debian (10 and newer)
+
+```
+sudo apt install s-tui
+```
+
 
 ### Arch Linux, Manjaro
 
