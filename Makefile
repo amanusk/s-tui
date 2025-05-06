@@ -18,4 +18,4 @@ clean:
 	rm -rf ./s_tui/dist/ ./s_tui/build/ ./s_tui/s*.spec ./s_tui/*.pyc ./s_tui/*.log s-tui.spec dist/
 
 debug:
-        python -m s_tui.s_tui
+	python -m s_tui.s_tui
