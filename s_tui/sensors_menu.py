@@ -46,6 +46,7 @@ class SensorsMenu:
         
         self.sensor_status_dict = {}
         sensor_column_list = []
+        selector_buttons_column_list = []
         self.sensor_button_dict = {}
         self.active_sensors = {}
         for source in source_list:
@@ -81,23 +82,26 @@ class SensorsMenu:
 
             col_selector_buttons= []
             if current_col_nr > 0:
-                checkall_button = urwid.Button("Check all "+sensor_title_str, on_press=self.on_checkall_col, user_data=sensor_title_str)
-                checkall_button._label.align = "center"
+                checkall_button = urwid.Button("Check all", on_press=self.on_checkall_col, user_data=sensor_title_str)
+                # checkall_button._label.align = "center"
                 col_selector_buttons.append(checkall_button)
-                uncheckall_button = urwid.Button("Uncheck all "+sensor_title_str, on_press=self.on_uncheckall_col, user_data=sensor_title_str)
-                uncheckall_button._label.align = "center"
+                uncheckall_button = urwid.Button("Uncheck all", on_press=self.on_uncheckall_col, user_data=sensor_title_str)
+                # uncheckall_button._label.align = "center"
                 col_selector_buttons.append(uncheckall_button)
 
             sensor_title_and_buttons = [sensor_title] + self.sensor_button_dict[
                 source_name
-            ] + col_selector_buttons
+            ]
             listw = urwid.SimpleFocusListWalker(sensor_title_and_buttons)
-
             sensor_column_list.append(urwid.Pile(listw))
 
-        sensor_select_widget = urwid.Columns(sensor_column_list)
+            listw = urwid.SimpleFocusListWalker(col_selector_buttons)
+            selector_buttons_column_list.append(urwid.Pile(listw))
 
-        list_temp = [sensor_select_widget, if_buttons]
+        sensor_select_widget = urwid.Columns(sensor_column_list)
+        selector_buttons_widget = urwid.Columns(selector_buttons_column_list)
+
+        list_temp = [sensor_select_widget, selector_buttons_widget, if_buttons]
         listw = urwid.SimpleFocusListWalker(list_temp)
         self.main_window = urwid.LineBox(ViListBox(listw))
 
