@@ -99,7 +99,7 @@ class SensorsMenu:
             selector_buttons_column_list.append(urwid.Pile(listw))
 
         sensor_select_widget = urwid.Columns(sensor_column_list)
-        selector_buttons_widget = urwid.Columns(selector_buttons_column_list)
+        selector_buttons_widget = urwid.Columns(selector_buttons_column_list, box_columns=[0,1])
 
         list_temp = [sensor_select_widget, selector_buttons_widget, if_buttons]
         listw = urwid.SimpleFocusListWalker(list_temp)
