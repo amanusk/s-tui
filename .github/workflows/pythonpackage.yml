@@ -31,7 +31,7 @@ jobs:
 
     - name: Run Black -- check
       run: |
-        pip install black
+        pip install black==25.1.0
         # check that code is formatted with black
         black --check .
 
