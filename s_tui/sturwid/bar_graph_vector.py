@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2020 Alex Manuskin, Gil Tsuker
+# Copyright (C) 2017-2025 Alex Manuskin, Gil Tsuker
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@ class BarGraphVector(LabeledBarGraphVector):
         values.append(new_val)
         return values[1:]
 
-    MAX_SAMPLES = 300
+    MAX_SAMPLES = 1000
     SCALE_DENSITY = 5
 
     def __init__(

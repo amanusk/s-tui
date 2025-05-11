@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2020 Alex Manuskin, Gil Tzuker, Maor Veitsman
+# Copyright (C) 2017-2025 Alex Manuskin, Gil Tzuker, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
