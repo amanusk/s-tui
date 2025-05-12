@@ -19,9 +19,10 @@
 
 from __future__ import absolute_import
 
-import warnings
 import logging
+import warnings
 from collections import OrderedDict
+
 import psutil
 
 from s_tui.sources.source import Source
@@ -95,10 +96,9 @@ class TempSource(Source):
 
         # Set temperature threshold if a custom one is set
         self.temp_thresh = self.THRESHOLD_TEMP
-        if temp_thresh is not None:
-            if int(temp_thresh) > 0:
-                self.temp_thresh = int(temp_thresh)
-                logging.debug("Updated custom threshold to %s", self.temp_thresh)
+        if temp_thresh is not None and int(temp_thresh) > 0:
+            self.temp_thresh = int(temp_thresh)
+            logging.debug("Updated custom threshold to %s", self.temp_thresh)
 
     def update(self):
         sample = OrderedDict(sorted(psutil.sensors_temperatures().items()))

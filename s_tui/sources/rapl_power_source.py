@@ -21,11 +21,11 @@ information
 
 from __future__ import absolute_import
 
-import time
 import logging
+import time
 
-from s_tui.sources.source import Source
 from s_tui.sources.rapl_read import get_power_reader
+from s_tui.sources.source import Source
 
 LOGGER = logging.getLogger(__name__)
 

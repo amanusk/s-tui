@@ -16,8 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-import urwid
 from collections import OrderedDict
+
+import urwid
 
 
 class SummaryTextList:
@@ -30,7 +31,7 @@ class SummaryTextList:
         # The title is the first in the list
         self.visible_summaries[keys[0]] = any(visible_sensors_list)
         # All others according to initial visibility
-        for key, visible in zip(keys[1:], visible_sensors_list):
+        for key, visible in zip(keys[1:], visible_sensors_list, strict=False):
             self.visible_summaries[key] = visible
 
         # We keep a dict of all the items in the summary list
@@ -58,7 +59,7 @@ class SummaryTextList:
         keys = list(self.visible_summaries.keys())
         self.visible_summaries[keys[0]] = any(visible_sensors)
         # Do not change visibility of title
-        for sensor, visible in zip(keys[1:], visible_sensors):
+        for sensor, visible in zip(keys[1:], visible_sensors, strict=False):
             self.visible_summaries[sensor] = visible
 
     def update(self):

@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 import logging
+
 import psutil
 
 from s_tui.sources.source import Source
@@ -54,10 +55,9 @@ class FreqSource(Source):
         self.top_freq = psutil.cpu_freq().max
         self.max_freq = self.top_freq
 
-        if self.top_freq == 0.0:
+        if self.top_freq == 0.0 and max(self.last_measurement) >= 0:
             # If top freq not available, take the current as top
-            if max(self.last_measurement) >= 0:
-                self.max_freq = max(self.last_measurement)
+            self.max_freq = max(self.last_measurement)
 
         self.available_sensors = ["Avg"]
         for core_id, _ in enumerate(psutil.cpu_freq(True)):

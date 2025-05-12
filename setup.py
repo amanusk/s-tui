@@ -17,6 +17,7 @@
 from __future__ import absolute_import
 
 from setuptools import setup
+
 import s_tui.helper_functions as AUX
 
 setup(
@@ -26,7 +27,7 @@ setup(
     author="Alex Manuskin",
     author_email="amanusk@pm.me",
     description="Stress Terminal UI stress test and monitoring tool",
-    long_description=open("README.md", "r").read(),
+    long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     license="GPLv2",
     url="https://github.com/amanusk/s-tui",

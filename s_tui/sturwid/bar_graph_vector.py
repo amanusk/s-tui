@@ -18,10 +18,10 @@
 
 from __future__ import absolute_import
 
-from s_tui.sturwid.complex_bar_graph import LabeledBarGraphVector
-from s_tui.sturwid.complex_bar_graph import ScalableBarGraph
 import logging
 import math
+
+from s_tui.sturwid.complex_bar_graph import LabeledBarGraphVector, ScalableBarGraph
 
 logger = logging.getLogger(__name__)
 
@@ -116,10 +116,7 @@ class BarGraphVector(LabeledBarGraphVector):
 
     def get_label_scale(self, min_val, max_val, size):
         """Dynamically change the scale of the graph (y label)"""
-        if size < self.SCALE_DENSITY:
-            label_cnt = 1
-        else:
-            label_cnt = int(size / self.SCALE_DENSITY)
+        label_cnt = 1 if size < self.SCALE_DENSITY else int(size / self.SCALE_DENSITY)
         try:
             if max_val >= 100:
                 label = [
@@ -147,7 +144,8 @@ class BarGraphVector(LabeledBarGraphVector):
                 ["bg background", self.color_a, self.color_b], satt=self.satt
             )
 
-    def update(self):
+    # PLR0912 Too many branches (20 > 12)
+    def update(self):  # noqa: PLR0912
         if not self.get_is_available():
             return
 
