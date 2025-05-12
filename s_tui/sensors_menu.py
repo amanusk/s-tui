@@ -43,7 +43,7 @@ class SensorsMenu:
         apply_button = urwid.Button("Apply", on_press=self.on_apply)
         apply_button._label.align = "center"
         if_buttons = urwid.Columns([apply_button, cancel_button])
-        
+
         self.sensor_status_dict = {}
         sensor_column_list = []
         selector_buttons_column_list = []
@@ -71,21 +71,29 @@ class SensorsMenu:
             sensor_title = urwid.Text(("bold text", sensor_title_str), "center")
 
             # create the checkbox buttons with the saved visibility
-            current_col_nr = 0;
+            current_col_nr = 0
             for sensor, s_tatus in zip(
                 source.get_sensor_list(), self.sensor_status_dict[source_name]
             ):
                 cb = urwid.CheckBox(sensor, s_tatus)
                 self.sensor_button_dict[source_name].append(cb)
                 self.active_sensors[source_name].append(s_tatus)
-                current_col_nr+=1
+                current_col_nr += 1
 
-            col_selector_buttons= []
+            col_selector_buttons = []
             if current_col_nr > 0:
-                checkall_button = urwid.Button("Check all", on_press=self.on_checkall_col, user_data=sensor_title_str)
+                checkall_button = urwid.Button(
+                    "Check all",
+                    on_press=self.on_checkall_col,
+                    user_data=sensor_title_str,
+                )
                 # checkall_button._label.align = "center"
                 col_selector_buttons.append(checkall_button)
-                uncheckall_button = urwid.Button("Uncheck all", on_press=self.on_uncheckall_col, user_data=sensor_title_str)
+                uncheckall_button = urwid.Button(
+                    "Uncheck all",
+                    on_press=self.on_uncheckall_col,
+                    user_data=sensor_title_str,
+                )
                 # uncheckall_button._label.align = "center"
                 col_selector_buttons.append(uncheckall_button)
 
@@ -99,7 +107,9 @@ class SensorsMenu:
             selector_buttons_column_list.append(urwid.Pile(listw))
 
         sensor_select_widget = urwid.Columns(sensor_column_list)
-        selector_buttons_widget = urwid.Columns(selector_buttons_column_list, box_columns=[0,1])
+        selector_buttons_widget = urwid.Columns(
+            selector_buttons_column_list, box_columns=[0, 1]
+        )
 
         list_temp = [sensor_select_widget, selector_buttons_widget, if_buttons]
         listw = urwid.SimpleFocusListWalker(list_temp)
