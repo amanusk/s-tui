@@ -42,11 +42,11 @@ class SensorsMenu:
         cancel_button._label.align = "center"
         apply_button = urwid.Button("Apply", on_press=self.on_apply)
         apply_button._label.align = "center"
-
         if_buttons = urwid.Columns([apply_button, cancel_button])
 
         self.sensor_status_dict = {}
         sensor_column_list = []
+        selector_buttons_column_list = []
         self.sensor_button_dict = {}
         self.active_sensors = {}
         for source in source_list:
@@ -71,23 +71,47 @@ class SensorsMenu:
             sensor_title = urwid.Text(("bold text", sensor_title_str), "center")
 
             # create the checkbox buttons with the saved visibility
+            current_col_nr = 0
             for sensor, s_tatus in zip(
                 source.get_sensor_list(), self.sensor_status_dict[source_name]
             ):
                 cb = urwid.CheckBox(sensor, s_tatus)
                 self.sensor_button_dict[source_name].append(cb)
                 self.active_sensors[source_name].append(s_tatus)
+                current_col_nr += 1
+
+            col_selector_buttons = []
+            if current_col_nr > 0:
+                checkall_button = urwid.Button(
+                    "Check all",
+                    on_press=self.on_checkall_col,
+                    user_data=sensor_title_str,
+                )
+                # checkall_button._label.align = "center"
+                col_selector_buttons.append(checkall_button)
+                uncheckall_button = urwid.Button(
+                    "Uncheck all",
+                    on_press=self.on_uncheckall_col,
+                    user_data=sensor_title_str,
+                )
+                # uncheckall_button._label.align = "center"
+                col_selector_buttons.append(uncheckall_button)
 
             sensor_title_and_buttons = [sensor_title] + self.sensor_button_dict[
                 source_name
             ]
             listw = urwid.SimpleFocusListWalker(sensor_title_and_buttons)
-
             sensor_column_list.append(urwid.Pile(listw))
 
-        sensor_select_widget = urwid.Columns(sensor_column_list)
+            listw = urwid.SimpleFocusListWalker(col_selector_buttons)
+            selector_buttons_column_list.append(urwid.Pile(listw))
 
-        list_temp = [sensor_select_widget, if_buttons]
+        sensor_select_widget = urwid.Columns(sensor_column_list)
+        selector_buttons_widget = urwid.Columns(
+            selector_buttons_column_list, box_columns=[0, 1]
+        )
+
+        list_temp = [sensor_select_widget, selector_buttons_widget, if_buttons]
         listw = urwid.SimpleFocusListWalker(list_temp)
         self.main_window = urwid.LineBox(ViListBox(listw))
 
@@ -124,3 +148,15 @@ class SensorsMenu:
 
         self.set_checkbox_value()
         self.return_fn(update=update_sensor_visibility)
+
+    def setall_cb_col(self, w, col, state):
+        for s_name, sensor_buttons in self.sensor_button_dict.items():
+            if s_name == col:
+                for checkbox in sensor_buttons:
+                    checkbox.set_state(state)
+
+    def on_uncheckall_col(self, w, col):
+        self.setall_cb_col(self, col, False)
+
+    def on_checkall_col(self, w, col):
+        self.setall_cb_col(self, col, True)
