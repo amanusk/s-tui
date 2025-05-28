@@ -52,7 +52,7 @@ def get_processor_name():
             all_info = cpuinfo.readlines()
             for line in all_info:
                 if b"model name" in line:
-                    return re.sub(b".*model name.*:", b"", line, 1)
+                    return re.sub(b".*model name.*:", b"", line, count=1)
     elif platform.system() == "FreeBSD":
         cmd = ["sysctl", "-n", "hw.model"]
         process = subprocess.Popen(
