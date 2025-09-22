@@ -697,14 +697,47 @@ class GraphController:
         ]
         for source in sources:
             try:
-                options = list(self.conf.items(source + ",Graphs"))
-                for option in options:
-                    # Returns tuples of values in order
-                    self.graphs_default_conf[source].append(str_to_bool(option[1]))
-                options = list(self.conf.items(source + ",Summaries"))
-                for option in options:
-                    # Returns tuples of values in order
-                    self.summary_default_conf[source].append(str_to_bool(option[1]))
+                # Get the actual sensor list to match against config
+                source_obj = [x for x in possible_sources if x.get_source_name() == source and x.get_is_available()][0]
+                sensor_list = source_obj.get_sensor_list()
+                
+                # Read Graphs config
+                options_dict = dict(self.conf.items(source + ",Graphs"))
+                for sensor in sensor_list:
+                    # Replace colons to match how they're saved
+                    safe_sensor = sensor.replace(':', '_COLON_')
+                    # Check both new format (with _COLON_) and old format (with actual colons)
+                    # ConfigParser lowercases option names, so we need to check lowercase
+                    safe_sensor_lower = safe_sensor.lower()
+                    sensor_lower = sensor.lower()
+                    
+                    if safe_sensor_lower in options_dict:
+                        self.graphs_default_conf[source].append(str_to_bool(options_dict[safe_sensor_lower]))
+                    elif sensor_lower in options_dict:
+                        # Handle old config files that might have the sensor name directly
+                        self.graphs_default_conf[source].append(str_to_bool(options_dict[sensor_lower]))
+                    else:
+                        # Fallback for missing entries
+                        self.graphs_default_conf[source].append(True)
+                
+                # Read Summaries config  
+                options_dict = dict(self.conf.items(source + ",Summaries"))
+                for sensor in sensor_list:
+                    # Replace colons to match how they're saved
+                    safe_sensor = sensor.replace(':', '_COLON_')
+                    # Check both new format (with _COLON_) and old format (with actual colons)
+                    # ConfigParser lowercases option names, so we need to check lowercase
+                    safe_sensor_lower = safe_sensor.lower()
+                    sensor_lower = sensor.lower()
+                    
+                    if safe_sensor_lower in options_dict:
+                        self.summary_default_conf[source].append(str_to_bool(options_dict[safe_sensor_lower]))
+                    elif sensor_lower in options_dict:
+                        # Handle old config files that might have the sensor name directly
+                        self.summary_default_conf[source].append(str_to_bool(options_dict[sensor_lower]))
+                    else:
+                        # Fallback for missing entries
+                        self.summary_default_conf[source].append(True)
             except (
                 AttributeError,
                 ValueError,
@@ -857,10 +890,14 @@ class GraphController:
                 curr_sensor = [x for x in sources if x.get_source_name() == source][0]
                 sensor_list = curr_sensor.get_sensor_list()
                 for sensor_id, sensor in enumerate(sensor_list):
+                    # Replace colons in sensor names to avoid ConfigParser issues
+                    # ConfigParser treats ':' as a delimiter which causes duplicate option errors
+                    # We use '_COLON_' as a safe placeholder that will be decoded when reading
+                    safe_sensor = sensor.replace(':', '_COLON_')
                     try:
-                        conf.set(section, sensor, str(visible_sensors[sensor_id]))
+                        conf.set(section, safe_sensor, str(visible_sensors[sensor_id]))
                     except IndexError:
-                        conf.set(section, sensor, str(True))
+                        conf.set(section, safe_sensor, str(True))
 
         if not user_config_dir_exists():
             make_user_config_dir()
