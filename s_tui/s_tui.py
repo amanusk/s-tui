@@ -634,7 +634,7 @@ class GraphController:
         # Use user config file if one was saved before
         self.conf = None
         if user_config_file_exists():
-            self.conf = configparser.ConfigParser()
+            self.conf = configparser.ConfigParser(delimiters="=")
             self.conf.read(get_user_config_file())
         else:
             logging.debug("Config file not found")
