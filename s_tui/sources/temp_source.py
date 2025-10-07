@@ -32,7 +32,7 @@ class TempSource(Source):
 
     THRESHOLD_TEMP = 80
 
-    def __init__(self, temp_thresh=None):
+    def __init__(self, temp_thresh=None, fahrenheit=False):
         warnings.filterwarnings(
             "ignore",
             ".*FileNotFound.*",
@@ -49,6 +49,10 @@ class TempSource(Source):
 
         self.name = "Temp"
         self.measurement_unit = "C"
+        self.farenheit = False
+        if fahrenheit:
+            self.measurement_unit = "F"
+            self.farenheit = True
         self.max_last_temp = 0
         self.pallet = (
             "temp light",
@@ -76,7 +80,9 @@ class TempSource(Source):
             sensor_name = "".join(key.title().split(" "))
             for sensor_idx, sensor in enumerate(value):
                 sensor_label = sensor.label
-                if sensor.current <= 1.0 or sensor.current >= 127.0:
+                if self.to_f(sensor.current) <= self.to_f(1.0) or self.to_f(
+                    sensor.current
+                ) >= self.to_f(127.0):
                     continue
 
                 full_name = ""
@@ -96,7 +102,7 @@ class TempSource(Source):
         # Set temperature threshold if a custom one is set
         self.temp_thresh = self.THRESHOLD_TEMP
         if temp_thresh is not None:
-            if int(temp_thresh) > 0:
+            if int(temp_thresh) > self.to_f(0):
                 self.temp_thresh = int(temp_thresh)
                 logging.debug("Updated custom threshold to %s", self.temp_thresh)
 
@@ -105,9 +111,11 @@ class TempSource(Source):
         self.last_measurement = []
         for sensor in sample:
             for minor_sensor in sample[sensor]:
-                if minor_sensor.current <= 1.0 or minor_sensor.current >= 127.0:
+                if self.to_f(minor_sensor.current) <= self.to_f(1.0) or self.to_f(
+                    minor_sensor.current
+                ) >= self.to_f(127.0):
                     continue
-                self.last_measurement.append(minor_sensor.current)
+                self.last_measurement.append(self.to_f(minor_sensor.current))
 
         if self.last_measurement:
             self.max_last_temp = max(self.last_measurement)
@@ -117,12 +125,18 @@ class TempSource(Source):
     def get_edge_triggered(self):
         return self.max_last_temp > self.temp_thresh
 
+    def to_f(self, temp):
+        if self.farenheit:
+            return temp * 9.0 / 5.0 + 32.0
+        else:
+            return temp
+
     def get_max_triggered(self):
         """Returns whether the current temperature threshold is exceeded"""
-        return self.max_temp > self.temp_thresh
+        return self.to_f(self.max_temp) > self.to_f(self.temp_thresh)
 
     def reset(self):
-        self.max_temp = 10
+        self.max_temp = self.to_f(10)
 
     def get_maximum(self):
         raise NotImplementedError("Get maximum is not implemented")
@@ -133,8 +147,8 @@ class TempSource(Source):
         for temp in available_temps:
             for temp_minor in temp:
                 try:
-                    if temp_minor.high > top_temp:
+                    if self.to_f(temp_minor.high) > self.to_f(top_temp):
                         top_temp = temp_minor.critical
                 except TypeError:
                     continue
-        return min(top_temp, 99)
+        return min(self.to_f(top_temp), self.to_f(99))
