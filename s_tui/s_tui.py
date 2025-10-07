@@ -417,8 +417,57 @@ class GraphView(urwid.WidgetPlaceholder):
         """Enable temperature logs in fahrenheit"""
         logging.debug("Fahrenheit State is %s", state)
 
-        # Update the controller to the state of the checkbox
         self.controller.fahrenheit = state
+
+        # Rebuild the Temp source with the new unit and refresh Temp graph/summary
+        try:
+            new_temp_source = self.controller.rebuild_temp_source()
+
+            # Recreate Temp graph with updated measurement unit
+            source_name = new_temp_source.get_source_name()
+            color_pallet = new_temp_source.get_pallet()
+            alert_pallet = new_temp_source.get_alert_pallet()
+
+            self.graphs[source_name] = BarGraphVector(
+                new_temp_source,
+                color_pallet,
+                len(new_temp_source.get_sensor_list()),
+                self.graphs_menu.active_sensors[source_name],
+                alert_colors=alert_pallet,
+            )
+
+            if self.controller.script_hooks_enabled:
+                self.graphs[source_name].source.add_edge_hook(
+                    self.controller.script_loader.load_script(
+                        new_temp_source.__class__.__name__, HOOK_INTERVAL
+                    )
+                )
+
+            # Recreate Temp summary with the new source
+            self.summaries[source_name] = SummaryTextList(
+                self.graphs[source_name].source,
+                self.summary_menu.active_sensors[source_name],
+            )
+
+            # Ensure visible summaries map uses the updated summary widget
+            if source_name in self.visible_summaries:
+                self.visible_summaries[source_name] = self.summaries[source_name]
+
+            # Update visibility based on current selection
+            if any(self.graphs_menu.active_sensors[source_name]):
+                self.visible_graphs[source_name] = self.graphs[source_name]
+            elif source_name in self.visible_graphs:
+                del self.visible_graphs[source_name]
+
+            # Refresh UI elements: graphs and summaries block
+            self.show_graphs()
+            self.main_window_w.base_widget[0].body[
+                self.summary_widget_index
+            ] = self._generate_summaries()
+
+        except Exception:
+            # Fail silently to avoid crashing UI; logging for debugging
+            logging.exception("Failed to rebuild Temp source after Fahrenheit toggle")
 
     def on_save_settings(self, w=None):
         """Calls controller save settings method"""
@@ -807,6 +856,29 @@ class GraphController:
             self.csv_file = DEFAULT_CSV_FILE
         # Debug counter
         self.debug_run_counter = 0
+
+    def rebuild_temp_source(self):
+        """Recreate the temperature source using current Fahrenheit flag.
+
+        Returns the new TempSource instance and updates self.sources in place.
+        """
+        for idx, src in enumerate(self.sources):
+            try:
+                is_temp = src.get_source_name() == "Temp"
+            except Exception:
+                is_temp = False
+            if is_temp:
+                new_src = TempSource(self.temp_thresh, self.fahrenheit)
+                # If new source is unavailable, keep old to avoid removing graphs
+                if not new_src.get_is_available():
+                    return src
+                self.sources[idx] = new_src
+                return new_src
+        # If Temp source not found, create and append it
+        new_src = TempSource(self.temp_thresh, self.fahrenheit)
+        if new_src.get_is_available():
+            self.sources.append(new_src)
+        return new_src
 
     def set_mode(self, mode):
         """Allow our view to set the mode."""

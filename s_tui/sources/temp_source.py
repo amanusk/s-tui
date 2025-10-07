@@ -100,7 +100,7 @@ class TempSource(Source):
         self.last_measurement = [0] * len(self.available_sensors)
 
         # Set temperature threshold if a custom one is set
-        self.temp_thresh = self.THRESHOLD_TEMP
+        self.temp_thresh = self.to_f(self.THRESHOLD_TEMP)
         if temp_thresh is not None:
             if int(temp_thresh) > self.to_f(0):
                 self.temp_thresh = int(temp_thresh)
