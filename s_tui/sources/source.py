@@ -28,6 +28,7 @@ class Source:
         self.edge_hooks = []
         self.measurement_unit = ""
         self.last_measurement = []
+        self.last_thresholds = []
         self.is_available = True
         self.available_sensors = []
         self.name = ""
@@ -104,6 +105,10 @@ class Source:
     def get_reading_list(self):
         """Returns a list of the last measurement"""
         return self.last_measurement
+
+    def get_threshold_list(self):
+        """Returns a list of the last threshold values"""
+        return self.last_thresholds
 
     def add_edge_hook(self, hook):
         """

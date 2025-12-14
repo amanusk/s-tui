@@ -92,7 +92,7 @@ class BarGraphVector(LabeledBarGraphVector):
 
         self.color_counter_vector = [0] * graph_count
 
-    def _set_colors(self, colors):
+    def _set_colors(self, graph, colors):
         self.color_a = colors[0]
         self.color_b = colors[1]
         self.smooth_a = colors[2]
@@ -100,10 +100,9 @@ class BarGraphVector(LabeledBarGraphVector):
         if self.satt:
             self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
 
-        for graph in self.bar_graph_vector:
-            graph.set_segment_attributes(
-                ["bg background", self.color_a, self.color_b], satt=self.satt
-            )
+        graph.set_segment_attributes(
+            ["bg background", self.color_a, self.color_b], satt=self.satt
+        )
 
     def get_graph_name(self):
         return self.graph_name
@@ -152,15 +151,14 @@ class BarGraphVector(LabeledBarGraphVector):
             return
 
         # NOTE setting edge trigger causes overhead
+        triggered = False
         try:
-            if self.source.get_edge_triggered():
-                self._set_colors(self.alert_colors)
-            else:
-                self._set_colors(self.regular_colors)
+            triggered = self.source.get_edge_triggered()
         except NotImplementedError:
             pass
 
         current_reading = self.source.get_reading_list()
+        current_thresholds = self.source.get_threshold_list()
         logging.info("Reading %s", current_reading)
 
         y_label_size_max = 0
@@ -168,6 +166,11 @@ class BarGraphVector(LabeledBarGraphVector):
 
         # update visible graph data, and maximum
         for graph_idx, graph in enumerate(self.bar_graph_vector):
+            if triggered and (current_thresholds[graph_idx] == None or
+                              current_reading[graph_idx] > current_thresholds[graph_idx]):
+                self._set_colors(graph, self.alert_colors)
+            else:
+                self._set_colors(graph, self.regular_colors)
             try:
                 _ = self.visible_graph_list[graph_idx]
             except IndexError:

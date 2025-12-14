@@ -100,14 +100,22 @@ class TempSource(Source):
                 self.temp_thresh = int(temp_thresh)
                 logging.debug("Updated custom threshold to %s", self.temp_thresh)
 
+        # Initialize individual thresholds
+        self.last_thresholds = [self.temp_thresh] * len(self.available_sensors)
+
     def update(self):
         sample = OrderedDict(sorted(psutil.sensors_temperatures().items()))
         self.last_measurement = []
+        self.last_thresholds = []
         for sensor in sample:
             for minor_sensor in sample[sensor]:
                 if minor_sensor.current <= 1.0 or minor_sensor.current >= 127.0:
                     continue
                 self.last_measurement.append(minor_sensor.current)
+                if minor_sensor.high != None and minor_sensor.high and minor_sensor.high < 127.0:
+                    self.last_thresholds.append(minor_sensor.high)
+                else:
+                    self.last_thresholds.append(self.temp_thresh)
 
         if self.last_measurement:
             self.max_last_temp = max(self.last_measurement)
