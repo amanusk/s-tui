@@ -412,6 +412,62 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.show_graphs()
 
+    def on_fahrenheit_checkbox(self, w=None, state=False):
+        """Enable temperature logs in fahrenheit"""
+        logging.debug("Fahrenheit State is %s", state)
+
+        self.controller.fahrenheit = state
+
+        # Rebuild the Temp source with the new unit and refresh Temp graph/summary
+        try:
+            new_temp_source = self.controller.rebuild_temp_source()
+
+            # Recreate Temp graph with updated measurement unit
+            source_name = new_temp_source.get_source_name()
+            color_pallet = new_temp_source.get_pallet()
+            alert_pallet = new_temp_source.get_alert_pallet()
+
+            self.graphs[source_name] = BarGraphVector(
+                new_temp_source,
+                color_pallet,
+                len(new_temp_source.get_sensor_list()),
+                self.graphs_menu.active_sensors[source_name],
+                alert_colors=alert_pallet,
+            )
+
+            if self.controller.script_hooks_enabled:
+                self.graphs[source_name].source.add_edge_hook(
+                    self.controller.script_loader.load_script(
+                        new_temp_source.__class__.__name__, HOOK_INTERVAL
+                    )
+                )
+
+            # Recreate Temp summary with the new source
+            self.summaries[source_name] = SummaryTextList(
+                self.graphs[source_name].source,
+                self.summary_menu.active_sensors[source_name],
+            )
+
+            # Ensure visible summaries map uses the updated summary widget
+            if source_name in self.visible_summaries:
+                self.visible_summaries[source_name] = self.summaries[source_name]
+
+            # Update visibility based on current selection
+            if any(self.graphs_menu.active_sensors[source_name]):
+                self.visible_graphs[source_name] = self.graphs[source_name]
+            elif source_name in self.visible_graphs:
+                del self.visible_graphs[source_name]
+
+            # Refresh UI elements: graphs and summaries block
+            self.show_graphs()
+            self.main_window_w.base_widget[0].body[
+                self.summary_widget_index
+            ] = self._generate_summaries()
+
+        except Exception:
+            # Fail silently to avoid crashing UI; logging for debugging
+            logging.exception("Failed to rebuild Temp source after Fahrenheit toggle")
+
     def on_save_settings(self, w=None):
         """Calls controller save settings method"""
         self.controller.save_settings()
@@ -457,6 +513,14 @@ class GraphView(urwid.WidgetPlaceholder):
         else:
             unicode_checkbox = urwid.Text("[N/A] UTF-8")
 
+        # Create f/c selection box
+        default_fahrenheit = self.controller.fahrenheit
+        fahrenheit_checkbox = urwid.CheckBox(
+            "Fahrenheit",
+            state=default_fahrenheit,
+            on_state_change=self.on_fahrenheit_checkbox,
+        )
+
         install_stress_message = urwid.Text("")
         if not self.controller.firestarter and not self.controller.stress_exe:
             install_stress_message = urwid.Text(
@@ -482,6 +546,7 @@ class GraphView(urwid.WidgetPlaceholder):
             urwid.Divider(),
             urwid.Text(("bold text", "Visual Options"), align="center"),
             unicode_checkbox,
+            fahrenheit_checkbox,
             self.refresh_rate_ctrl,
             urwid.Divider(),
             urwid.Text(("bold text", "Summaries"), align="center"),
@@ -650,21 +715,29 @@ class GraphController:
         ):
             logging.debug("No refresh rate configured")
 
-        # Change UTF8 setting from config
+        # Load UTF8 setting from config
         try:
-            if self.conf.getboolean("GraphControl", "UTF8"):
-                self.smooth_graph_mode = True
-            else:
-                logging.debug(
-                    "UTF8 selected as %s", self.conf.get("GraphControl", "UTF8")
-                )
+            self.smooth_graph_mode = self.conf.getboolean("GraphControl", "UTF8")
+            logging.debug("UTF8 %s", self.smooth_graph_mode)
         except (
             AttributeError,
             ValueError,
             configparser.NoOptionError,
             configparser.NoSectionError,
         ):
-            logging.debug("No user config for utf8")
+            logging.debug("No user config for UTF8")
+
+        # Load Fahrenheit setting from config
+        try:
+            self.fahrenheit = self.conf.getboolean("GraphControl", "Fahrenheit")
+            logging.debug("Fahrenheit %s", self.fahrenheit)
+        except (
+            AttributeError,
+            ValueError,
+            configparser.NoOptionError,
+            configparser.NoSectionError,
+        ):
+            logging.debug("No user config for Fahrenheit")
 
         # Try to load high temperature threshold if configured
         if t_thresh is None:
@@ -683,7 +756,7 @@ class GraphController:
 
         # This should be the only place where sources are configured
         possible_sources = [
-            TempSource(self.temp_thresh),
+            TempSource(self.temp_thresh, self.fahrenheit),
             FreqSource(),
             UtilSource(),
             RaplPowerSource(),
@@ -748,6 +821,7 @@ class GraphController:
         self.refresh_rate = args.refresh_rate
 
         self.smooth_graph_mode = False
+        self.fahrenheit = False
 
         self.summary_default_conf = defaultdict(list)
         self.graphs_default_conf = defaultdict(list)
@@ -781,6 +855,29 @@ class GraphController:
             self.csv_file = DEFAULT_CSV_FILE
         # Debug counter
         self.debug_run_counter = 0
+
+    def rebuild_temp_source(self):
+        """Recreate the temperature source using current Fahrenheit flag.
+
+        Returns the new TempSource instance and updates self.sources in place.
+        """
+        for idx, src in enumerate(self.sources):
+            try:
+                is_temp = src.get_source_name() == "Temp"
+            except Exception:
+                is_temp = False
+            if is_temp:
+                new_src = TempSource(self.temp_thresh, self.fahrenheit)
+                # If new source is unavailable, keep old to avoid removing graphs
+                if not new_src.get_is_available():
+                    return src
+                self.sources[idx] = new_src
+                return new_src
+        # If Temp source not found, create and append it
+        new_src = TempSource(self.temp_thresh, self.fahrenheit)
+        if new_src.get_is_available():
+            self.sources.append(new_src)
+        return new_src
 
     def set_mode(self, mode):
         """Allow our view to set the mode."""
@@ -872,6 +969,8 @@ class GraphController:
             conf.set("GraphControl", "refresh", str(self.refresh_rate))
             # Save the configured UTF8 setting
             conf.set("GraphControl", "UTF8", str(self.smooth_graph_mode))
+            # Save the configured UTF8 setting
+            conf.set("GraphControl", "Fahrenheit", str(self.fahrenheit))
             # Save the configured t_thresh
             if self.temp_thresh:
                 conf.set("GraphControl", "TTHRESH", str(self.temp_thresh))
