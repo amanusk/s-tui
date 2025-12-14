@@ -36,7 +36,6 @@ import sys
 
 import psutil
 import urwid
-import urwid.curses_display
 
 try:
     import configparser
