@@ -200,9 +200,11 @@ class BarGraphVector(LabeledBarGraphVector):
                 num_displayed_bars = graph.get_size()[1]
                 start_idx = self.MAX_SAMPLES - num_displayed_bars
 
-                visible_graph_data = self.graph_data[graph_idx][start_idx - 1:]
+                visible_graph_data = self.graph_data[graph_idx][start_idx - 1 :]
                 local_top_value.append(max(visible_graph_data))
-                graph_display_data.append((graph_idx, graph, start_idx, num_displayed_bars))
+                graph_display_data.append(
+                    (graph_idx, graph, start_idx, num_displayed_bars)
+                )
             else:
                 graph_display_data.append(None)
 

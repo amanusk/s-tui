@@ -70,7 +70,11 @@ class FreqSource(Source):
         # Get per-cpu frequencies in a single call
         per_cpu_freq = psutil.cpu_freq(True)
         # Compute average from per-CPU values
-        avg_freq = sum(core.current for core in per_cpu_freq) / len(per_cpu_freq) if per_cpu_freq else 0.0
+        avg_freq = (
+            sum(core.current for core in per_cpu_freq) / len(per_cpu_freq)
+            if per_cpu_freq
+            else 0.0
+        )
         self.last_measurement = [avg_freq]
         for core in per_cpu_freq:
             self.last_measurement.append(core.current)

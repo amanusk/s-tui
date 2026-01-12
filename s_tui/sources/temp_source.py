@@ -144,7 +144,7 @@ class TempSource(Source):
 
     def get_top(self):
         # Cache the top temperature after first calculation
-        if hasattr(self, '_cached_top_temp'):
+        if hasattr(self, "_cached_top_temp"):
             return self._cached_top_temp
 
         top_temp = 10
