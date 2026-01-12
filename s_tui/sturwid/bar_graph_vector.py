@@ -82,7 +82,7 @@ class BarGraphVector(LabeledBarGraphVector):
         for _ in range(graph_count):
             graph = ScalableBarGraph(["bg background", self.color_a, self.color_b])
             w.append(graph)
-
+            graph = ScalableBarGraph(["bg background", self.color_a, self.color_b])
         super(BarGraphVector, self).__init__(
             graph_title, sub_title_list, y_label, w, visible_graph_list
         )
@@ -166,8 +166,21 @@ class BarGraphVector(LabeledBarGraphVector):
 
         # update visible graph data, and maximum
         for graph_idx, graph in enumerate(self.bar_graph_vector):
-            if triggered and (current_thresholds[graph_idx] == None or
-                              current_reading[graph_idx] > current_thresholds[graph_idx]):
+            # Check if this graph has a threshold defined
+            has_threshold = (
+                graph_idx < len(current_thresholds)
+                and current_thresholds[graph_idx] is not None
+            )
+            if (
+                # Case 1: no per-sensor threshold, fall back to global trigger
+                (not has_threshold and triggered)
+                # Case 2: per-sensor threshold exists and this sensor exceeds it,
+                #         even if `triggered` is False
+                or (
+                    has_threshold
+                    and current_reading[graph_idx] > current_thresholds[graph_idx]
+                )
+            ):
                 self._set_colors(graph, self.alert_colors)
             else:
                 self._set_colors(graph, self.regular_colors)

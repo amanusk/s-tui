@@ -50,6 +50,7 @@ class TempSource(Source):
         self.name = "Temp"
         self.measurement_unit = "C"
         self.max_last_temp = 0
+        self.temp_thresh_is_set = False
         self.pallet = (
             "temp light",
             "temp dark",
@@ -96,6 +97,7 @@ class TempSource(Source):
         # Set temperature threshold if a custom one is set
         self.temp_thresh = self.THRESHOLD_TEMP
         if temp_thresh is not None:
+            self.temp_thresh_is_set = True
             if int(temp_thresh) > 0:
                 self.temp_thresh = int(temp_thresh)
                 logging.debug("Updated custom threshold to %s", self.temp_thresh)
@@ -112,7 +114,12 @@ class TempSource(Source):
                 if minor_sensor.current <= 1.0 or minor_sensor.current >= 127.0:
                     continue
                 self.last_measurement.append(minor_sensor.current)
-                if minor_sensor.high != None and minor_sensor.high and minor_sensor.high < 127.0:
+                if (
+                    minor_sensor.high != None
+                    and minor_sensor.high
+                    and minor_sensor.high < 127.0
+                    and self.temp_thresh_is_set is False
+                ):
                     self.last_thresholds.append(minor_sensor.high)
                 else:
                     self.last_thresholds.append(self.temp_thresh)
