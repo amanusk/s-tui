@@ -139,45 +139,33 @@ def output_to_json(sources):
     sys.exit()
 
 
-def get_user_config_dir():
-    """
-    Return the path to the user s-tui config directory
-    """
+def _get_xdg_config_home():
+    """Return the XDG config home directory, with fallback to ~/.config"""
     user_home = os.getenv("XDG_CONFIG_HOME")
-    if user_home is None or not user_home:
-        config_path = os.path.expanduser(os.path.join("~", ".config", "s-tui"))
-    else:
-        config_path = os.path.join(user_home, "s-tui")
-
-    return config_path
+    if user_home:
+        return user_home
+    return os.path.expanduser(os.path.join("~", ".config"))
 
 
 def get_config_dir():
     """
     Return the path to the user home config directory
     """
-    user_home = os.getenv("XDG_CONFIG_HOME")
-    if user_home is None or not user_home:
-        config_path = os.path.expanduser(os.path.join("~", ".config"))
-    else:
-        config_path = user_home
+    return _get_xdg_config_home()
 
-    return config_path
+
+def get_user_config_dir():
+    """
+    Return the path to the user s-tui config directory
+    """
+    return os.path.join(_get_xdg_config_home(), "s-tui")
 
 
 def get_user_config_file():
     """
-    Return the path to the user s-tui config directory
+    Return the path to the user s-tui config file
     """
-    user_home = os.getenv("XDG_CONFIG_HOME")
-    if user_home is None or not user_home:
-        config_path = os.path.expanduser(
-            os.path.join("~", ".config", "s-tui", "s-tui.conf")
-        )
-    else:
-        config_path = os.path.join(user_home, "s-tui", "s-tui.conf")
-
-    return config_path
+    return os.path.join(get_user_config_dir(), "s-tui.conf")
 
 
 def user_config_dir_exists():
