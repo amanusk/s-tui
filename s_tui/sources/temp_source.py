@@ -115,7 +115,7 @@ class TempSource(Source):
                     continue
                 self.last_measurement.append(minor_sensor.current)
                 if (
-                    minor_sensor.high != None
+                    minor_sensor.high is not None
                     and minor_sensor.high
                     and minor_sensor.high < 127.0
                     and self.temp_thresh_is_set is False
@@ -143,6 +143,10 @@ class TempSource(Source):
         raise NotImplementedError("Get maximum is not implemented")
 
     def get_top(self):
+        # Cache the top temperature after first calculation
+        if hasattr(self, "_cached_top_temp"):
+            return self._cached_top_temp
+
         top_temp = 10
         available_temps = psutil.sensors_temperatures().values()
         for temp in available_temps:
@@ -152,4 +156,5 @@ class TempSource(Source):
                         top_temp = temp_minor.critical
                 except TypeError:
                     continue
-        return min(top_temp, 99)
+        self._cached_top_temp = min(top_temp, 99)
+        return self._cached_top_temp

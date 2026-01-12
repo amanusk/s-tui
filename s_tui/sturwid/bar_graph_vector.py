@@ -77,12 +77,11 @@ class BarGraphVector(LabeledBarGraphVector):
         graph_title = self.graph_name + " [" + self.measurement_unit + "]"
         sub_title_list = self.source.get_sensor_list()
 
-        # create several different instances of salable bar graph
+        # create several different instances of scalable bar graph
         w = []
         for _ in range(graph_count):
             graph = ScalableBarGraph(["bg background", self.color_a, self.color_b])
             w.append(graph)
-            graph = ScalableBarGraph(["bg background", self.color_a, self.color_b])
         super(BarGraphVector, self).__init__(
             graph_title, sub_title_list, y_label, w, visible_graph_list
         )
@@ -163,8 +162,10 @@ class BarGraphVector(LabeledBarGraphVector):
 
         y_label_size_max = 0
         local_top_value = []
+        # Store per-graph data for the second pass
+        graph_display_data = []
 
-        # update visible graph data, and maximum
+        # First pass: update graph data, collect local maximums, and prepare display data
         for graph_idx, graph in enumerate(self.bar_graph_vector):
             # Check if this graph has a threshold defined
             has_threshold = (
@@ -189,18 +190,23 @@ class BarGraphVector(LabeledBarGraphVector):
             except IndexError:
                 # If a new graph "Appears", append it to visible
                 self.visible_graph_list.append(True)
-            bars = []
+
             if self.visible_graph_list[graph_idx]:
                 self.graph_data[graph_idx] = self.append_latest_value(
                     self.graph_data[graph_idx], current_reading[graph_idx]
                 )
 
-                # Get the graph width (dimension 1)
+                # Get the graph width (dimension 1) - cache for reuse
                 num_displayed_bars = graph.get_size()[1]
-                visible_id = self.MAX_SAMPLES - num_displayed_bars - 1
+                start_idx = self.MAX_SAMPLES - num_displayed_bars
 
-                visible_graph_data = self.graph_data[graph_idx][visible_id:]
+                visible_graph_data = self.graph_data[graph_idx][start_idx - 1 :]
                 local_top_value.append(max(visible_graph_data))
+                graph_display_data.append(
+                    (graph_idx, graph, start_idx, num_displayed_bars)
+                )
+            else:
+                graph_display_data.append(None)
 
         update_max = False
         if self.graph_max == 1:
@@ -212,36 +218,26 @@ class BarGraphVector(LabeledBarGraphVector):
             update_max = True
             self.graph_max = local_max
 
-        # update the graph bars
-        for graph_idx, graph in enumerate(self.bar_graph_vector):
+        # Second pass: generate bars using cached data
+        for entry in graph_display_data:
+            if entry is None:
+                continue
+            graph_idx, graph, start_idx, num_displayed_bars = entry
             bars = []
-            if self.visible_graph_list[graph_idx]:
-                # Get the graph width (dimension 1)
-                num_displayed_bars = graph.get_size()[1]
-                # Iterate over all the information in the graph
-                if self.color_counter_vector[graph_idx] % 2 == 0:
-                    for n in range(
-                        self.MAX_SAMPLES - num_displayed_bars, self.MAX_SAMPLES
-                    ):
-                        value = round(self.graph_data[graph_idx][n], 1)
-                        # toggle between two bar types
-                        if n & 1:
-                            bars.append([0, value])
-                        else:
-                            bars.append([value, 0])
+            # Determine bar color alternation pattern
+            swap = self.color_counter_vector[graph_idx] % 2 == 1
+            for n in range(start_idx, self.MAX_SAMPLES):
+                value = round(self.graph_data[graph_idx][n], 1)
+                # toggle between two bar types
+                first = (n & 1) ^ swap
+                if first:
+                    bars.append([0, value])
                 else:
-                    for n in range(
-                        self.MAX_SAMPLES - num_displayed_bars, self.MAX_SAMPLES
-                    ):
-                        value = round(self.graph_data[graph_idx][n], 1)
-                        if n & 1:
-                            bars.append([value, 0])
-                        else:
-                            bars.append([0, value])
-                self.color_counter_vector[graph_idx] += 1
+                    bars.append([value, 0])
+            self.color_counter_vector[graph_idx] += 1
 
-                graph.set_data(bars, float(self.graph_max))
-                y_label_size_max = max(y_label_size_max, graph.get_size()[0])
+            graph.set_data(bars, float(self.graph_max))
+            y_label_size_max = max(y_label_size_max, graph.get_size()[0])
 
         self.set_y_label(
             self.get_label_scale(0, self.graph_max, float(y_label_size_max))

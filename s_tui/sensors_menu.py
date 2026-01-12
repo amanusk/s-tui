@@ -137,12 +137,12 @@ class SensorsMenu:
     def on_apply(self, w):
         update_sensor_visibility = False
         for s_name, sensor_buttons in self.sensor_button_dict.items():
-            cb_sensor_visibility = []
-            for sensor_cb in sensor_buttons:
-                cb_sensor_visibility.append(sensor_cb.get_state())
+            cb_sensor_visibility = [
+                sensor_cb.get_state() for sensor_cb in sensor_buttons
+            ]
 
-                changed_state = cb_sensor_visibility != self.active_sensors[s_name]
-                update_sensor_visibility |= changed_state
+            if cb_sensor_visibility != self.active_sensors[s_name]:
+                update_sensor_visibility = True
 
             self.active_sensors[s_name] = cb_sensor_visibility
 

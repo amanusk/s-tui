@@ -24,7 +24,6 @@ from __future__ import absolute_import
 
 import argparse
 import signal
-import itertools
 import logging
 import os
 import subprocess
@@ -264,7 +263,6 @@ class GraphView(urwid.WidgetPlaceholder):
                 graph.update()
             except IndexError:
                 logging.debug("Graph update failed")
-                pass
 
         # update graph summery
         for summary in self.visible_summaries.values():
@@ -272,7 +270,6 @@ class GraphView(urwid.WidgetPlaceholder):
                 summary.update()
             except IndexError:
                 logging.debug("Summary update failed")
-                pass
 
         # Only update clock if not is stress mode
         if self.controller.stress_controller.get_current_mode() != "Monitor":
@@ -307,14 +304,11 @@ class GraphView(urwid.WidgetPlaceholder):
         if update:
             for sensor, visible_sensors in self.graphs_menu.active_sensors.items():
                 self.graphs[sensor].set_visible_graphs(visible_sensors)
-                # If not sensor is selected, do not display the graph
-                if sensor in self.visible_graphs and not any(visible_sensors):
-                    del self.visible_graphs[sensor]
-                elif not any(visible_sensors):
-                    pass
-                # Update visible graphs if a sensor was selected
-                else:
+                # Update visible_graphs based on sensor selection
+                if any(visible_sensors):
                     self.visible_graphs[sensor] = self.graphs[sensor]
+                elif sensor in self.visible_graphs:
+                    del self.visible_graphs[sensor]
             self.show_graphs()
 
         self.original_widget = self.main_window_w
@@ -333,60 +327,37 @@ class GraphView(urwid.WidgetPlaceholder):
 
         self.original_widget = self.main_window_w
 
-    def on_stress_menu_open(self, widget):
-        """Open stress options"""
+    def _open_menu_overlay(self, menu):
+        """Helper to open a menu overlay with cached size"""
+        height, width = menu.get_size()
         self.original_widget = urwid.Overlay(
-            self.stress_menu.main_window,
+            menu.main_window,
             self.original_widget,
             ("fixed left", 1),
-            self.stress_menu.get_size()[1],
+            width,
             "top",
-            self.stress_menu.get_size()[0],
+            height,
         )
+
+    def on_stress_menu_open(self, widget):
+        """Open stress options"""
+        self._open_menu_overlay(self.stress_menu)
 
     def on_help_menu_open(self, widget):
         """Open Help menu"""
-        self.original_widget = urwid.Overlay(
-            self.help_menu.main_window,
-            self.original_widget,
-            ("fixed left", 1),
-            self.help_menu.get_size()[1],
-            "top",
-            self.help_menu.get_size()[0],
-        )
+        self._open_menu_overlay(self.help_menu)
 
     def on_about_menu_open(self, widget):
         """Open About menu"""
-        self.original_widget = urwid.Overlay(
-            self.about_menu.main_window,
-            self.original_widget,
-            ("fixed left", 1),
-            self.about_menu.get_size()[1],
-            "top",
-            self.about_menu.get_size()[0],
-        )
+        self._open_menu_overlay(self.about_menu)
 
     def on_graphs_menu_open(self, widget):
         """Open Sensor menu on top of existing frame"""
-        self.original_widget = urwid.Overlay(
-            self.graphs_menu.main_window,
-            self.original_widget,
-            ("fixed left", 1),
-            self.graphs_menu.get_size()[1],
-            "top",
-            self.graphs_menu.get_size()[0],
-        )
+        self._open_menu_overlay(self.graphs_menu)
 
     def on_summary_menu_open(self, widget):
         """Open Sensor menu on top of existing frame"""
-        self.original_widget = urwid.Overlay(
-            self.summary_menu.main_window,
-            self.original_widget,
-            ("fixed left", 1),
-            self.summary_menu.get_size()[1],
-            "top",
-            self.summary_menu.get_size()[0],
-        )
+        self._open_menu_overlay(self.summary_menu)
 
     def on_mode_button(self, my_button, state):
         """Notify the controller of a new mode setting."""
@@ -514,10 +485,9 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def show_graphs(self):
         """Show a pile of the graph selected for display"""
-        elements = itertools.chain.from_iterable(
-            ([graph] for graph in self.visible_graphs.values())
+        self.graph_place_holder.original_widget = urwid.Pile(
+            list(self.visible_graphs.values())
         )
-        self.graph_place_holder.original_widget = urwid.Pile(elements)
 
     def main_window(self):
         # initiating the graphs
@@ -547,17 +517,13 @@ class GraphView(urwid.WidgetPlaceholder):
                 self.summary_menu.active_sensors[source_name],
             )
 
-        # Check if source is available and add it to a dict of visible graphs
-        # and summaries.
-        # All available summaries are always visible
+        # Check if source is available and has selected sensors
+        # Combine availability check and sensor selection in one pass
         self.visible_graphs = OrderedDict(
-            (key, val) for key, val in self.graphs.items() if val.get_is_available()
+            (key, val)
+            for key, val in self.graphs.items()
+            if val.get_is_available() and any(self.graphs_menu.active_sensors[key])
         )
-
-        # Do not show the graph if there is no selected sensors
-        for key in self.graphs.keys():
-            if not any(self.graphs_menu.active_sensors[key]):
-                del self.visible_graphs[key]
 
         self.visible_summaries = OrderedDict(
             (key, val) for key, val in self.summaries.items() if val.get_is_available()
@@ -837,6 +803,8 @@ class GraphController:
 
     def save_settings(self):
         """Save the current configuration to a user config file"""
+        # Build source lookup dict once for O(1) access
+        sources_by_name = {s.get_source_name(): s for s in self.sources}
 
         def _save_displayed_setting(conf, submenu):
             items = []
@@ -849,11 +817,11 @@ class GraphController:
                 section = source + "," + submenu
                 conf.add_section(section)
 
-                sources = self.sources
                 logging.debug("Saving settings for %s", source)
                 logging.debug("Visible sensors %s", visible_sensors)
-                # TODO: consider changing sensors_list to dict
-                curr_sensor = [x for x in sources if x.get_source_name() == source][0]
+                curr_sensor = sources_by_name.get(source)
+                if curr_sensor is None:
+                    continue
                 sensor_list = curr_sensor.get_sensor_list()
                 for sensor_id, sensor in enumerate(sensor_list):
                     try:
@@ -919,25 +887,22 @@ def main():
     log_file = DEFAULT_LOG_FILE
     if args.debug_run:
         args.debug = True
+
+    log_formatter = logging.Formatter(
+        "%(asctime)s [%(funcName)s()] [%(levelname)-5.5s]  %(message)s"
+    )
+    root_logger = logging.getLogger()
+
     if args.debug or args.debug_file is not None:
         level = logging.DEBUG
         if args.debug_file is not None:
             log_file = args.debug_file
-        log_formatter = logging.Formatter(
-            "%(asctime)s [%(funcName)s()] [%(levelname)-5.5s]  %(message)s"
-        )
-        root_logger = logging.getLogger()
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(log_formatter)
         root_logger.addHandler(file_handler)
-        root_logger.setLevel(level)
     else:
         level = logging.ERROR
-        log_formatter = logging.Formatter(
-            "%(asctime)s [%(funcName)s()] [%(levelname)-5.5s]  %(message)s"
-        )
-        root_logger = logging.getLogger()
-        root_logger.setLevel(level)
+    root_logger.setLevel(level)
 
     if args.terminal or args.json:
         logging.info("Printing single line to terminal")

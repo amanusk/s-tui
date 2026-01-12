@@ -49,8 +49,12 @@ class UtilSource(Source):
             self.available_sensors.append("Core " + str(core_id))
 
     def update(self):
-        self.last_measurement = [psutil.cpu_percent(interval=0.0, percpu=False)]
-        for util in psutil.cpu_percent(interval=0.0, percpu=True):
+        # Get per-CPU utilization in a single call
+        per_cpu_util = psutil.cpu_percent(interval=0.0, percpu=True)
+        # Compute average from per-CPU values instead of making a second call
+        avg_util = sum(per_cpu_util) / len(per_cpu_util) if per_cpu_util else 0.0
+        self.last_measurement = [avg_util]
+        for util in per_cpu_util:
             logging.info("Core id util %s", util)
             self.last_measurement.append(float(util))
 

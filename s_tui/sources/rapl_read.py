@@ -46,7 +46,7 @@ RaplStats = namedtuple("rapl", ["label", "current", "max"])
 class RaplReader:
     def __init__(self):
         basenames = glob.glob("/sys/class/powercap/intel-rapl:*/")
-        self.basenames = sorted(set({x for x in basenames}))
+        self.basenames = sorted(set(basenames))
 
     def read_power(self):
         """Read power stats and return dictionary"""
@@ -153,9 +153,12 @@ class AMDRaplMsrReader:
 
     def read_power(self):
         ret = []
+        # Read UNIT_MSR once - it's the same for all cores/packages
+        first_msr_file = next(iter(self.package_msr_files.values()))
+        unit_msr = self.read_msr(first_msr_file, UNIT_MSR)
+        energy_factor = 0.5 ** ((unit_msr & ENERGY_UNIT_MASK) >> 8)
+
         for i, filename in self.package_msr_files.items():
-            unit_msr = self.read_msr(filename, UNIT_MSR)
-            energy_factor = 0.5 ** ((unit_msr & ENERGY_UNIT_MASK) >> 8)
             package_msr = self.read_msr(filename, PACKAGE_MSR)
             ret.append(
                 RaplStats(
@@ -166,8 +169,6 @@ class AMDRaplMsrReader:
             )
 
         for i, filename in self.core_msr_files.items():
-            unit_msr = self.read_msr(filename, UNIT_MSR)
-            energy_factor = 0.5 ** ((unit_msr & ENERGY_UNIT_MASK) >> 8)
             core_msr = self.read_msr(filename, CORE_MSR)
             ret.append(
                 RaplStats(

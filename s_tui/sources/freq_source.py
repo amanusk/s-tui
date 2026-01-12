@@ -45,13 +45,16 @@ class FreqSource(Source):
             "freq dark smooth",
         )
 
-        # Check if psutil.cpu_freq is available.
+        # Get per-cpu and overall freq in minimal calls
+        per_cpu_freq = psutil.cpu_freq(True)
+        overall_freq = psutil.cpu_freq(False)
+
         # +1 for average frequency
-        self.last_measurement = [0] * len(psutil.cpu_freq(True))
-        if psutil.cpu_freq(False):
+        self.last_measurement = [0] * len(per_cpu_freq)
+        if overall_freq:
             self.last_measurement.append(0)
 
-        self.top_freq = psutil.cpu_freq().max
+        self.top_freq = overall_freq.max if overall_freq else 0.0
         self.max_freq = self.top_freq
 
         if self.top_freq == 0.0:
@@ -60,12 +63,20 @@ class FreqSource(Source):
                 self.max_freq = max(self.last_measurement)
 
         self.available_sensors = ["Avg"]
-        for core_id, _ in enumerate(psutil.cpu_freq(True)):
+        for core_id in range(len(per_cpu_freq)):
             self.available_sensors.append("Core " + str(core_id))
 
     def update(self):
-        self.last_measurement = [psutil.cpu_freq(False).current]
-        for core in psutil.cpu_freq(True):
+        # Get per-cpu frequencies in a single call
+        per_cpu_freq = psutil.cpu_freq(True)
+        # Compute average from per-CPU values
+        avg_freq = (
+            sum(core.current for core in per_cpu_freq) / len(per_cpu_freq)
+            if per_cpu_freq
+            else 0.0
+        )
+        self.last_measurement = [avg_freq]
+        for core in per_cpu_freq:
             self.last_measurement.append(core.current)
 
     def get_maximum(self):
