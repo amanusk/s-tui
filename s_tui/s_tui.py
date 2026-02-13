@@ -832,7 +832,7 @@ class GraphController:
         if not user_config_dir_exists():
             make_user_config_dir()
 
-        conf = configparser.ConfigParser()
+        conf = configparser.ConfigParser(delimiters="=")
         config_file = get_user_config_file()
         with open(config_file, "w") as cfgfile:
             conf.add_section("GraphControl")
