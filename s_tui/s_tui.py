@@ -90,9 +90,7 @@ DEFAULT_LOG_FILE = "_s-tui.log"
 DEFAULT_CSV_FILE = "s-tui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
 
 VERSION_MESSAGE = (
-    "s-tui "
-    + __version__
-    + " - (C) 2017-2025 Alex Manuskin, Gil Tsuker\n\
+    "s-tui " + __version__ + " - (C) 2017-2025 Alex Manuskin, Gil Tsuker\n\
     Released under GNU GPLv2"
 )
 
@@ -588,10 +586,8 @@ class GraphController:
             user_config_dir = get_user_config_dir()
 
         if user_config_dir is None:
-            logging.warning(
-                "Failed to find or create scripts directory,\
-                             proceeding without scripting support"
-            )
+            logging.warning("Failed to find or create scripts directory,\
+                             proceeding without scripting support")
             self.script_hooks_enabled = False
         else:
             self.script_loader = ScriptHookLoader(user_config_dir)

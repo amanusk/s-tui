@@ -48,7 +48,7 @@ class ScalableBarGraph(urwid.BarGraph):
         If self.bar_width is None this implementation will stretch
         the bars across the available space specified by maxcol.
         """
-        (maxcol, _) = size
+        maxcol, _ = size
 
         if self.bar_width is not None:
             return [self.bar_width] * min(len(bardata), int(maxcol / self.bar_width))

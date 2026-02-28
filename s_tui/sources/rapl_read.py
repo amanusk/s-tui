@@ -28,7 +28,6 @@ from multiprocessing import cpu_count
 from sys import byteorder
 from s_tui.helper_functions import cat
 
-
 INTER_RAPL_DIR = "/sys/class/powercap/intel-rapl/"
 AMD_ENERGY_DIR_GLOB = "/sys/devices/platform/amd_energy.0/hwmon/hwmon*/"
 MICRO_JOULE_IN_JOULE = 1000000.0
