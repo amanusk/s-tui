@@ -19,3 +19,25 @@ clean:
 
 debug:
 	python -m s_tui.s_tui
+
+# ---- Test targets ----
+
+# Run all CI-compatible tests (mocked, no hardware required)
+test:
+	python -m pytest tests/ -m "not hardware" -v --tb=short
+
+# Run only hardware integration tests (requires real sensors)
+test-hw:
+	python -m pytest tests/ -m hardware -v --tb=short
+
+# Run the full suite (CI + hardware)
+test-all:
+	python -m pytest tests/ -v --tb=short
+
+# Run tests matching a keyword (usage: make test-k K=pattern)
+test-k:
+	python -m pytest tests/ -k "$(K)" -v --tb=short
+
+# Run only expected-to-fail (xfail) tests
+test-xfail:
+	python -m pytest tests/test_psutil_failures.py::TestTempSourceFailures tests/test_runtime_disruption.py -v --tb=short

@@ -43,4 +43,10 @@ setup(
         "urwid>=3.0.2",
         "psutil>=7.0.0",
     ],
+    extras_require={
+        "test": [
+            "pytest>=7.0",
+            "pytest-mock>=3.10",
+        ],
+    },
 )
