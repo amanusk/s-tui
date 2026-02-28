@@ -174,20 +174,35 @@ class TestTempSensorChanges:
 
 
 class TestFanSensorChanges:
-    @pytest.mark.xfail(
-        strict=True,
-        reason="FanSource.update() crashes with AttributeError when sensors_fans() returns None",
-    )
     def test_fan_returns_none_during_update(self, mocker):
-        """sensors_fans() returns None mid-run."""
+        """sensors_fans() returns None mid-run — keeps stale data (GH-256)."""
         fans = make_fans_dict(count=1)
         mocker.patch("psutil.sensors_fans", return_value=fans)
         src = FanSource()
         assert src.get_is_available() is True
+        src.update()
+        prev_measurement = list(src.last_measurement)
 
         # Mid-run: returns None
         mocker.patch("psutil.sensors_fans", return_value=None)
         src.update()  # should not crash
+        # Stale data preserved
+        assert src.last_measurement == prev_measurement
+
+    def test_fan_typeerror_during_update(self, mocker):
+        """sensors_fans() raises TypeError mid-run — keeps stale data (GH-256)."""
+        fans = make_fans_dict(count=1)
+        mocker.patch("psutil.sensors_fans", return_value=fans)
+        src = FanSource()
+        assert src.get_is_available() is True
+        src.update()
+        prev_measurement = list(src.last_measurement)
+
+        # Mid-run: psutil raises TypeError (sysfs None bug)
+        mocker.patch("psutil.sensors_fans", side_effect=TypeError)
+        src.update()  # should not crash
+        # Stale data preserved
+        assert src.last_measurement == prev_measurement
 
     def test_fan_sensor_disappears(self, mocker):
         """sensors_fans() returns empty dict mid-run.
