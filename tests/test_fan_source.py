@@ -36,7 +36,12 @@ class TestFanSourceUpdate:
         assert readings[0] == 1200
 
     def test_filters_unreasonable_speeds(self, mocker):
-        fans = {"hw": [SensorFan(label="f0", current=1200), SensorFan(label="f1", current=99999)]}
+        fans = {
+            "hw": [
+                SensorFan(label="f0", current=1200),
+                SensorFan(label="f1", current=99999),
+            ]
+        }
         mocker.patch("psutil.sensors_fans", return_value=fans)
         src = FanSource()
         src.update()

@@ -19,13 +19,13 @@ from s_tui.sources.fan_source import FanSource
 from s_tui.sources.rapl_power_source import RaplPowerSource
 from s_tui.sources.rapl_read import get_power_reader
 
-
 pytestmark = pytest.mark.hardware
 
 
 # =====================================================================
 # UtilSource
 # =====================================================================
+
 
 class TestUtilSourceHW:
     def test_init_and_available(self):
@@ -61,6 +61,7 @@ class TestUtilSourceHW:
 # FreqSource
 # =====================================================================
 
+
 class TestFreqSourceHW:
     def test_init_and_available(self):
         """FreqSource should be available when cpu_freq works."""
@@ -81,6 +82,7 @@ class TestFreqSourceHW:
 # =====================================================================
 # TempSource
 # =====================================================================
+
 
 class TestTempSourceHW:
     def test_init(self):
@@ -104,6 +106,7 @@ class TestTempSourceHW:
 # FanSource
 # =====================================================================
 
+
 class TestFanSourceHW:
     def test_init(self):
         """FanSource should init without crashing."""
@@ -122,6 +125,7 @@ class TestFanSourceHW:
 # =====================================================================
 # RaplPowerSource
 # =====================================================================
+
 
 class TestRaplPowerSourceHW:
     def test_init(self):
@@ -148,6 +152,7 @@ class TestRaplPowerSourceHW:
 # get_power_reader
 # =====================================================================
 
+
 class TestGetPowerReaderHW:
     def test_reader_type(self):
         """get_power_reader returns a reader or None."""
@@ -162,6 +167,7 @@ class TestGetPowerReaderHW:
 # =====================================================================
 # Multi-update stability
 # =====================================================================
+
 
 class TestMultiUpdateStability:
     def test_util_multiple_updates(self):

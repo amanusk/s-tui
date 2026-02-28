@@ -43,6 +43,7 @@ def menu(simple_sources, default_conf):
 # Initialization
 # =====================================================================
 
+
 class TestSensorsMenuInit:
     def test_active_sensors_match_defaults(self, menu, default_conf):
         """active_sensors should mirror the default config."""
@@ -66,6 +67,7 @@ class TestSensorsMenuInit:
     def test_main_window_is_urwid_widget(self, menu):
         """main_window should be a urwid LineBox."""
         import urwid
+
         assert isinstance(menu.main_window, urwid.LineBox)
 
     def test_no_default_conf_defaults_to_all_true(self, simple_sources):
@@ -81,6 +83,7 @@ class TestSensorsMenuInit:
 # on_cancel
 # =====================================================================
 
+
 class TestSensorsMenuCancel:
     def test_on_cancel_calls_return_fn_with_update_false(self, menu):
         """on_cancel should call return_fn(update=False)."""
@@ -91,6 +94,7 @@ class TestSensorsMenuCancel:
 # =====================================================================
 # on_apply
 # =====================================================================
+
 
 class TestSensorsMenuApply:
     def test_on_apply_no_changes(self, menu):
@@ -110,6 +114,7 @@ class TestSensorsMenuApply:
 # =====================================================================
 # setall / checkall / uncheckall
 # =====================================================================
+
 
 class TestSensorsMenuCheckAll:
     def test_setall_cb_col(self, menu):

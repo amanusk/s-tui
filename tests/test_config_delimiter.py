@@ -20,7 +20,7 @@ from s_tui.helper_functions import get_user_config_file
 
 class TestConfigDelimiter:
     """Test that config files with colons in values work correctly.
-    
+
     These tests verify the fix for issue #252 (PR #254) which ensures
     ConfigParser delimiter consistency between save_settings() and _load_config().
     """
@@ -108,12 +108,16 @@ class TestConfigDelimiter:
             # The config should use '=' as delimiter
             assert "refresh" in config_content
             # Verify format uses '=' not ':' as key-value separator
-            lines = [l.strip() for l in config_content.split("\n") if "refresh" in l and "=" in l]
+            lines = [
+                l.strip()
+                for l in config_content.split("\n")
+                if "refresh" in l and "=" in l
+            ]
             assert len(lines) > 0, "Config file should contain refresh setting"
             # The line should use '=' as delimiter (PR #254 fix)
-            assert any("=" in line and ":" not in line.split("=")[0] for line in lines), (
-                "Config should use '=' as delimiter, not ':' (PR #254 fix)"
-            )
+            assert any(
+                "=" in line and ":" not in line.split("=")[0] for line in lines
+            ), "Config should use '=' as delimiter, not ':' (PR #254 fix)"
 
     def test_configparser_delimiter_consistency(self):
         """Test that ConfigParser with delimiters="=" preserves colons in values.
@@ -131,6 +135,7 @@ class TestConfigDelimiter:
 
         # Write to a temporary file
         import tempfile
+
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".conf") as f:
             conf_write.write(f)
             temp_file = f.name

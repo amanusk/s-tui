@@ -73,6 +73,7 @@ class TestStressControllerProcess:
     def test_kill_stress_process_no_such_process(self, mocker):
         """kill_stress_process handles NoSuchProcess gracefully."""
         import psutil
+
         mocker.patch(
             "s_tui.s_tui.kill_child_processes",
             side_effect=psutil.NoSuchProcess(pid=12345),

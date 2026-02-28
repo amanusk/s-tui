@@ -15,10 +15,10 @@ from s_tui.sources.rapl_read import (
     MICRO_JOULE_IN_JOULE,
 )
 
-
 # =====================================================================
 # RaplReader
 # =====================================================================
+
 
 class TestRaplReader:
     def test_available_true(self, mocker):
@@ -33,22 +33,31 @@ class TestRaplReader:
 
     def test_init_discovers_basenames(self, mocker):
         """__init__ globs for intel-rapl:* directories."""
-        mocker.patch("glob.glob", return_value=[
-            "/sys/class/powercap/intel-rapl:0/",
-            "/sys/class/powercap/intel-rapl:1/",
-        ])
+        mocker.patch(
+            "glob.glob",
+            return_value=[
+                "/sys/class/powercap/intel-rapl:0/",
+                "/sys/class/powercap/intel-rapl:1/",
+            ],
+        )
         reader = RaplReader()
         assert len(reader.basenames) == 2
 
     def test_read_power_returns_rapl_stats(self, mocker):
         """read_power() returns list of RaplStats namedtuples."""
-        mocker.patch("glob.glob", return_value=[
-            "/sys/class/powercap/intel-rapl:0/",
-        ])
-        mocker.patch("s_tui.sources.rapl_read.cat", side_effect=[
-            "package-0",   # name
-            "123456789",   # energy_uj
-        ])
+        mocker.patch(
+            "glob.glob",
+            return_value=[
+                "/sys/class/powercap/intel-rapl:0/",
+            ],
+        )
+        mocker.patch(
+            "s_tui.sources.rapl_read.cat",
+            side_effect=[
+                "package-0",  # name
+                "123456789",  # energy_uj
+            ],
+        )
         reader = RaplReader()
         result = reader.read_power()
         assert len(result) == 1
@@ -58,15 +67,21 @@ class TestRaplReader:
 
     def test_read_power_skips_on_ioerror(self, mocker):
         """read_power() skips entries that raise IOError."""
-        mocker.patch("glob.glob", return_value=[
-            "/sys/class/powercap/intel-rapl:0/",
-            "/sys/class/powercap/intel-rapl:1/",
-        ])
-        mocker.patch("s_tui.sources.rapl_read.cat", side_effect=[
-            IOError("read failed"),   # name read for :0
-            "package-1",              # name read for :1
-            "999",                    # energy_uj for :1
-        ])
+        mocker.patch(
+            "glob.glob",
+            return_value=[
+                "/sys/class/powercap/intel-rapl:0/",
+                "/sys/class/powercap/intel-rapl:1/",
+            ],
+        )
+        mocker.patch(
+            "s_tui.sources.rapl_read.cat",
+            side_effect=[
+                IOError("read failed"),  # name read for :0
+                "package-1",  # name read for :1
+                "999",  # energy_uj for :1
+            ],
+        )
         reader = RaplReader()
         result = reader.read_power()
         assert len(result) == 1
@@ -81,9 +96,12 @@ class TestRaplReader:
 
     def test_read_power_skips_none_name(self, mocker):
         """read_power() skips entry when name is None."""
-        mocker.patch("glob.glob", return_value=[
-            "/sys/class/powercap/intel-rapl:0/",
-        ])
+        mocker.patch(
+            "glob.glob",
+            return_value=[
+                "/sys/class/powercap/intel-rapl:0/",
+            ],
+        )
         mocker.patch("s_tui.sources.rapl_read.cat", return_value=None)
         reader = RaplReader()
         result = reader.read_power()
@@ -93,6 +111,7 @@ class TestRaplReader:
 # =====================================================================
 # AMDEnergyReader
 # =====================================================================
+
 
 class TestAMDEnergyReader:
     def test_available_true(self, mocker):
@@ -139,12 +158,13 @@ class TestAMDEnergyReader:
 # AMDRaplMsrReader
 # =====================================================================
 
+
 class TestAMDRaplMsrReader:
     def test_available_non_amd_cpu(self, mocker):
         """available() returns False for Intel CPU."""
         mocker.patch(
             "s_tui.sources.rapl_read.cat",
-            return_value="model name\t: Intel Core\nvendor_id\t: GenuineIntel\ncpu family\t: 6\n"
+            return_value="model name\t: Intel Core\nvendor_id\t: GenuineIntel\ncpu family\t: 6\n",
         )
         assert AMDRaplMsrReader.available() is False
 
@@ -152,7 +172,7 @@ class TestAMDRaplMsrReader:
         """available() returns False for AMD CPU with wrong family."""
         mocker.patch(
             "s_tui.sources.rapl_read.cat",
-            return_value="vendor_id\t: AuthenticAMD\ncpu family\t: 25\n"
+            return_value="vendor_id\t: AuthenticAMD\ncpu family\t: 25\n",
         )
         assert AMDRaplMsrReader.available() is False
 
@@ -160,7 +180,7 @@ class TestAMDRaplMsrReader:
         """available() returns False when MSR device is missing."""
         mocker.patch(
             "s_tui.sources.rapl_read.cat",
-            return_value="vendor_id\t: AuthenticAMD\ncpu family\t: 23\n"
+            return_value="vendor_id\t: AuthenticAMD\ncpu family\t: 23\n",
         )
         mocker.patch("builtins.open", side_effect=FileNotFoundError)
         assert AMDRaplMsrReader.available() is False
@@ -169,7 +189,7 @@ class TestAMDRaplMsrReader:
         """available() returns True for family 0x17 AMD with MSR access."""
         mocker.patch(
             "s_tui.sources.rapl_read.cat",
-            return_value="vendor_id\t: AuthenticAMD\ncpu family\t: 23\n"
+            return_value="vendor_id\t: AuthenticAMD\ncpu family\t: 23\n",
         )
         mock_file = MagicMock()
         mocker.patch("builtins.open", return_value=mock_file)
@@ -177,16 +197,14 @@ class TestAMDRaplMsrReader:
 
     def test_available_cpuinfo_not_found(self, mocker):
         """available() returns False when /proc/cpuinfo is missing."""
-        mocker.patch(
-            "s_tui.sources.rapl_read.cat",
-            side_effect=FileNotFoundError
-        )
+        mocker.patch("s_tui.sources.rapl_read.cat", side_effect=FileNotFoundError)
         assert AMDRaplMsrReader.available() is False
 
 
 # =====================================================================
 # get_power_reader selection
 # =====================================================================
+
 
 class TestGetPowerReader:
     def test_returns_rapl_reader_when_available(self, mocker):

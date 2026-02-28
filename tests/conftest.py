@@ -5,10 +5,10 @@ from collections import namedtuple, OrderedDict
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Marker registration
 # ---------------------------------------------------------------------------
+
 
 def pytest_configure(config):
     config.addinivalue_line(
@@ -17,10 +17,7 @@ def pytest_configure(config):
 
 
 def _is_ci():
-    return (
-        os.environ.get("CI") == "true"
-        or os.environ.get("GITHUB_ACTIONS") == "true"
-    )
+    return os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true"
 
 
 def pytest_collection_modifyitems(config, items):
@@ -37,9 +34,7 @@ def pytest_collection_modifyitems(config, items):
 # ---------------------------------------------------------------------------
 
 CpuFreq = namedtuple("scpufreq", ["current", "min", "max"])
-SensorTemperature = namedtuple(
-    "shwtemp", ["label", "current", "high", "critical"]
-)
+SensorTemperature = namedtuple("shwtemp", ["label", "current", "high", "critical"])
 SensorFan = namedtuple("sfan", ["label", "current"])
 RaplStats = namedtuple("rapl", ["label", "current", "max"])
 
@@ -47,6 +42,7 @@ RaplStats = namedtuple("rapl", ["label", "current", "max"])
 # ---------------------------------------------------------------------------
 # Default fake data builders
 # ---------------------------------------------------------------------------
+
 
 def make_cpu_freq_list(count=4, current=2400.0, min_freq=800.0, max_freq=3600.0):
     """Return a list of *count* CpuFreq named-tuples."""
@@ -92,6 +88,7 @@ def make_fans_dict(count=1, label_prefix="fan", current=1200, group_name="thinkp
 # Reusable psutil mock fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def mock_cpu_count(mocker):
     """Mock psutil.cpu_count to return 4."""
@@ -101,9 +98,7 @@ def mock_cpu_count(mocker):
 @pytest.fixture
 def mock_cpu_percent(mocker):
     """Mock psutil.cpu_percent to return per-cpu values for 4 cores."""
-    return mocker.patch(
-        "psutil.cpu_percent", return_value=[25.0, 30.0, 20.0, 15.0]
-    )
+    return mocker.patch("psutil.cpu_percent", return_value=[25.0, 30.0, 20.0, 15.0])
 
 
 @pytest.fixture

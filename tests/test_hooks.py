@@ -10,10 +10,10 @@ from s_tui.sources.hook import Hook
 from s_tui.sources.hook_script import ScriptHook
 from s_tui.sources.script_hook_loader import ScriptHookLoader
 
-
 # =====================================================================
 # Hook
 # =====================================================================
+
 
 class TestHook:
     def test_init_callback_stored(self):
@@ -92,6 +92,7 @@ class TestHook:
 # ScriptHook
 # =====================================================================
 
+
 class TestScriptHook:
     def test_init_stores_path(self, tmp_path):
         """ScriptHook stores the script path."""
@@ -141,6 +142,7 @@ class TestScriptHook:
 # =====================================================================
 # ScriptHookLoader
 # =====================================================================
+
 
 class TestScriptHookLoader:
     def test_init_sets_hooks_dir(self, tmp_path):

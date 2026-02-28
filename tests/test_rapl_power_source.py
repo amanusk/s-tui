@@ -26,9 +26,7 @@ def mock_power_reader(mocker):
 @pytest.fixture
 def mock_no_power_reader(mocker):
     """Mock get_power_reader to return None (no reader available)."""
-    mocker.patch(
-        "s_tui.sources.rapl_power_source.get_power_reader", return_value=None
-    )
+    mocker.patch("s_tui.sources.rapl_power_source.get_power_reader", return_value=None)
 
 
 class TestRaplPowerSourceInit:

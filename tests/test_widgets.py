@@ -12,10 +12,10 @@ from s_tui.sturwid.bar_graph_vector import BarGraphVector
 from s_tui.sturwid.summary_text_list import SummaryTextList
 from s_tui.sturwid.ui_elements import ViListBox
 
-
 # =====================================================================
 # ScalableBarGraph
 # =====================================================================
+
 
 class TestScalableBarGraph:
     def test_init(self):
@@ -62,6 +62,7 @@ class TestScalableBarGraph:
 # LabeledBarGraphVector
 # =====================================================================
 
+
 class TestLabeledBarGraphVector:
     def _make(self, n_graphs=2, visible=None):
         """Helper to build a LabeledBarGraphVector."""
@@ -80,9 +81,7 @@ class TestLabeledBarGraphVector:
     def test_rejects_non_scalable_graph(self):
         """Constructor raises if graph is not ScalableBarGraph."""
         with pytest.raises(Exception, match="ScalableBarGraph"):
-            LabeledBarGraphVector(
-                "T", ["s"], [], [urwid.BarGraph(["bg", "a"])], [True]
-            )
+            LabeledBarGraphVector("T", ["s"], [], [urwid.BarGraph(["bg", "a"])], [True])
 
     def test_set_visible_graphs(self):
         """set_visible_graphs hides/shows sub-graphs."""
@@ -116,6 +115,7 @@ class TestLabeledBarGraphVector:
 # =====================================================================
 # BarGraphVector
 # =====================================================================
+
 
 class TestBarGraphVector:
     @pytest.fixture
@@ -191,17 +191,20 @@ class TestBarGraphVector:
 # SummaryTextList
 # =====================================================================
 
+
 class TestSummaryTextList:
     @pytest.fixture
     def mock_source(self):
         src = MagicMock()
         src.get_source_name.return_value = "CPU Util"
         src.get_is_available.return_value = True
-        summary = OrderedDict([
-            ("CPU Util", ""),
-            ("Avg", "25.0%"),
-            ("Core 0", "30.0%"),
-        ])
+        summary = OrderedDict(
+            [
+                ("CPU Util", ""),
+                ("Avg", "25.0%"),
+                ("Core 0", "30.0%"),
+            ]
+        )
         src.get_summary.return_value = summary
         return src
 
@@ -235,11 +238,13 @@ class TestSummaryTextList:
         stl.get_text_item_list()  # populates summary_text_items
 
         # Change source values
-        new_summary = OrderedDict([
-            ("CPU Util", ""),
-            ("Avg", "50.0%"),
-            ("Core 0", "60.0%"),
-        ])
+        new_summary = OrderedDict(
+            [
+                ("CPU Util", ""),
+                ("Avg", "50.0%"),
+                ("Core 0", "60.0%"),
+            ]
+        )
         mock_source.get_summary.return_value = new_summary
         stl.update()
 
@@ -265,6 +270,7 @@ class TestSummaryTextList:
 # =====================================================================
 # ViListBox
 # =====================================================================
+
 
 class TestViListBox:
     def _make(self):

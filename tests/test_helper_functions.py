@@ -26,10 +26,10 @@ from s_tui.helper_functions import (
     user_config_file_exists,
 )
 
-
 # ---------------------------------------------------------------------------
 # seconds_to_text
 # ---------------------------------------------------------------------------
+
 
 class TestSecondsToText:
     def test_zero(self):
@@ -51,6 +51,7 @@ class TestSecondsToText:
 # ---------------------------------------------------------------------------
 # str_to_bool
 # ---------------------------------------------------------------------------
+
 
 class TestStrToBool:
     def test_true(self):
@@ -75,6 +76,7 @@ class TestStrToBool:
 # ---------------------------------------------------------------------------
 # cat
 # ---------------------------------------------------------------------------
+
 
 class TestCat:
     def test_read_binary(self, tmp_path):
@@ -112,6 +114,7 @@ class TestCat:
 # which
 # ---------------------------------------------------------------------------
 
+
 class TestWhich:
     def test_finds_existing_program(self):
         # python3 should be on PATH
@@ -139,6 +142,7 @@ class TestWhich:
 # get_processor_name
 # ---------------------------------------------------------------------------
 
+
 class TestGetProcessorName:
     def test_returns_something(self):
         """get_processor_name should return a non-empty value on any platform."""
@@ -149,6 +153,7 @@ class TestGetProcessorName:
 # ---------------------------------------------------------------------------
 # Config directory helpers
 # ---------------------------------------------------------------------------
+
 
 class TestConfigDirHelpers:
     def test_get_config_dir_with_xdg(self, monkeypatch):
@@ -193,6 +198,7 @@ class TestConfigDirHelpers:
 # kill_child_processes
 # ---------------------------------------------------------------------------
 
+
 class TestKillChildProcesses:
     def test_none_parent(self):
         """Should handle None gracefully (AttributeError caught)."""
@@ -202,6 +208,7 @@ class TestKillChildProcesses:
 # ---------------------------------------------------------------------------
 # output_to_terminal / output_to_json
 # ---------------------------------------------------------------------------
+
 
 class TestOutputFunctions:
     def _make_mock_source(self, name, sensors_summary):
@@ -254,6 +261,7 @@ class TestOutputFunctions:
 # ---------------------------------------------------------------------------
 # __version__
 # ---------------------------------------------------------------------------
+
 
 class TestVersion:
     def test_version_is_string(self):

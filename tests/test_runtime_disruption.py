@@ -29,10 +29,10 @@ from tests.conftest import (
     make_fans_dict,
 )
 
-
 # =====================================================================
 # UtilSource -- core count changes
 # =====================================================================
+
 
 class TestUtilCoreCountChanges:
     @pytest.mark.xfail(
@@ -79,6 +79,7 @@ class TestUtilCoreCountChanges:
 # FreqSource -- core count changes
 # =====================================================================
 
+
 class TestFreqCoreCountChanges:
     def test_freq_core_count_shrinks(self, mocker):
         """cpu_freq(percpu=True) returns fewer cores after init.
@@ -111,6 +112,7 @@ class TestFreqCoreCountChanges:
 # =====================================================================
 # TempSource -- sensor appear / disappear
 # =====================================================================
+
 
 class TestTempSensorChanges:
     def test_temp_sensor_disappears(self, mocker):
@@ -170,6 +172,7 @@ class TestTempSensorChanges:
 # FanSource -- sensor disappear / None
 # =====================================================================
 
+
 class TestFanSensorChanges:
     @pytest.mark.xfail(
         strict=True,
@@ -209,6 +212,7 @@ class TestFanSensorChanges:
 # RaplPowerSource -- reader failure mid-run
 # =====================================================================
 
+
 class TestRaplReaderFailsMidRun:
     @pytest.mark.xfail(
         strict=True,
@@ -236,6 +240,7 @@ class TestRaplReaderFailsMidRun:
 # Source.update() exception propagation
 # =====================================================================
 
+
 class TestSourceUpdateExceptionPropagation:
     @pytest.mark.xfail(
         strict=True,
@@ -259,6 +264,7 @@ class TestSourceUpdateExceptionPropagation:
 # =====================================================================
 # Summary after sensor mismatch
 # =====================================================================
+
 
 class TestSummaryAfterMismatch:
     @pytest.mark.xfail(

@@ -69,7 +69,9 @@ class TestTempSourceFiltering:
             SensorTemperature(label="Good", current=55.0, high=80.0, critical=100.0),
             SensorTemperature(label="Low", current=0.5, high=80.0, critical=100.0),
         ]
-        mocker.patch("psutil.sensors_temperatures", return_value=_make_temp_dict(sensors))
+        mocker.patch(
+            "psutil.sensors_temperatures", return_value=_make_temp_dict(sensors)
+        )
         src = TempSource()
         assert len(src.get_sensor_list()) == 1
 
@@ -78,7 +80,9 @@ class TestTempSourceFiltering:
             SensorTemperature(label="Good", current=55.0, high=80.0, critical=100.0),
             SensorTemperature(label="High", current=127.5, high=80.0, critical=100.0),
         ]
-        mocker.patch("psutil.sensors_temperatures", return_value=_make_temp_dict(sensors))
+        mocker.patch(
+            "psutil.sensors_temperatures", return_value=_make_temp_dict(sensors)
+        )
         src = TempSource()
         assert len(src.get_sensor_list()) == 1
 
@@ -109,7 +113,9 @@ class TestTempSourceEdgeTriggered:
         sensors = [
             SensorTemperature(label="Hot", current=85.0, high=80.0, critical=100.0),
         ]
-        mocker.patch("psutil.sensors_temperatures", return_value=_make_temp_dict(sensors))
+        mocker.patch(
+            "psutil.sensors_temperatures", return_value=_make_temp_dict(sensors)
+        )
         src = TempSource()
         src.update()
         assert src.get_edge_triggered() is True

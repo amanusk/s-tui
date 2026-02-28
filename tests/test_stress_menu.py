@@ -18,6 +18,7 @@ def menu(mocker):
 # Initialization
 # =====================================================================
 
+
 class TestStressMenuInit:
     def test_defaults(self, menu):
         """Default values after construction."""
@@ -43,6 +44,7 @@ class TestStressMenuInit:
 # =====================================================================
 # get_stress_cmd
 # =====================================================================
+
 
 class TestGetStressCmd:
     def test_default_cmd(self, menu):
@@ -129,6 +131,7 @@ class TestGetStressCmd:
 # Validation helpers
 # =====================================================================
 
+
 class TestStressMenuValidation:
     def test_get_pos_num_valid(self):
         assert StressMenu.get_pos_num("42", "0") == "42"
@@ -174,6 +177,7 @@ class TestStressMenuValidation:
 # on_default resets to defaults
 # =====================================================================
 
+
 class TestStressMenuOnDefault:
     def test_on_default_resets(self, menu):
         """on_default() resets all fields and calls return_fn."""
@@ -190,6 +194,7 @@ class TestStressMenuOnDefault:
 # =====================================================================
 # get_size
 # =====================================================================
+
 
 class TestStressMenuGetSize:
     def test_get_size(self, menu):

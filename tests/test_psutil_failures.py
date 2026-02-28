@@ -16,10 +16,10 @@ from s_tui.sources.fan_source import FanSource
 from s_tui.sources.rapl_power_source import RaplPowerSource
 from tests.conftest import SensorTemperature
 
-
 # ---------------------------------------------------------------------------
 # UtilSource failure modes
 # ---------------------------------------------------------------------------
+
 
 class TestUtilSourceFailures:
     def test_cpu_percent_missing_attribute(self, mocker):
@@ -38,6 +38,7 @@ class TestUtilSourceFailures:
 # FreqSource failure modes
 # ---------------------------------------------------------------------------
 
+
 class TestFreqSourceFailures:
     def test_cpu_freq_returns_none(self, mocker):
         """If cpu_freq returns None (no frequency info), handle gracefully."""
@@ -51,6 +52,7 @@ class TestFreqSourceFailures:
 
     def test_cpu_freq_empty_percpu(self, mocker):
         """If cpu_freq(percpu=True) returns empty list."""
+
         def _cpu_freq(percpu=False):
             if percpu:
                 return []
@@ -66,6 +68,7 @@ class TestFreqSourceFailures:
 # ---------------------------------------------------------------------------
 # TempSource failure modes
 # ---------------------------------------------------------------------------
+
 
 class TestTempSourceFailures:
     @pytest.mark.xfail(
@@ -112,6 +115,7 @@ class TestTempSourceFailures:
         temps = OrderedDict([("coretemp", sensors)])
 
         call_count = [0]
+
         def _temps_side_effect():
             call_count[0] += 1
             if call_count[0] <= 2:  # init calls it twice
@@ -130,6 +134,7 @@ class TestTempSourceFailures:
 # FanSource failure modes
 # ---------------------------------------------------------------------------
 
+
 class TestFanSourceFailures:
     def test_sensors_fans_returns_none(self, mocker):
         """sensors_fans() returning None should mark unavailable."""
@@ -147,6 +152,7 @@ class TestFanSourceFailures:
         """IOError during fan dict creation."""
         # First call succeeds (availability check), second raises
         call_count = [0]
+
         def _fans():
             call_count[0] += 1
             if call_count[0] == 1:
@@ -161,6 +167,7 @@ class TestFanSourceFailures:
 # ---------------------------------------------------------------------------
 # RaplPowerSource failure modes
 # ---------------------------------------------------------------------------
+
 
 class TestRaplPowerSourceFailures:
     def test_no_reader_available(self, mocker):
