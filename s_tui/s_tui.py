@@ -198,6 +198,9 @@ class GraphView(urwid.WidgetPlaceholder):
         # main control
         self.controller = controller
         self.main_window_w = []
+        # Track per-source update failures to avoid log spam while preserving
+        # actionable logs when failures start/stop.
+        self.source_update_errors = {}
 
         # general urwid items
         self.clock_view = urwid.Text(ZERO_TIME, align="center")
@@ -249,12 +252,52 @@ class GraphView(urwid.WidgetPlaceholder):
     def update_displayed_information(self):
         """Update all the graphs that are being displayed"""
 
+        recoverable_source_errors = (OSError, IOError, TypeError, ValueError)
+        debug_mode = getattr(self.controller.args, "debug", False) or getattr(
+            self.controller.args, "debug_run", False
+        )
+
         for source in self.controller.sources:
             source_name = source.get_source_name()
             if any(self.graphs_menu.active_sensors[source_name]) or any(
                 self.summary_menu.active_sensors[source_name]
             ):
-                source.update()
+                try:
+                    source.update()
+                    previous_error = self.source_update_errors.pop(source_name, None)
+                    if previous_error is not None:
+                        logging.info(
+                            "Source %s recovered from update errors (%s)",
+                            source_name,
+                            previous_error,
+                        )
+                except recoverable_source_errors as err:
+                    error_name = err.__class__.__name__
+                    previous_error = self.source_update_errors.get(source_name)
+                    self.source_update_errors[source_name] = error_name
+                    if previous_error != error_name:
+                        logging.warning(
+                            "Source %s update failed with recoverable %s: %s",
+                            source_name,
+                            error_name,
+                            err,
+                        )
+                    else:
+                        logging.debug(
+                            "Source %s update still failing with %s",
+                            source_name,
+                            error_name,
+                        )
+                except Exception as err:
+                    error_name = err.__class__.__name__
+                    self.source_update_errors[source_name] = error_name
+                    logging.exception(
+                        "Source %s update failed with unexpected %s",
+                        source_name,
+                        error_name,
+                    )
+                    if debug_mode:
+                        raise
 
         for graph in self.visible_graphs.values():
             try:

@@ -163,6 +163,58 @@ class TestFanSourceFailures:
         src = FanSource()
         assert src.get_is_available() is False
 
+    def test_sensors_fans_typeerror_on_init(self, mocker):
+        """TypeError from psutil on init should mark unavailable (GH-255).
+
+        psutil may raise TypeError internally when sysfs fan sensor files
+        contain None (e.g. Intel xe GPU fans).
+        """
+        mocker.patch("psutil.sensors_fans", side_effect=TypeError)
+        src = FanSource()
+        assert src.get_is_available() is False
+
+    def test_sensors_fans_typeerror_on_update(self, mocker):
+        """TypeError from psutil during update keeps stale data (GH-256).
+
+        When psutil.sensors_fans() raises TypeError mid-run, the source
+        should keep its previous measurement rather than crashing.
+        """
+        from tests.conftest import make_fans_dict
+
+        fans = make_fans_dict(count=1, current=1200)
+        mocker.patch("psutil.sensors_fans", return_value=fans)
+        src = FanSource()
+        assert src.get_is_available() is True
+        src.update()
+        assert src.last_measurement == [1200]
+
+        # Mid-run: psutil raises TypeError
+        mocker.patch("psutil.sensors_fans", side_effect=TypeError)
+        src.update()  # should not crash
+        # Stale data preserved
+        assert src.last_measurement == [1200]
+
+    def test_sensors_fans_none_on_update(self, mocker):
+        """sensors_fans() returning None mid-run keeps stale data.
+
+        When psutil.sensors_fans() returns None during an update cycle,
+        the source should keep its previous measurement.
+        """
+        from tests.conftest import make_fans_dict
+
+        fans = make_fans_dict(count=1, current=900)
+        mocker.patch("psutil.sensors_fans", return_value=fans)
+        src = FanSource()
+        assert src.get_is_available() is True
+        src.update()
+        assert src.last_measurement == [900]
+
+        # Mid-run: returns None
+        mocker.patch("psutil.sensors_fans", return_value=None)
+        src.update()  # should not crash
+        # Stale data preserved
+        assert src.last_measurement == [900]
+
 
 # ---------------------------------------------------------------------------
 # RaplPowerSource failure modes

@@ -35,6 +35,13 @@ class FanSource(Source):
             self.is_available = False
             logging.debug("Fans sensors is not available from psutil")
             return
+        except TypeError:
+            # psutil bug: sensors_fans() raises TypeError on some hardware
+            # when sysfs fan sensor files contain None (e.g. Intel xe GPU fans)
+            # See: https://github.com/amanusk/s-tui/issues/255
+            self.is_available = False
+            logging.debug("Fans sensors raised TypeError (psutil bug)")
+            return
 
         Source.__init__(self)
 
@@ -45,7 +52,7 @@ class FanSource(Source):
         sensors_dict = dict()
         try:
             sensors_dict = psutil.sensors_fans()
-        except IOError:
+        except (IOError, TypeError):
             logging.debug("Unable to create sensors dict")
             self.is_available = False
             return
@@ -71,11 +78,22 @@ class FanSource(Source):
         self.last_measurement = [0] * len(self.available_sensors)
 
     def update(self):
-        sample = psutil.sensors_fans()
+        try:
+            sample = psutil.sensors_fans()
+        except (TypeError, OSError):
+            # psutil bug: sensors_fans() may raise TypeError on some hardware
+            # when sysfs fan sensor files contain None.
+            # See: https://github.com/amanusk/s-tui/issues/256
+            # Keep last_measurement unchanged (show stale data).
+            logging.debug("sensors_fans() raised an exception, keeping stale data")
+            return
+        if sample is None:
+            logging.debug("sensors_fans() returned None, keeping stale data")
+            return
         self.last_measurement = []
         for sensor in sample.values():
             for minor_sensor in sensor:
-                # Ignore unreasonalbe fan speeds
+                # Ignore unreasonable fan speeds
                 if minor_sensor.current > 10000:
                     continue
                 self.last_measurement.append(int(minor_sensor.current))
