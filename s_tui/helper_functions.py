@@ -87,26 +87,37 @@ def kill_child_processes(parent_proc):
         logging.debug("Could not kill process")
 
 
+_csv_fieldnames = None
+_csv_header_written = False
+
+
 def output_to_csv(sources, csv_writeable_file):
     """Print statistics to csv file"""
-    file_exists = os.path.isfile(csv_writeable_file)
+    global _csv_fieldnames, _csv_header_written
+
+    csv_dict = OrderedDict()
+    csv_dict.update({"Time": time.strftime("%Y-%m-%d_%H:%M:%S")})
+    summaries = [val for key, val in sources.items()]
+    for summarie in summaries:
+        update_dict = dict()
+        for prob, val in summarie.source.get_sensors_summary().items():
+            prob = summarie.source.get_source_name() + ":" + prob
+            update_dict[prob] = val
+        csv_dict.update(update_dict)
+
+    if _csv_fieldnames is None:
+        _csv_fieldnames = list(csv_dict.keys())
 
     with open(csv_writeable_file, "a") as csvfile:
-        csv_dict = OrderedDict()
-        csv_dict.update({"Time": time.strftime("%Y-%m-%d_%H:%M:%S")})
-        summaries = [val for key, val in sources.items()]
-        for summarie in summaries:
-            update_dict = dict()
-            for prob, val in summarie.source.get_sensors_summary().items():
-                prob = summarie.source.get_source_name() + ":" + prob
-                update_dict[prob] = val
-            csv_dict.update(update_dict)
+        writer = csv.DictWriter(csvfile, fieldnames=_csv_fieldnames)
 
-        fieldnames = [key for key, val in csv_dict.items()]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        if not file_exists:
-            writer.writeheader()  # file doesn't exist yet, write a header
+        if not _csv_header_written:
+            if (
+                not os.path.isfile(csv_writeable_file)
+                or os.path.getsize(csv_writeable_file) == 0
+            ):
+                writer.writeheader()
+            _csv_header_written = True
         writer.writerow(csv_dict)
 
 
