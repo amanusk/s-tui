@@ -49,6 +49,11 @@ class FreqSource(Source):
         per_cpu_freq = psutil.cpu_freq(True)
         overall_freq = psutil.cpu_freq(False)
 
+        # Set as not available if no cpu freq
+        if len(per_cpu_freq) == 0 and not overall_freq:
+                self.is_available = False
+                return
+
         # +1 for average frequency
         self.last_measurement = [0] * len(per_cpu_freq)
         if overall_freq:
