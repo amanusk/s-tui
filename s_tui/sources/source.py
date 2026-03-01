@@ -20,6 +20,11 @@
 from collections import OrderedDict
 import logging
 
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
 
 class Source:
     """This is a basic source class for s-tui"""
@@ -31,6 +36,7 @@ class Source:
         self.last_thresholds = []
         self.is_available = True
         self.available_sensors = []
+        self.sensor_available = []  # Per-sensor availability (True/False)
         self.name = ""
         self.pallet = (
             "temp light",
@@ -65,9 +71,18 @@ class Source:
         sub_title_list = self.get_sensor_list()
 
         graph_vector_summary = OrderedDict()
-        for graph_idx, graph_data in enumerate(self.last_measurement):
-            val_str = str(round(graph_data, 1))
-            graph_vector_summary[sub_title_list[graph_idx]] = val_str
+        for graph_idx, sensor_name in enumerate(sub_title_list):
+            # Show N/A if sensor is marked unavailable
+            if (
+                graph_idx < len(self.sensor_available)
+                and not self.sensor_available[graph_idx]
+            ):
+                graph_vector_summary[sensor_name] = "N/A"
+            elif graph_idx < len(self.last_measurement):
+                val_str = str(round(self.last_measurement[graph_idx], 1))
+                graph_vector_summary[sensor_name] = val_str
+            else:
+                graph_vector_summary[sensor_name] = "N/A"
 
         return graph_vector_summary
 
@@ -130,6 +145,53 @@ class Source:
             for hook in [h for h in self.edge_hooks if h.is_ready()]:
                 logging.debug("Hook invoked")
                 hook.invoke()
+
+    @staticmethod
+    def _get_online_cpu_ids():
+        """Get sorted list of online CPU core IDs using psutil.
+
+        Uses Process.cpu_affinity() which reflects which CPUs are online.
+        Available on Linux, Windows, and FreeBSD.
+        Returns a sorted list of online core IDs, or None if unavailable.
+        """
+        if psutil is None:
+            return None
+        try:
+            return sorted(psutil.Process().cpu_affinity())
+        except (AttributeError, OSError, psutil.Error):
+            return None
+
+    @staticmethod
+    def _get_max_cpu_id():
+        """Get the highest CPU core ID on the system.
+
+        Combines cpu_count() and cpu_affinity() to detect all cores,
+        including offline ones. cpu_count() should return total logical CPUs,
+        but cpu_affinity() helps catch cases where higher-numbered cores exist.
+
+        Strategy: Use the maximum of:
+        1. cpu_count() - total logical CPUs (should include offline)
+        2. max(online_ids) + 1 - ensures we account for all possible core IDs
+        """
+        if psutil is None:
+            return 0
+        total = psutil.cpu_count(logical=True) or 0
+
+        # Check cpu_affinity - this gives us the actual online core IDs
+        # If max online ID + 1 > cpu_count(), we know there are more cores
+        try:
+            online_ids = psutil.Process().cpu_affinity()
+            if online_ids:
+                max_online = max(online_ids)
+                # Always use max_online + 1 to ensure we include the highest core
+                # even if it's offline (e.g., if cores 0-6 are online, max_online=6,
+                # so we need at least 7 cores total, but if core 7 exists offline,
+                # cpu_count() should return 8, and max(8, 7) = 8)
+                total = max(total, max_online + 1)
+        except (AttributeError, OSError, psutil.Error):
+            pass
+
+        return total
 
 
 class MockSource(Source):

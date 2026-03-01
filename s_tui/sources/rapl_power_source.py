@@ -64,35 +64,51 @@ class RaplPowerSource(Source):
             name += "," + str(sensor_count)
             self.available_sensors.append(name)
 
+        self.sensor_available = [True] * len(self.available_sensors)
+
     def update(self):
         if not self.is_available:
             return
-        current_measurement_value = self.reader.read_power()
+
+        try:
+            current_measurement_value = self.reader.read_power()
+        except (IOError, OSError) as e:
+            logging.debug(
+                "read_power() raised %s: %s, keeping stale data", type(e).__name__, e
+            )
+            return
+
+        if current_measurement_value is None:
+            return
+
         current_measurement_time = time.time()
 
         for m_idx, _ in enumerate(self.last_probe):
-            joule_used = (
-                current_measurement_value[m_idx].current
-                - self.last_probe[m_idx].current
-            ) / float(self.MICRO_JOULE_IN_JOULE)
-            self.last_probe[m_idx] = joule_used
+            try:
+                joule_used = (
+                    current_measurement_value[m_idx].current
+                    - self.last_probe[m_idx].current
+                ) / float(self.MICRO_JOULE_IN_JOULE)
+                self.last_probe[m_idx] = current_measurement_value[m_idx]
 
-            seconds_passed = current_measurement_time - self.last_probe_time
-            logging.debug("seconds passed %s", seconds_passed)
-            watts_used = float(joule_used) / float(seconds_passed)
-            logging.debug("watts used %s", watts_used)
-            logging.info(
-                "Joule_Used %d, seconds passed, %d", joule_used, seconds_passed
-            )
+                seconds_passed = current_measurement_time - self.last_probe_time
+                logging.debug("seconds passed %s", seconds_passed)
+                watts_used = float(joule_used) / float(seconds_passed)
+                logging.debug("watts used %s", watts_used)
+                logging.info(
+                    "Joule_Used %d, seconds passed, %d", joule_used, seconds_passed
+                )
 
-            if watts_used > 0:
-                # The information on joules used elapses every once in a while,
-                # this might lead to negative readings.
-                # To prevent this, we keep the last value until the next update
-                self.last_measurement[m_idx] = watts_used
-                logging.info("Power reading elapsed")
+                if watts_used > 0:
+                    # The information on joules used elapses every once in a while,
+                    # this might lead to negative readings.
+                    # To prevent this, we keep the last value until the next update
+                    if m_idx < len(self.last_measurement):
+                        self.last_measurement[m_idx] = watts_used
+                    logging.info("Power reading elapsed")
+            except (IndexError, AttributeError) as e:
+                logging.debug("Error processing power sensor %d: %s", m_idx, e)
 
-        self.last_probe = current_measurement_value
         self.last_probe_time = current_measurement_time
 
     def get_maximum(self):
