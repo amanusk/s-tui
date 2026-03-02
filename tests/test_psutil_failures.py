@@ -71,20 +71,12 @@ class TestFreqSourceFailures:
 
 
 class TestTempSourceFailures:
-    @pytest.mark.xfail(
-        strict=True,
-        reason="TempSource crashes with AttributeError when sensors_temperatures() returns None",
-    )
     def test_sensors_temperatures_returns_none(self, mocker):
         """sensors_temperatures() returning None should mark unavailable."""
         mocker.patch("psutil.sensors_temperatures", return_value=None)
         src = TempSource()
         assert src.get_is_available() is False
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="TempSource stays available=True when sensors_temperatures() returns empty dict",
-    )
     def test_sensors_temperatures_returns_empty(self, mocker):
         """sensors_temperatures() returning {} should mark unavailable."""
         mocker.patch("psutil.sensors_temperatures", return_value={})
@@ -97,18 +89,17 @@ class TestTempSourceFailures:
         src = TempSource()
         assert src.get_is_available() is False
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="TempSource does not catch IOError during initial sensors_temperatures() call",
-    )
     def test_sensors_temperatures_ioerror_on_init(self, mocker):
-        """First call works, OrderedDict sorting raises IOError."""
+        """First call raises IOError — should mark unavailable."""
         mocker.patch("psutil.sensors_temperatures", side_effect=IOError)
         src = TempSource()
         assert src.get_is_available() is False
 
     def test_sensors_temperatures_ioerror_on_update(self, mocker):
-        """sensors_temperatures works during init but fails during update."""
+        """sensors_temperatures works during init but fails during update.
+
+        The implementation catches the error and keeps stale data.
+        """
         sensors = [
             SensorTemperature(label="Core 0", current=55.0, high=80.0, critical=100.0),
         ]
@@ -125,9 +116,13 @@ class TestTempSourceFailures:
         mocker.patch("psutil.sensors_temperatures", side_effect=_temps_side_effect)
         src = TempSource()
         assert src.get_is_available() is True
-        # Now update should raise IOError (unhandled in current code)
-        with pytest.raises((IOError, OSError)):
-            src.update()
+
+        # Capture readings before the failure
+        old_measurement = list(src.last_measurement)
+
+        # update() should not raise — it catches IOError and keeps stale data
+        src.update()
+        assert src.last_measurement == old_measurement
 
 
 # ---------------------------------------------------------------------------

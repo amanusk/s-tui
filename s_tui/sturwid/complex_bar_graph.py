@@ -72,6 +72,15 @@ class ScalableBarGraph(urwid.BarGraph):
     def on_resize(self, new_size):
         pass  # place folder for any future implantation
 
+    @staticmethod
+    def _create_na_placeholder():
+        """Create a placeholder widget showing 'N/A' for unavailable sensors"""
+        na_text = urwid.Text("N/A", align="center")
+        na_filler = urwid.Filler(na_text, valign="middle")
+        # Wrap in LineBox for visual frame (optional, can be removed if too busy)
+        na_placeholder = urwid.LineBox(na_filler)
+        return na_placeholder
+
 
 class LabeledBarGraphVector(urwid.WidgetPlaceholder):
     """Add option to add labels for X and Y axes"""
@@ -97,6 +106,8 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         self.title = urwid.WidgetPlaceholder(list_w)
         self.sub_title_list = sub_title_list
         self.set_title(title)
+
+        self.sensor_available = [True] * len(bar_graph_vector)
 
         super(LabeledBarGraphVector, self).__init__(urwid.Pile([]))
         self.set_visible_graphs(visible_graph_list)
@@ -135,13 +146,23 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         vline = urwid.AttrWrap(urwid.SolidFill("|"), "line")
 
         graph_vector_column_list = []
-        for state, graph, sub_title in zip(
-            visible_graph_list, self.bar_graph_vector, self.sub_title_list
+        for idx, (state, graph, sub_title) in enumerate(
+            zip(visible_graph_list, self.bar_graph_vector, self.sub_title_list)
         ):
             if state:
                 text_w = urwid.Text(sub_title, align="center")
                 sub_title_widget = urwid.ListBox([text_w])
-                graph_a = [("fixed", 1, sub_title_widget), ("weight", 1, graph)]
+
+                # Use placeholder if sensor is unavailable
+                if idx < len(self.sensor_available) and not self.sensor_available[idx]:
+                    display_widget = ScalableBarGraph._create_na_placeholder()
+                else:
+                    display_widget = graph
+
+                graph_a = [
+                    ("fixed", 1, sub_title_widget),
+                    ("weight", 1, display_widget),
+                ]
                 graph_and_title = urwid.Pile(graph_a)
                 graph_vector_column_list.append(("weight", 1, graph_and_title))
                 graph_vector_column_list.append(("fixed", 1, vline))
