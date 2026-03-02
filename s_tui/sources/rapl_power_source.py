@@ -27,8 +27,6 @@ import logging
 from s_tui.sources.source import Source
 from s_tui.sources.rapl_read import get_power_reader
 
-LOGGER = logging.getLogger(__name__)
-
 
 class RaplPowerSource(Source):
     MICRO_JOULE_IN_JOULE = 1000000.0
