@@ -181,9 +181,9 @@ class TestConfigSensorNameMatching:
 
         menu = SensorsMenu(MagicMock(), [source], default_conf)
         active = menu.active_sensors["Temp"]
-        assert active[0] is True   # Core0,0 from config
+        assert active[0] is True  # Core0,0 from config
         assert active[1] is False  # Core1,0 from config
-        assert active[2] is True   # Core2,0 new, defaults visible
+        assert active[2] is True  # Core2,0 new, defaults visible
 
     def test_config_more_sensors_than_system(self):
         """Config has more sensors than currently on the system.
@@ -198,9 +198,7 @@ class TestConfigSensorNameMatching:
         source.get_sensor_list.return_value = ["Core0,0"]
 
         # Config has entries for 3 sensors
-        default_conf = {
-            "Temp": {"core0,0": False, "core1,0": True, "core2,0": True}
-        }
+        default_conf = {"Temp": {"core0,0": False, "core1,0": True, "core2,0": True}}
 
         menu = SensorsMenu(MagicMock(), [source], default_conf)
         active = menu.active_sensors["Temp"]
