@@ -57,17 +57,27 @@ class TestUtilCoreCountChanges:
     def test_core_count_shrinks(self, mocker):
         """Simulate a core going offline mid-run.
 
-        Current behaviour: the code silently truncates the update to
-        fewer entries without crashing.  The sensor list retains its
-        original length, so get_sensors_summary() may include stale data.
+        The code marks offline cores as N/A and keeps the sensor list
+        at its original length.
         """
         mocker.patch("psutil.cpu_count", return_value=4)
         mocker.patch("psutil.cpu_percent", return_value=[25.0, 30.0, 20.0, 15.0])
+        mocker.patch(
+            "s_tui.sources.source.Source._get_max_cpu_id", return_value=4
+        )
+        mocker.patch(
+            "s_tui.sources.source.Source._get_online_cpu_ids",
+            return_value=[0, 1, 2, 3],
+        )
         src = UtilSource()
         assert len(src.get_sensor_list()) == 5
 
-        # Core goes offline: only 3 values
+        # Core goes offline: only 3 values, online_ids shrinks
         mocker.patch("psutil.cpu_percent", return_value=[25.0, 30.0, 20.0])
+        mocker.patch(
+            "s_tui.sources.source.Source._get_online_cpu_ids",
+            return_value=[0, 1, 2],
+        )
         src.update()
 
         # Does not crash; sensor_list keeps original length
@@ -84,7 +94,7 @@ class TestFreqCoreCountChanges:
     def test_freq_core_count_shrinks(self, mocker):
         """cpu_freq(percpu=True) returns fewer cores after init.
 
-        Current behaviour: no crash; stale data for disappeared cores.
+        The code marks disappeared cores as N/A without crashing.
         """
         per_cpu_4 = make_cpu_freq_list(4)
         overall = make_cpu_freq_overall()
@@ -93,6 +103,13 @@ class TestFreqCoreCountChanges:
             return per_cpu_4 if percpu else overall
 
         mocker.patch("psutil.cpu_freq", side_effect=_freq_init)
+        mocker.patch(
+            "s_tui.sources.source.Source._get_max_cpu_id", return_value=4
+        )
+        mocker.patch(
+            "s_tui.sources.source.Source._get_online_cpu_ids",
+            return_value=[0, 1, 2, 3],
+        )
         src = FreqSource()
         assert len(src.get_sensor_list()) == 5
 
@@ -103,6 +120,10 @@ class TestFreqCoreCountChanges:
             return per_cpu_2 if percpu else overall
 
         mocker.patch("psutil.cpu_freq", side_effect=_freq_shrunk)
+        mocker.patch(
+            "s_tui.sources.source.Source._get_online_cpu_ids",
+            return_value=[0, 1],
+        )
         src.update()
 
         summary = src.get_sensors_summary()
@@ -229,10 +250,6 @@ class TestFanSensorChanges:
 
 
 class TestRaplReaderFailsMidRun:
-    @pytest.mark.xfail(
-        strict=True,
-        reason="RaplPowerSource.update() does not catch IOError from reader",
-    )
     def test_rapl_reader_fails_during_update(self, mocker):
         """RAPL energy file becomes unreadable mid-run."""
         reader = MagicMock()
@@ -257,14 +274,17 @@ class TestRaplReaderFailsMidRun:
 
 
 class TestSourceUpdateExceptionPropagation:
-    @pytest.mark.xfail(
-        strict=True,
-        reason="source.update() raising OSError is not caught in the main update loop",
-    )
     def test_source_update_raises_oserror(self, mocker):
-        """Any psutil call raises OSError during update()."""
+        """Any psutil call raises OSError during update() — should not propagate."""
         mocker.patch("psutil.cpu_count", return_value=4)
         mocker.patch("psutil.cpu_percent", return_value=[25.0, 30.0, 20.0, 15.0])
+        mocker.patch(
+            "s_tui.sources.source.Source._get_max_cpu_id", return_value=4
+        )
+        mocker.patch(
+            "s_tui.sources.source.Source._get_online_cpu_ids",
+            return_value=[0, 1, 2, 3],
+        )
         src = UtilSource()
 
         mocker.patch("psutil.cpu_percent", side_effect=OSError("device gone"))

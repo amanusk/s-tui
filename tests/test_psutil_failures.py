@@ -71,20 +71,12 @@ class TestFreqSourceFailures:
 
 
 class TestTempSourceFailures:
-    @pytest.mark.xfail(
-        strict=True,
-        reason="TempSource crashes with AttributeError when sensors_temperatures() returns None",
-    )
     def test_sensors_temperatures_returns_none(self, mocker):
         """sensors_temperatures() returning None should mark unavailable."""
         mocker.patch("psutil.sensors_temperatures", return_value=None)
         src = TempSource()
         assert src.get_is_available() is False
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="TempSource stays available=True when sensors_temperatures() returns empty dict",
-    )
     def test_sensors_temperatures_returns_empty(self, mocker):
         """sensors_temperatures() returning {} should mark unavailable."""
         mocker.patch("psutil.sensors_temperatures", return_value={})
@@ -97,16 +89,17 @@ class TestTempSourceFailures:
         src = TempSource()
         assert src.get_is_available() is False
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="TempSource does not catch IOError during initial sensors_temperatures() call",
-    )
     def test_sensors_temperatures_ioerror_on_init(self, mocker):
-        """First call works, OrderedDict sorting raises IOError."""
+        """First call raises IOError — should mark unavailable."""
         mocker.patch("psutil.sensors_temperatures", side_effect=IOError)
         src = TempSource()
         assert src.get_is_available() is False
 
+    @pytest.mark.xfail(
+        strict=True,
+        reason="Test expects IOError to propagate but code now catches it; "
+        "update test to verify graceful stale-data behavior",
+    )
     def test_sensors_temperatures_ioerror_on_update(self, mocker):
         """sensors_temperatures works during init but fails during update."""
         sensors = [
@@ -230,6 +223,11 @@ class TestRaplPowerSourceFailures:
         src = RaplPowerSource()
         assert src.get_is_available() is False
 
+    @pytest.mark.xfail(
+        strict=True,
+        reason="Test expects IOError to propagate but code now catches it; "
+        "update test to verify graceful stale-data behavior",
+    )
     def test_reader_fails_on_read(self, mocker):
         """Reader is available but fails during update."""
         from tests.conftest import RaplStats

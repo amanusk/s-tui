@@ -91,7 +91,14 @@ def make_fans_dict(count=1, label_prefix="fan", current=1200, group_name="thinkp
 
 @pytest.fixture
 def mock_cpu_count(mocker):
-    """Mock psutil.cpu_count to return 4."""
+    """Mock psutil.cpu_count to return 4, with matching topology helpers."""
+    mocker.patch(
+        "s_tui.sources.source.Source._get_max_cpu_id", return_value=4
+    )
+    mocker.patch(
+        "s_tui.sources.source.Source._get_online_cpu_ids",
+        return_value=[0, 1, 2, 3],
+    )
     return mocker.patch("psutil.cpu_count", return_value=4)
 
 
@@ -103,7 +110,7 @@ def mock_cpu_percent(mocker):
 
 @pytest.fixture
 def mock_cpu_freq(mocker):
-    """Mock psutil.cpu_freq for 4 cores + overall."""
+    """Mock psutil.cpu_freq for 4 cores + overall, with matching topology helpers."""
     per_cpu = make_cpu_freq_list(4)
     overall = make_cpu_freq_overall()
 
@@ -112,6 +119,13 @@ def mock_cpu_freq(mocker):
             return per_cpu
         return overall
 
+    mocker.patch(
+        "s_tui.sources.source.Source._get_max_cpu_id", return_value=4
+    )
+    mocker.patch(
+        "s_tui.sources.source.Source._get_online_cpu_ids",
+        return_value=[0, 1, 2, 3],
+    )
     return mocker.patch("psutil.cpu_freq", side_effect=_cpu_freq)
 
 
