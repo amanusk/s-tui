@@ -62,9 +62,7 @@ class TestUtilCoreCountChanges:
         """
         mocker.patch("psutil.cpu_count", return_value=4)
         mocker.patch("psutil.cpu_percent", return_value=[25.0, 30.0, 20.0, 15.0])
-        mocker.patch(
-            "s_tui.sources.source.Source._get_max_cpu_id", return_value=4
-        )
+        mocker.patch("s_tui.sources.source.Source._get_max_cpu_id", return_value=4)
         mocker.patch(
             "s_tui.sources.source.Source._get_online_cpu_ids",
             return_value=[0, 1, 2, 3],
@@ -103,9 +101,7 @@ class TestFreqCoreCountChanges:
             return per_cpu_4 if percpu else overall
 
         mocker.patch("psutil.cpu_freq", side_effect=_freq_init)
-        mocker.patch(
-            "s_tui.sources.source.Source._get_max_cpu_id", return_value=4
-        )
+        mocker.patch("s_tui.sources.source.Source._get_max_cpu_id", return_value=4)
         mocker.patch(
             "s_tui.sources.source.Source._get_online_cpu_ids",
             return_value=[0, 1, 2, 3],
@@ -278,9 +274,7 @@ class TestSourceUpdateExceptionPropagation:
         """Any psutil call raises OSError during update() — should not propagate."""
         mocker.patch("psutil.cpu_count", return_value=4)
         mocker.patch("psutil.cpu_percent", return_value=[25.0, 30.0, 20.0, 15.0])
-        mocker.patch(
-            "s_tui.sources.source.Source._get_max_cpu_id", return_value=4
-        )
+        mocker.patch("s_tui.sources.source.Source._get_max_cpu_id", return_value=4)
         mocker.patch(
             "s_tui.sources.source.Source._get_online_cpu_ids",
             return_value=[0, 1, 2, 3],
