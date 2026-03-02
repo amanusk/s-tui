@@ -207,7 +207,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.refresh_rate_ctrl = urwid.Edit(
             ("Refresh[s]:"), self.controller.refresh_rate
         )
-        self.hline = urwid.AttrWrap(urwid.SolidFill(" "), "line")
+        self.hline = urwid.AttrMap(urwid.SolidFill(" "), "line")
 
         self.mode_buttons = []
 
@@ -411,11 +411,11 @@ class GraphView(urwid.WidgetPlaceholder):
         # Update the controller to the state of the checkbox
         self.controller.smooth_graph_mode = state
         if state:
-            self.hline = urwid.AttrWrap(
+            self.hline = urwid.AttrMap(
                 urwid.SolidFill("\N{LOWER ONE QUARTER BLOCK}"), "line"
             )
         else:
-            self.hline = urwid.AttrWrap(urwid.SolidFill(" "), "line")
+            self.hline = urwid.AttrMap(urwid.SolidFill(" "), "line")
 
         for graph in self.graphs.values():
             graph.set_smooth_colors(state)
@@ -576,7 +576,7 @@ class GraphView(urwid.WidgetPlaceholder):
             urwid.SimpleListWalker(cpu_stats + graph_controls + [summaries])
         )
 
-        vline = urwid.AttrWrap(urwid.SolidFill("|"), "line")
+        vline = urwid.AttrMap(urwid.SolidFill("|"), "line")
         widget = urwid.Columns(
             [
                 ("fixed", 20, text_col),
