@@ -231,7 +231,7 @@ class TestRaplPowerSourceFailures:
         assert src.get_is_available() is False
 
     def test_reader_fails_on_read(self, mocker):
-        """Reader is available but fails during update."""
+        """Reader is available but fails during update — should not crash."""
         from tests.conftest import RaplStats
 
         reader = MagicMock()
@@ -246,8 +246,27 @@ class TestRaplPowerSourceFailures:
 
         # Now make reader fail on next read
         reader.read_power.side_effect = IOError("file disappeared")
-        with pytest.raises((IOError, OSError)):
-            src.update()
+        src.update()  # should not crash
+        assert src.get_is_available() is True
+
+    def test_reader_returns_none(self, mocker):
+        """Reader returns None during update — should not crash."""
+        from tests.conftest import RaplStats
+
+        reader = MagicMock()
+        reader.read_power.return_value = [
+            RaplStats(label="pkg", current=1000000.0, max=0.0),
+        ]
+        mocker.patch(
+            "s_tui.sources.rapl_power_source.get_power_reader", return_value=reader
+        )
+        src = RaplPowerSource()
+        assert src.get_is_available() is True
+
+        # Now reader returns None
+        reader.read_power.return_value = None
+        src.update()  # should not crash
+        assert src.get_is_available() is True
 
     def test_update_skipped_when_unavailable(self, mocker):
         """update() should be a no-op when source is not available."""
