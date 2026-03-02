@@ -19,6 +19,7 @@
 
 from collections import OrderedDict
 import logging
+import os
 
 try:
     import psutil
@@ -146,6 +147,15 @@ class Source:
                 logging.debug("Hook invoked")
                 hook.invoke()
 
+    def _mark_offline_cores(self, total_cores, online_ids):
+        """Mark cores not in online_ids as unavailable in sensor_available."""
+        if online_ids is None:
+            return
+        online_set = set(online_ids)
+        for core_id in range(total_cores):
+            if core_id not in online_set:
+                self.sensor_available[core_id + 1] = False
+
     @staticmethod
     def _get_online_cpu_ids():
         """Get sorted list of online CPU core IDs using psutil.
@@ -163,32 +173,26 @@ class Source:
 
     @staticmethod
     def _get_max_cpu_id():
-        """Get the highest CPU core ID on the system.
+        """Get the total number of CPU cores, including offline ones.
 
-        Combines cpu_count() and cpu_affinity() to detect all cores,
-        including offline ones. cpu_count() should return total logical CPUs,
-        but cpu_affinity() helps catch cases where higher-numbered cores exist.
-
-        Strategy: Use the maximum of:
-        1. cpu_count() - total logical CPUs (should include offline)
-        2. max(online_ids) + 1 - ensures we account for all possible core IDs
+        psutil.cpu_count() and cpu_affinity() may only reflect online cores.
+        os.sysconf('SC_NPROCESSORS_CONF') returns all configured processors
+        including offline ones. Available on POSIX (Linux, BSD, macOS).
         """
         if psutil is None:
             return 0
         total = psutil.cpu_count(logical=True) or 0
 
-        # Check cpu_affinity - this gives us the actual online core IDs
-        # If max online ID + 1 > cpu_count(), we know there are more cores
         try:
             online_ids = psutil.Process().cpu_affinity()
             if online_ids:
-                max_online = max(online_ids)
-                # Always use max_online + 1 to ensure we include the highest core
-                # even if it's offline (e.g., if cores 0-6 are online, max_online=6,
-                # so we need at least 7 cores total, but if core 7 exists offline,
-                # cpu_count() should return 8, and max(8, 7) = 8)
-                total = max(total, max_online + 1)
+                total = max(total, max(online_ids) + 1)
         except (AttributeError, OSError, psutil.Error):
+            pass
+
+        try:
+            total = max(total, os.sysconf("SC_NPROCESSORS_CONF"))
+        except (AttributeError, ValueError, OSError):
             pass
 
         return total

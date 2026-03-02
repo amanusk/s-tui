@@ -70,29 +70,16 @@ class FreqSource(Source):
         self.last_measurement = [0.0] * len(self.available_sensors)
         self.sensor_available = [True] * len(self.available_sensors)
 
-        # Mark offline cores as unavailable from the start
-        online_ids = self._get_online_cpu_ids()
-        if online_ids is not None:
-            online_set = set(online_ids)
-            for core_id in range(total_cores):
-                if core_id not in online_set:
-                    self.sensor_available[core_id + 1] = False
+        self._mark_offline_cores(total_cores, self._get_online_cpu_ids())
 
         if self.top_freq == 0.0 and max(self.last_measurement) >= 0:
             self.max_freq = max(self.last_measurement)
 
     def update(self):
-        online_ids = self._get_online_cpu_ids()
-
         try:
             per_cpu_freq = psutil.cpu_freq(True)
         except (OSError, IOError, AttributeError, NotImplementedError) as e:
             logging.debug("cpu_freq() raised %s: %s", type(e).__name__, e)
-            # cpu_freq() raises NotImplementedError when:
-            # - CPU frequency files are not available on the system
-            # - Some Linux distributions or configurations don't expose frequency info
-            # - The underlying system API doesn't support per-CPU frequency queries
-            # In this case, we can't get frequency data, so mark all cores as unavailable (N/A)
             for i in range(1, len(self.sensor_available)):
                 self.sensor_available[i] = False
             return
@@ -100,43 +87,18 @@ class FreqSource(Source):
         if not per_cpu_freq:
             return
 
-        if online_ids is None:
-            # No cpu_affinity — direct index mapping
-            freqs = [f.current for f in per_cpu_freq]
-            valid = [f for f in freqs if f > 0]
-            avg = sum(valid) / len(valid) if valid else 0.0
-            self.last_measurement = [avg] + freqs
-            return
-
-        # psutil.cpu_freq(True) uses direct index mapping:
-        # per_cpu_freq[i] corresponds to Core i (not online_ids[i]).
-        # Unlike cpu_percent(), cpu_freq() preserves all cores including offline ones,
-        # with offline cores showing current=0.0, min=0.0, max=0.0.
-        online_set = set(online_ids) if online_ids else set()
+        # cpu_freq(percpu=True) uses direct index mapping — per_cpu_freq[i]
+        # corresponds to Core i. Offline cores report current=0.0.
         num_cores = len(self.available_sensors) - 1  # index 0 is "Avg"
         online_freqs = []
 
         for core_id in range(num_cores):
-            if core_id < len(per_cpu_freq):
-                freq_val = (
-                    per_cpu_freq[core_id].current
-                    if hasattr(per_cpu_freq[core_id], "current")
-                    else 0.0
-                )
-                if freq_val > 0:
-                    # Online core with valid frequency
-                    self.last_measurement[core_id + 1] = freq_val
-                    online_freqs.append(freq_val)
-                    self.sensor_available[core_id + 1] = True
-                else:
-                    # Offline core (0.0 frequency indicates offline)
-                    self.sensor_available[core_id + 1] = False
+            if core_id < len(per_cpu_freq) and per_cpu_freq[core_id].current > 0:
+                self.last_measurement[core_id + 1] = per_cpu_freq[core_id].current
+                online_freqs.append(per_cpu_freq[core_id].current)
+                self.sensor_available[core_id + 1] = True
             else:
-                # Core beyond per_cpu_freq length - check affinity
-                if core_id in online_set:
-                    self.sensor_available[core_id + 1] = True
-                else:
-                    self.sensor_available[core_id + 1] = False
+                self.sensor_available[core_id + 1] = False
 
         self.last_measurement[0] = (
             sum(online_freqs) / len(online_freqs) if online_freqs else 0.0

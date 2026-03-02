@@ -107,9 +107,10 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         self.sub_title_list = sub_title_list
         self.set_title(title)
 
+        self.sensor_available = [True] * len(bar_graph_vector)
+
         super(LabeledBarGraphVector, self).__init__(urwid.Pile([]))
-        # Initialize with all sensors available (will be updated by BarGraphVector if needed)
-        self.set_visible_graphs(visible_graph_list, sensor_available=None)
+        self.set_visible_graphs(visible_graph_list)
 
     def set_title(self, title):
         if not title:
@@ -137,21 +138,10 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
 
         self.y_label = ("fixed", y_scale_len, y_list_walker)
 
-    def set_visible_graphs(self, visible_graph_list=None, sensor_available=None):
-        """Show a column of the graph selected for display
-
-        Args:
-            visible_graph_list: List of booleans indicating which graphs to show
-            sensor_available: Optional list of booleans indicating which sensors are available.
-                            If None, all sensors are assumed available.
-                            If a sensor is unavailable, a placeholder showing "N/A" is used.
-        """
+    def set_visible_graphs(self, visible_graph_list=None):
+        """Show a column of the graph selected for display"""
         if visible_graph_list is None:
             visible_graph_list = self.visible_graph_list
-
-        if sensor_available is None:
-            # Default: all sensors available
-            sensor_available = [True] * len(self.bar_graph_vector)
 
         vline = urwid.AttrWrap(urwid.SolidFill("|"), "line")
 
@@ -164,7 +154,7 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
                 sub_title_widget = urwid.ListBox([text_w])
 
                 # Use placeholder if sensor is unavailable
-                if idx < len(sensor_available) and not sensor_available[idx]:
+                if idx < len(self.sensor_available) and not self.sensor_available[idx]:
                     display_widget = ScalableBarGraph._create_na_placeholder()
                 else:
                     display_widget = graph

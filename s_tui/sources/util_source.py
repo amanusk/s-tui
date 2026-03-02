@@ -51,13 +51,11 @@ class UtilSource(Source):
         self.last_measurement = [0.0] * len(self.available_sensors)
         self.sensor_available = [True] * len(self.available_sensors)
 
-        # Mark offline cores as unavailable from the start
-        online_ids = self._get_online_cpu_ids()
-        if online_ids is not None:
-            online_set = set(online_ids)
-            for core_id in range(total_cores):
-                if core_id not in online_set:
-                    self.sensor_available[core_id + 1] = False
+        # Affinity cache — refreshed in update() when online core count changes
+        self._cached_online_ids = self._get_online_cpu_ids()
+        self._cached_online_len = -1  # force refresh on first update()
+
+        self._mark_offline_cores(total_cores, self._cached_online_ids)
 
     def update(self):
         try:
@@ -68,7 +66,12 @@ class UtilSource(Source):
         if not per_cpu:
             return
 
-        online_ids = self._get_online_cpu_ids()
+        # Only re-query affinity when the online core count changes
+        if len(per_cpu) != self._cached_online_len:
+            self._cached_online_ids = self._get_online_cpu_ids()
+            self._cached_online_len = len(per_cpu)
+
+        online_ids = self._cached_online_ids
 
         if online_ids is None:
             # No cpu_affinity (e.g. macOS) — direct index mapping
@@ -76,8 +79,8 @@ class UtilSource(Source):
             self.last_measurement = [avg] + [float(v) for v in per_cpu]
             return
 
-        # psutil drops offline cores and shifts indices, so
-        # per_cpu[i] belongs to online_ids[i], not to core i.
+        # cpu_percent(percpu=True) drops offline cores and shifts indices,
+        # so per_cpu[i] belongs to online_ids[i], not to core i.
         value_by_core = dict(zip(online_ids, per_cpu))
         num_cores = len(self.available_sensors) - 1  # index 0 is "Avg"
         online_values = []
@@ -88,7 +91,6 @@ class UtilSource(Source):
                 online_values.append(self.last_measurement[core_id + 1])
                 self.sensor_available[core_id + 1] = True
             else:
-                # Offline — stale value stays in last_measurement
                 self.sensor_available[core_id + 1] = False
 
         self.last_measurement[0] = (

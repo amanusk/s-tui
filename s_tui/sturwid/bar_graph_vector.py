@@ -90,7 +90,6 @@ class BarGraphVector(LabeledBarGraphVector):
             graph.set_bar_width(bar_width)
 
         self.color_counter_vector = [0] * graph_count
-        self.sensor_available = [True] * graph_count
 
     def _set_colors(self, graph, colors):
         self.color_a = colors[0]
@@ -246,7 +245,7 @@ class BarGraphVector(LabeledBarGraphVector):
 
         # Sync sensor availability from source and rebuild graphs if changed
         need_rebuild = update_max
-        source_available = getattr(self.source, "sensor_available", [])
+        source_available = self.source.sensor_available
         if source_available:
             new_available = source_available[: len(self.sensor_available)]
             if new_available != self.sensor_available[: len(new_available)]:
@@ -254,7 +253,7 @@ class BarGraphVector(LabeledBarGraphVector):
                 need_rebuild = True
 
         if need_rebuild:
-            self.set_visible_graphs(sensor_available=self.sensor_available)
+            self.set_visible_graphs()
 
     def reset(self):
         self.graph_data = []
