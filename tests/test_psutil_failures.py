@@ -223,11 +223,6 @@ class TestRaplPowerSourceFailures:
         src = RaplPowerSource()
         assert src.get_is_available() is False
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Test expects IOError to propagate but code now catches it; "
-        "update test to verify graceful stale-data behavior",
-    )
     def test_reader_fails_on_read(self, mocker):
         """Reader is available but fails during update."""
         from tests.conftest import RaplStats

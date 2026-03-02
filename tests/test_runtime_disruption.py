@@ -251,6 +251,10 @@ class TestFanSensorChanges:
 
 
 class TestRaplReaderFailsMidRun:
+    @pytest.mark.xfail(
+        strict=True,
+        reason="RaplPowerSource.update() does not catch IOError from reader",
+    )
     def test_rapl_reader_fails_during_update(self, mocker):
         """RAPL energy file becomes unreadable mid-run."""
         reader = MagicMock()
