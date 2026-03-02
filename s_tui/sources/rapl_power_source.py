@@ -83,6 +83,13 @@ class RaplPowerSource(Source):
         current_measurement_time = time.time()
         seconds_passed = current_measurement_time - self.last_probe_time
 
+        if seconds_passed <= 0:
+            logging.warning(
+                "Non-positive time delta between RAPL measurements: %s",
+                seconds_passed,
+            )
+            return
+
         for m_idx, _ in enumerate(self.last_probe):
             try:
                 joule_used = (
@@ -94,7 +101,7 @@ class RaplPowerSource(Source):
                 watts_used = float(joule_used) / float(seconds_passed)
                 logging.debug("watts used %s", watts_used)
                 logging.info(
-                    "Joule_Used %d, seconds passed, %d", joule_used, seconds_passed
+                    "Joule_Used %f, seconds passed, %f", joule_used, seconds_passed
                 )
 
                 if watts_used > 0:
@@ -104,7 +111,7 @@ class RaplPowerSource(Source):
                     # update
                     self.last_measurement[m_idx] = watts_used
                     logging.info("Power reading elapsed")
-            except (IndexError, AttributeError, ZeroDivisionError) as e:
+            except (IndexError, AttributeError) as e:
                 logging.warning("Error reading RAPL sensor %d: %s", m_idx, e)
 
         self.last_probe = current_measurement_value
