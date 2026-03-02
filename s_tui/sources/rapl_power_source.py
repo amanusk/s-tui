@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2025 Alex Manuskin, Maor Veitsman
+# Copyright (C) 2017-2026 Alex Manuskin, Maor Veitsman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -27,8 +27,6 @@ import logging
 from s_tui.sources.source import Source
 from s_tui.sources.rapl_read import get_power_reader
 
-LOGGER = logging.getLogger(__name__)
-
 
 class RaplPowerSource(Source):
     MICRO_JOULE_IN_JOULE = 1000000.0
@@ -54,7 +52,7 @@ class RaplPowerSource(Source):
         self.last_probe_time = time.time()
         self.last_probe = self.reader.read_power()
         self.max_power = 1
-        self.last_measurement = [0] * len(self.last_probe)
+        self.last_measurement = [0.0] * len(self.last_probe)
 
         multi_sensors = []
         for item in self.last_probe:
@@ -67,30 +65,52 @@ class RaplPowerSource(Source):
     def update(self):
         if not self.is_available:
             return
-        current_measurement_value = self.reader.read_power()
+        if self.reader is None:
+            logging.warning("RAPL reader is not initialized")
+            return
+        try:
+            current_measurement_value = self.reader.read_power()
+        except (IOError, OSError) as e:
+            logging.warning("Failed to read RAPL power: %s", e)
+            return
+
+        if not current_measurement_value:
+            logging.warning("RAPL read_power() returned empty or None")
+            return
+
         current_measurement_time = time.time()
+        seconds_passed = current_measurement_time - self.last_probe_time
+
+        if seconds_passed <= 0:
+            logging.warning(
+                "Non-positive time delta between RAPL measurements: %s",
+                seconds_passed,
+            )
+            return
 
         for m_idx, _ in enumerate(self.last_probe):
-            joule_used = (
-                current_measurement_value[m_idx].current
-                - self.last_probe[m_idx].current
-            ) / float(self.MICRO_JOULE_IN_JOULE)
-            self.last_probe[m_idx] = joule_used
+            try:
+                joule_used = (
+                    current_measurement_value[m_idx].current
+                    - self.last_probe[m_idx].current
+                ) / float(self.MICRO_JOULE_IN_JOULE)
 
-            seconds_passed = current_measurement_time - self.last_probe_time
-            logging.debug("seconds passed %s", seconds_passed)
-            watts_used = float(joule_used) / float(seconds_passed)
-            logging.debug("watts used %s", watts_used)
-            logging.info(
-                "Joule_Used %d, seconds passed, %d", joule_used, seconds_passed
-            )
+                logging.debug("seconds passed %s", seconds_passed)
+                watts_used = float(joule_used) / float(seconds_passed)
+                logging.debug("watts used %s", watts_used)
+                logging.info(
+                    "Joule_Used %f, seconds passed, %f", joule_used, seconds_passed
+                )
 
-            if watts_used > 0:
-                # The information on joules used elapses every once in a while,
-                # this might lead to negative readings.
-                # To prevent this, we keep the last value until the next update
-                self.last_measurement[m_idx] = watts_used
-                logging.info("Power reading elapsed")
+                if watts_used > 0:
+                    # The information on joules used elapses every once in a
+                    # while, this might lead to negative readings.
+                    # To prevent this, we keep the last value until the next
+                    # update
+                    self.last_measurement[m_idx] = watts_used
+                    logging.info("Power reading elapsed")
+            except (IndexError, AttributeError) as e:
+                logging.warning("Error reading RAPL sensor %d: %s", m_idx, e)
 
         self.last_probe = current_measurement_value
         self.last_probe_time = current_measurement_time
