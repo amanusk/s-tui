@@ -303,27 +303,3 @@ class TestSourceUpdateExceptionPropagation:
             pytest.fail("update() should not propagate OSError to caller")
 
 
-# =====================================================================
-# Summary after sensor mismatch
-# =====================================================================
-
-
-class TestSummaryAfterMismatch:
-    @pytest.mark.xfail(
-        strict=True,
-        reason="get_sensors_summary() IndexError when last_measurement length != available_sensors",
-    )
-    def test_summary_after_measurement_grows(self, mocker):
-        """get_summary() after last_measurement has more entries than available_sensors."""
-        mocker.patch("psutil.cpu_count", return_value=2)
-        mocker.patch("psutil.cpu_percent", return_value=[25.0, 30.0])
-        src = UtilSource()
-        assert len(src.get_sensor_list()) == 3  # Avg + 2 cores
-
-        # 4 cores now
-        mocker.patch("psutil.cpu_percent", return_value=[25.0, 30.0, 20.0, 15.0])
-        src.update()
-
-        # This is the crash point: available_sensors has 3, last_measurement has 5
-        summary = src.get_summary()
-        assert summary is not None

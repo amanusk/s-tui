@@ -439,7 +439,7 @@ class GraphView(urwid.WidgetPlaceholder):
             self.mode_buttons.append(radio_button(group, mode, self.on_mode_button))
 
         # Set default radio button to "Monitor" mode
-        self.mode_buttons[0].set_state(True, do_callback=False)
+        self.mode_buttons[0].original_widget.set_state(True, do_callback=False)
 
         # Create list of buttons
         control_options = list()
