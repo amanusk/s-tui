@@ -38,9 +38,13 @@ class TempSource(Source):
             ".*FileNotFound.*",
         )
         try:
-            if psutil.sensors_temperatures():
-                self.is_available = True
-        except AttributeError:
+            sensors_data = psutil.sensors_temperatures()
+            if not sensors_data:
+                self.is_available = False
+                logging.debug("sensors_temperatures() returned empty/None")
+                return
+            self.is_available = True
+        except (AttributeError, IOError):
             self.is_available = False
             logging.debug("cpu temperature is not available from psutil")
             return
@@ -92,6 +96,7 @@ class TempSource(Source):
                 logging.debug("Temp sensor name %s", full_name)
                 self.available_sensors.append(full_name)
 
+        self.sensor_available = [True] * len(self.available_sensors)
         self.last_measurement = [0] * len(self.available_sensors)
 
         # Set temperature threshold if a custom one is set
@@ -106,7 +111,20 @@ class TempSource(Source):
         self.last_thresholds = [self.temp_thresh] * len(self.available_sensors)
 
     def update(self):
-        sample = OrderedDict(sorted(psutil.sensors_temperatures().items()))
+        try:
+            sensors_data = psutil.sensors_temperatures()
+        except (IOError, OSError) as e:
+            logging.debug("sensors_temperatures() raised %s, keeping stale data", e)
+            return
+
+        if not sensors_data:
+            return
+
+        try:
+            sample = OrderedDict(sorted(sensors_data.items()))
+        except IOError:
+            return
+
         self.last_measurement = []
         self.last_thresholds = []
         for sensor in sample:

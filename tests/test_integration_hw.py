@@ -34,9 +34,11 @@ class TestUtilSourceHW:
         assert src.get_is_available() is True
 
     def test_sensor_list_matches_cpu_count(self):
-        """Sensor list length should be cpu_count + 1 (Avg)."""
+        """Sensor list should cover all present cores (including offline) + Avg."""
+        from s_tui.sources.source import Source
+
         src = UtilSource()
-        expected = psutil.cpu_count() + 1
+        expected = Source._get_max_cpu_id() + 1  # all cores + Avg
         assert len(src.get_sensor_list()) == expected
 
     def test_update_produces_readings(self):

@@ -42,27 +42,64 @@ class UtilSource(Source):
             "util dark smooth",
         )
 
-        self.last_measurement = [0] * (psutil.cpu_count() + 1)
+        total_cores = self._get_max_cpu_id()
 
         self.available_sensors = ["Avg"]
-        for core_id in range(psutil.cpu_count()):
+        for core_id in range(total_cores):
             self.available_sensors.append("Core " + str(core_id))
 
-    def update(self):
-        # Get per-CPU utilization in a single call
-        per_cpu_util = psutil.cpu_percent(interval=0.0, percpu=True)
-        # Compute average from per-CPU values instead of making a second call
-        avg_util = sum(per_cpu_util) / len(per_cpu_util) if per_cpu_util else 0.0
-        self.last_measurement = [avg_util]
-        for util in per_cpu_util:
-            logging.info("Core id util %s", util)
-            self.last_measurement.append(float(util))
+        self.last_measurement = [0.0] * len(self.available_sensors)
+        self.sensor_available = [True] * len(self.available_sensors)
 
+        # Affinity cache — refreshed in update() when online core count changes
+        self._cached_online_ids = self._get_online_cpu_ids()
+        self._cached_online_len = -1  # force refresh on first update()
+
+        self._mark_offline_cores(total_cores, self._cached_online_ids)
+
+    def update(self):
+        try:
+            per_cpu = psutil.cpu_percent(interval=0.0, percpu=True)
+        except OSError:
+            return
+
+        if not per_cpu:
+            return
+
+        # Only re-query affinity when the online core count changes
+        if len(per_cpu) != self._cached_online_len:
+            self._cached_online_ids = self._get_online_cpu_ids()
+            self._cached_online_len = len(per_cpu)
+
+        online_ids = self._cached_online_ids
+
+        if online_ids is None:
+            # No cpu_affinity (e.g. macOS) — direct index mapping
+            avg = sum(per_cpu) / len(per_cpu)
+            self.last_measurement = [avg] + [float(v) for v in per_cpu]
+            return
+
+        # cpu_percent(percpu=True) drops offline cores and shifts indices,
+        # so per_cpu[i] belongs to online_ids[i], not to core i.
+        value_by_core = dict(zip(online_ids, per_cpu))
+        num_cores = len(self.available_sensors) - 1  # index 0 is "Avg"
+        online_values = []
+
+        for core_id in range(num_cores):
+            if core_id in value_by_core:
+                self.last_measurement[core_id + 1] = float(value_by_core[core_id])
+                online_values.append(self.last_measurement[core_id + 1])
+                self.sensor_available[core_id + 1] = True
+            else:
+                self.sensor_available[core_id + 1] = False
+
+        self.last_measurement[0] = (
+            sum(online_values) / len(online_values) if online_values else 0.0
+        )
         logging.info("Utilization recorded %s", self.last_measurement)
 
     def get_is_available(self):
         return self.is_available
 
     def get_top(self):
-        # Util can only be as high as 100%
         return 100

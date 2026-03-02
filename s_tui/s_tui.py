@@ -253,9 +253,7 @@ class GraphView(urwid.WidgetPlaceholder):
         """Update all the graphs that are being displayed"""
 
         recoverable_source_errors = (OSError, IOError, TypeError, ValueError)
-        debug_mode = getattr(self.controller.args, "debug", False) or getattr(
-            self.controller.args, "debug_run", False
-        )
+        debug_mode = self.controller.args.debug or self.controller.args.debug_run
 
         for source in self.controller.sources:
             source_name = source.get_source_name()

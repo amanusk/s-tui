@@ -29,7 +29,7 @@ class FreqSource(Source):
 
     def __init__(self):
         self.is_available = True
-        if not hasattr(psutil, "cpu_freq") and psutil.cpu_freq():
+        if not hasattr(psutil, "cpu_freq"):
             self.is_available = False
             logging.debug("cpu_freq is not available from psutil")
             return
@@ -45,39 +45,64 @@ class FreqSource(Source):
             "freq dark smooth",
         )
 
-        # Get per-cpu and overall freq in minimal calls
-        per_cpu_freq = psutil.cpu_freq(True)
-        overall_freq = psutil.cpu_freq(False)
+        # cpu_freq can raise NotImplementedError if cores are offline at startup
+        try:
+            per_cpu_freq = psutil.cpu_freq(True)
+        except (OSError, IOError, NotImplementedError):
+            per_cpu_freq = None
 
-        # +1 for average frequency
-        self.last_measurement = [0] * len(per_cpu_freq)
-        if overall_freq:
-            self.last_measurement.append(0)
+        try:
+            overall_freq = psutil.cpu_freq(False)
+        except (OSError, IOError, NotImplementedError):
+            overall_freq = None
+
+        total_cores = self._get_max_cpu_id()
+        if per_cpu_freq and len(per_cpu_freq) > total_cores:
+            total_cores = len(per_cpu_freq)
 
         self.top_freq = overall_freq.max if overall_freq else 0.0
         self.max_freq = self.top_freq
 
-        if self.top_freq == 0.0:
-            # If top freq not available, take the current as top
-            if max(self.last_measurement) >= 0:
-                self.max_freq = max(self.last_measurement)
-
         self.available_sensors = ["Avg"]
-        for core_id in range(len(per_cpu_freq)):
+        for core_id in range(total_cores):
             self.available_sensors.append("Core " + str(core_id))
 
+        self.last_measurement = [0.0] * len(self.available_sensors)
+        self.sensor_available = [True] * len(self.available_sensors)
+
+        self._mark_offline_cores(total_cores, self._get_online_cpu_ids())
+
+        if self.top_freq == 0.0 and max(self.last_measurement) >= 0:
+            self.max_freq = max(self.last_measurement)
+
     def update(self):
-        # Get per-cpu frequencies in a single call
-        per_cpu_freq = psutil.cpu_freq(True)
-        # Compute average from per-CPU values
-        avg_freq = (
-            sum(core.current for core in per_cpu_freq) / len(per_cpu_freq)
-            if per_cpu_freq
-            else 0.0
+        try:
+            per_cpu_freq = psutil.cpu_freq(True)
+        except (OSError, IOError, AttributeError, NotImplementedError) as e:
+            logging.debug("cpu_freq() raised %s: %s", type(e).__name__, e)
+            for i in range(1, len(self.sensor_available)):
+                self.sensor_available[i] = False
+            return
+
+        if not per_cpu_freq:
+            return
+
+        # cpu_freq(percpu=True) uses direct index mapping — per_cpu_freq[i]
+        # corresponds to Core i. Offline cores report current=0.0.
+        num_cores = len(self.available_sensors) - 1  # index 0 is "Avg"
+        online_freqs = []
+
+        for core_id in range(num_cores):
+            if core_id < len(per_cpu_freq) and per_cpu_freq[core_id].current > 0:
+                self.last_measurement[core_id + 1] = per_cpu_freq[core_id].current
+                online_freqs.append(per_cpu_freq[core_id].current)
+                self.sensor_available[core_id + 1] = True
+            else:
+                self.sensor_available[core_id + 1] = False
+
+        self.last_measurement[0] = (
+            sum(online_freqs) / len(online_freqs) if online_freqs else 0.0
         )
-        self.last_measurement = [avg_freq]
-        for core in per_cpu_freq:
-            self.last_measurement.append(core.current)
 
     def get_maximum(self):
         return self.max_freq
