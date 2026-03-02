@@ -35,19 +35,24 @@ from tests.conftest import (
 
 
 class TestUtilCoreCountChanges:
-    @pytest.mark.xfail(
-        strict=True,
-        reason="get_sensors_summary() IndexError when last_measurement > available_sensors",
-    )
     def test_core_count_grows(self, mocker):
         """Simulate a core coming online mid-run (e.g. CPU hotplug)."""
         mocker.patch("psutil.cpu_count", return_value=4)
         mocker.patch("psutil.cpu_percent", return_value=[25.0, 30.0, 20.0, 15.0])
+        mocker.patch("s_tui.sources.source.Source._get_max_cpu_id", return_value=4)
+        mocker.patch(
+            "s_tui.sources.source.Source._get_online_cpu_ids",
+            return_value=[0, 1, 2, 3],
+        )
         src = UtilSource()
         assert len(src.get_sensor_list()) == 5  # Avg + 4 cores
 
         # Core comes online: 5 values now returned
         mocker.patch("psutil.cpu_percent", return_value=[25.0, 30.0, 20.0, 15.0, 10.0])
+        mocker.patch(
+            "s_tui.sources.source.Source._get_online_cpu_ids",
+            return_value=[0, 1, 2, 3, 4],
+        )
         src.update()
 
         # This should not crash
