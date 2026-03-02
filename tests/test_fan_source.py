@@ -46,8 +46,11 @@ class TestFanSourceUpdate:
         src = FanSource()
         src.update()
         readings = src.get_reading_list()
-        assert len(readings) == 1
+        # Both sensors are in the list, but the unreasonable one is marked unavailable
+        assert len(readings) == 2
         assert readings[0] == 1200
+        assert src.sensor_available[0] is True
+        assert src.sensor_available[1] is False
 
     def test_edge_triggered_always_false(self, mock_sensors_fans):
         src = FanSource()

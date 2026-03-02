@@ -146,8 +146,7 @@ class TestTempSensorChanges:
     def test_temp_sensor_disappears(self, mocker):
         """sensors_temperatures() returns fewer sensors mid-run.
 
-        Current behaviour: no crash; sensor list retains original length,
-        missing sensors may show stale data.
+        Disappeared sensor is marked N/A via sensor_available.
         """
         sensors_2 = [
             SensorTemperature(label="Core 0", current=55.0, high=80.0, critical=100.0),
@@ -168,11 +167,14 @@ class TestTempSensorChanges:
 
         summary = src.get_sensors_summary()
         assert summary is not None
+        assert len(src.get_sensor_list()) == 2
+        # Core 0 still available, Core 1 disappeared
+        assert src.sensor_available[0] is True
+        assert src.sensor_available[1] is False
+        # Summary shows N/A for disappeared sensor
+        values = list(summary.values())
+        assert values[1] == "N/A"
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="TempSource summary IndexError when new sensor appears mid-run",
-    )
     def test_temp_sensor_appears(self, mocker):
         """New sensor shows up in sensors_temperatures() mid-run."""
         sensors_1 = [
@@ -235,8 +237,7 @@ class TestFanSensorChanges:
     def test_fan_sensor_disappears(self, mocker):
         """sensors_fans() returns empty dict mid-run.
 
-        Current behaviour: no crash; sensor list retains original length,
-        missing fans show stale data.
+        Disappeared fan sensor is marked N/A via sensor_available.
         """
         fans = make_fans_dict(count=1)
         mocker.patch("psutil.sensors_fans", return_value=fans)
@@ -249,6 +250,11 @@ class TestFanSensorChanges:
 
         summary = src.get_sensors_summary()
         assert summary is not None
+        assert len(src.get_sensor_list()) == 1
+        assert src.sensor_available[0] is False
+        # Summary shows N/A for disappeared sensor
+        values = list(summary.values())
+        assert values[0] == "N/A"
 
 
 # =====================================================================

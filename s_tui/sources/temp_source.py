@@ -76,6 +76,7 @@ class TempSource(Source):
             logging.debug("Unable to create sensors dict")
             self.is_available = False
             return
+        self._sensor_lookup = {}
         multi_sensors = []
         for key, value in sensors_dict.items():
             sensor_name = "".join(key.title().split(" "))
@@ -95,6 +96,7 @@ class TempSource(Source):
 
                 logging.debug("Temp sensor name %s", full_name)
                 self.available_sensors.append(full_name)
+                self._sensor_lookup[(key, sensor_idx)] = len(self.available_sensors) - 1
 
         self.sensor_available = [True] * len(self.available_sensors)
         self.last_measurement = [0] * len(self.available_sensors)
@@ -125,25 +127,40 @@ class TempSource(Source):
         except IOError:
             return
 
-        self.last_measurement = []
-        self.last_thresholds = []
-        for sensor in sample:
-            for minor_sensor in sample[sensor]:
+        updated = set()
+        for key, sensors in sample.items():
+            for sensor_idx, minor_sensor in enumerate(sensors):
+                idx = self._sensor_lookup.get((key, sensor_idx))
+                if idx is None:
+                    continue  # new sensor not in original list
                 if minor_sensor.current <= 1.0 or minor_sensor.current >= 127.0:
+                    self.sensor_available[idx] = False
                     continue
-                self.last_measurement.append(minor_sensor.current)
+                self.last_measurement[idx] = minor_sensor.current
                 if (
                     minor_sensor.high is not None
                     and minor_sensor.high
                     and minor_sensor.high < 127.0
                     and self.temp_thresh_is_set is False
                 ):
-                    self.last_thresholds.append(minor_sensor.high)
+                    self.last_thresholds[idx] = minor_sensor.high
                 else:
-                    self.last_thresholds.append(self.temp_thresh)
+                    self.last_thresholds[idx] = self.temp_thresh
+                self.sensor_available[idx] = True
+                updated.add(idx)
 
-        if self.last_measurement:
-            self.max_last_temp = max(self.last_measurement)
+        # Mark sensors not seen in this sample as unavailable
+        for idx in range(len(self.available_sensors)):
+            if idx not in updated:
+                self.sensor_available[idx] = False
+
+        available_temps = [
+            self.last_measurement[i]
+            for i in range(len(self.available_sensors))
+            if self.sensor_available[i]
+        ]
+        if available_temps:
+            self.max_last_temp = max(available_temps)
             # Call check for hooks
             Source.update(self)
 

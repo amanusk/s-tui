@@ -12,6 +12,7 @@ when values contain colons (e.g., time strings like "12:34:56").
 
 import os
 import pytest
+from collections import defaultdict
 from unittest.mock import MagicMock, patch
 import configparser
 
@@ -153,3 +154,69 @@ class TestConfigDelimiter:
             )
         finally:
             os.unlink(temp_file)
+
+
+class TestConfigSensorNameMatching:
+    """Test that sensor config is matched by name, not position.
+
+    Verifies the fix for config loading that uses sensor names as keys
+    instead of positional lists, so reordering/adding/removing sensors
+    between restarts doesn't misalign visibility settings.
+    """
+
+    def test_config_fewer_sensors_than_system(self):
+        """Config has fewer sensors than currently on the system.
+
+        New sensors should default to visible (True).
+        """
+        from s_tui.sensors_menu import SensorsMenu
+
+        # Create a mock source with 3 sensors
+        source = MagicMock()
+        source.get_source_name.return_value = "Temp"
+        source.get_sensor_list.return_value = ["Core0,0", "Core1,0", "Core2,0"]
+
+        # Config only knows about 2 of them (dict keyed by lowercase name)
+        default_conf = {"Temp": {"core0,0": True, "core1,0": False}}
+
+        menu = SensorsMenu(MagicMock(), [source], default_conf)
+        active = menu.active_sensors["Temp"]
+        assert active[0] is True   # Core0,0 from config
+        assert active[1] is False  # Core1,0 from config
+        assert active[2] is True   # Core2,0 new, defaults visible
+
+    def test_config_more_sensors_than_system(self):
+        """Config has more sensors than currently on the system.
+
+        Extra config entries should be silently ignored.
+        """
+        from s_tui.sensors_menu import SensorsMenu
+
+        # System has only 1 sensor
+        source = MagicMock()
+        source.get_source_name.return_value = "Temp"
+        source.get_sensor_list.return_value = ["Core0,0"]
+
+        # Config has entries for 3 sensors
+        default_conf = {
+            "Temp": {"core0,0": False, "core1,0": True, "core2,0": True}
+        }
+
+        menu = SensorsMenu(MagicMock(), [source], default_conf)
+        active = menu.active_sensors["Temp"]
+        assert len(active) == 1
+        assert active[0] is False  # Core0,0 from config
+
+    def test_config_empty_defaults_all_visible(self):
+        """No config for a source means all sensors default to visible."""
+        from s_tui.sensors_menu import SensorsMenu
+
+        source = MagicMock()
+        source.get_source_name.return_value = "Fan"
+        source.get_sensor_list.return_value = ["fan0", "fan1"]
+
+        default_conf = defaultdict(dict)
+
+        menu = SensorsMenu(MagicMock(), [source], default_conf)
+        active = menu.active_sensors["Fan"]
+        assert active == [True, True]
