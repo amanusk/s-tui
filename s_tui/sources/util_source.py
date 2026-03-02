@@ -42,7 +42,7 @@ class UtilSource(Source):
             "util dark smooth",
         )
 
-        total_cores = self._get_max_cpu_id()
+        total_cores = self._get_total_core_count()
 
         self.available_sensors = ["Avg"]
         for core_id in range(total_cores):

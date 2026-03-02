@@ -172,7 +172,7 @@ class Source:
             return None
 
     @staticmethod
-    def _get_max_cpu_id():
+    def _get_total_core_count():
         """Get the total number of CPU cores, including offline ones.
 
         psutil.cpu_count() and cpu_affinity() may only reflect online cores.

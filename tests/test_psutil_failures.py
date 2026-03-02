@@ -95,13 +95,11 @@ class TestTempSourceFailures:
         src = TempSource()
         assert src.get_is_available() is False
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Test expects IOError to propagate but code now catches it; "
-        "update test to verify graceful stale-data behavior",
-    )
     def test_sensors_temperatures_ioerror_on_update(self, mocker):
-        """sensors_temperatures works during init but fails during update."""
+        """sensors_temperatures works during init but fails during update.
+
+        The implementation catches the error and keeps stale data.
+        """
         sensors = [
             SensorTemperature(label="Core 0", current=55.0, high=80.0, critical=100.0),
         ]
@@ -118,9 +116,13 @@ class TestTempSourceFailures:
         mocker.patch("psutil.sensors_temperatures", side_effect=_temps_side_effect)
         src = TempSource()
         assert src.get_is_available() is True
-        # Now update should raise IOError (unhandled in current code)
-        with pytest.raises((IOError, OSError)):
-            src.update()
+
+        # Capture readings before the failure
+        old_measurement = list(src.last_measurement)
+
+        # update() should not raise — it catches IOError and keeps stale data
+        src.update()
+        assert src.last_measurement == old_measurement
 
 
 # ---------------------------------------------------------------------------

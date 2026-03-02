@@ -44,7 +44,7 @@ class TempSource(Source):
                 logging.debug("sensors_temperatures() returned empty/None")
                 return
             self.is_available = True
-        except (AttributeError, IOError):
+        except (AttributeError, IOError, OSError):
             self.is_available = False
             logging.debug("cpu temperature is not available from psutil")
             return

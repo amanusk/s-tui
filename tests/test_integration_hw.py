@@ -38,7 +38,7 @@ class TestUtilSourceHW:
         from s_tui.sources.source import Source
 
         src = UtilSource()
-        expected = Source._get_max_cpu_id() + 1  # all cores + Avg
+        expected = Source._get_total_core_count() + 1  # all cores + Avg
         assert len(src.get_sensor_list()) == expected
 
     def test_update_produces_readings(self):

@@ -56,7 +56,7 @@ class FreqSource(Source):
         except (OSError, IOError, NotImplementedError):
             overall_freq = None
 
-        total_cores = self._get_max_cpu_id()
+        total_cores = self._get_total_core_count()
         if per_cpu_freq and len(per_cpu_freq) > total_cores:
             total_cores = len(per_cpu_freq)
 
