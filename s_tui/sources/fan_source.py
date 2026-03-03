@@ -60,6 +60,7 @@ class FanSource(Source):
             self.is_available = False
             return
 
+        self._sensor_lookup = {}
         for key, value in sensors_dict.items():
             sensor_name = key
             for sensor_idx, sensor in enumerate(value):
@@ -74,7 +75,9 @@ class FanSource(Source):
                 logging.debug("Fan sensor name %s", full_name)
 
                 self.available_sensors.append(full_name)
+                self._sensor_lookup[(key, sensor_idx)] = len(self.available_sensors) - 1
 
+        self.sensor_available = [True] * len(self.available_sensors)
         self.last_measurement = [0] * len(self.available_sensors)
 
     def update(self):
@@ -90,13 +93,24 @@ class FanSource(Source):
         if sample is None:
             logging.debug("sensors_fans() returned None, keeping stale data")
             return
-        self.last_measurement = []
-        for sensor in sample.values():
-            for minor_sensor in sensor:
-                # Ignore unreasonable fan speeds
+
+        updated = set()
+        for key, sensors in sample.items():
+            for sensor_idx, minor_sensor in enumerate(sensors):
+                idx = self._sensor_lookup.get((key, sensor_idx))
+                if idx is None:
+                    continue  # new sensor not in original list
                 if minor_sensor.current > 10000:
+                    self.sensor_available[idx] = False
                     continue
-                self.last_measurement.append(int(minor_sensor.current))
+                self.last_measurement[idx] = int(minor_sensor.current)
+                self.sensor_available[idx] = True
+                updated.add(idx)
+
+        # Mark sensors not seen in this sample as unavailable
+        for idx in range(len(self.available_sensors)):
+            if idx not in updated:
+                self.sensor_available[idx] = False
 
     def get_edge_triggered(self):
         return False

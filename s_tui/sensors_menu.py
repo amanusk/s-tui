@@ -22,7 +22,6 @@ A class displaying all available sensors
 
 from __future__ import print_function
 from __future__ import absolute_import
-import copy
 
 import urwid
 from s_tui.sturwid.ui_elements import ViListBox
@@ -52,15 +51,13 @@ class SensorsMenu:
         for source in source_list:
             source_name = source.get_source_name()
 
-            # get the saves sensor visibility list
-            if default_source_conf[source_name]:
-                # print(str(default_source_conf[source_name]))
-                self.sensor_status_dict[source_name] = copy.deepcopy(
-                    default_source_conf[source_name]
-                )
-            else:
-                self.sensor_status_dict[source_name] = [True] * len(
-                    source.get_sensor_list()
+            # Build per-sensor visibility from config dict (keyed by name)
+            conf = default_source_conf.get(source_name) or {}
+            self.sensor_status_dict[source_name] = []
+            for sensor in source.get_sensor_list():
+                # ConfigParser lowercases keys, so compare lowercase
+                self.sensor_status_dict[source_name].append(
+                    conf.get(sensor.lower(), True)
                 )
 
             self.sensor_button_dict[source_name] = []

@@ -26,10 +26,10 @@ def simple_sources():
 
 @pytest.fixture
 def default_conf():
-    """Default config: all sensors visible."""
+    """Default config: all sensors visible (dict keyed by lowercase sensor name)."""
     return {
-        "CPU Util": [True, True],
-        "Temp": [True, True, True],
+        "CPU Util": {"avg": True, "core 0": True},
+        "Temp": {"core 0": True, "core 1": True, "core 2": True},
     }
 
 
@@ -46,9 +46,9 @@ def menu(simple_sources, default_conf):
 
 class TestSensorsMenuInit:
     def test_active_sensors_match_defaults(self, menu, default_conf):
-        """active_sensors should mirror the default config."""
-        for name, states in default_conf.items():
-            assert menu.active_sensors[name] == states
+        """active_sensors should mirror the default config values."""
+        for name, conf_dict in default_conf.items():
+            assert menu.active_sensors[name] == list(conf_dict.values())
 
     def test_sensor_button_dict_populated(self, menu):
         """Each source should have checkbox entries."""
@@ -72,7 +72,9 @@ class TestSensorsMenuInit:
 
     def test_no_default_conf_defaults_to_all_true(self, simple_sources):
         """When default_source_conf entry is falsy, all sensors default True."""
-        conf = {"CPU Util": None, "Temp": None}
+        from collections import defaultdict
+
+        conf = defaultdict(dict)
         return_fn = MagicMock()
         m = SensorsMenu(return_fn, simple_sources, conf)
         assert m.active_sensors["CPU Util"] == [True, True]

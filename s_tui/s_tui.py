@@ -699,14 +699,14 @@ class GraphController:
         ]
         for source in sources:
             try:
-                options = list(self.conf.items(source + ",Graphs"))
-                for option in options:
-                    # Returns tuples of values in order
-                    self.graphs_default_conf[source].append(str_to_bool(option[1]))
-                options = list(self.conf.items(source + ",Summaries"))
-                for option in options:
-                    # Returns tuples of values in order
-                    self.summary_default_conf[source].append(str_to_bool(option[1]))
+                for option_name, option_value in self.conf.items(source + ",Graphs"):
+                    self.graphs_default_conf[source][option_name] = str_to_bool(
+                        option_value
+                    )
+                for option_name, option_value in self.conf.items(source + ",Summaries"):
+                    self.summary_default_conf[source][option_name] = str_to_bool(
+                        option_value
+                    )
             except (
                 AttributeError,
                 ValueError,
@@ -752,8 +752,8 @@ class GraphController:
 
         self.smooth_graph_mode = False
 
-        self.summary_default_conf = defaultdict(list)
-        self.graphs_default_conf = defaultdict(list)
+        self.summary_default_conf = defaultdict(dict)
+        self.graphs_default_conf = defaultdict(dict)
 
         self.temp_thresh = None
 
