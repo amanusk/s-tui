@@ -1,10 +1,10 @@
 """Tests for SensorsMenu: sensor visibility management and callbacks."""
 
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
+
 from s_tui.sensors_menu import SensorsMenu
-from s_tui.sources.source import MockSource
 
 
 def _make_mock_source(name, sensors):

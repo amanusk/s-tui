@@ -17,65 +17,55 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 """Helper functions module with common useful functions"""
 
-import os
+from __future__ import annotations
+
+import contextlib
+import csv
+import json
 import logging
+import os
 import platform
+import re
 import signal
 import subprocess
-import re
-import csv
 import sys
-import json
 import time
+from typing import IO, TYPE_CHECKING, Any, Literal, overload
+
+if TYPE_CHECKING:
+    import psutil
 
 from collections import OrderedDict
 
 __version__ = "1.3.0"
 
 _DEFAULT = object()
-PY3 = sys.version_info[0] == 3
 POSIX = os.name == "posix"
 ENCODING = sys.getfilesystemencoding()
-if not PY3:
-    ENCODING_ERRS = "replace"
-else:
-    try:
-        ENCODING_ERRS = sys.getfilesystemencodeerrors()  # py 3.6
-    except AttributeError:
-        ENCODING_ERRS = "surrogateescape" if POSIX else "replace"
+try:
+    ENCODING_ERRS = sys.getfilesystemencodeerrors()
+except AttributeError:
+    ENCODING_ERRS = "surrogateescape" if POSIX else "replace"
 
 
-def get_processor_name():
+def get_processor_name() -> str:
     """Returns the processor name in the system"""
     if platform.system() == "Linux":
-        with open("/proc/cpuinfo", "rb") as cpuinfo:
-            all_info = cpuinfo.readlines()
-            for line in all_info:
-                if b"model name" in line:
-                    return re.sub(b".*model name.*:", b"", line, count=1)
+        with open("/proc/cpuinfo") as cpuinfo:
+            for line in cpuinfo:
+                if "model name" in line:
+                    return re.sub(r".*model name.*:", "", line, count=1)
     elif platform.system() == "FreeBSD":
-        cmd = ["sysctl", "-n", "hw.model"]
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        str_value = process.stdout.read()
-        return str_value
+        return subprocess.check_output(["sysctl", "-n", "hw.model"], text=True).strip()
     elif platform.system() == "Darwin":
-        cmd = ["sysctl", "-n", "machdep.cpu.brand_string"]
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        str_value = process.stdout.read()
-        return str_value
+        return subprocess.check_output(
+            ["sysctl", "-n", "machdep.cpu.brand_string"], text=True
+        ).strip()
 
     return platform.processor()
 
 
-def kill_child_processes(parent_proc, timeout=3):
+def kill_child_processes(parent_proc: psutil.Process | None, timeout: int = 3) -> None:
     """Kills a process and all its children gracefully.
 
     Attempts SIGTERM via process group first, falls back to per-process
@@ -99,10 +89,8 @@ def kill_child_processes(parent_proc, timeout=3):
         logging.debug("Process group kill failed, falling back to per-process")
         try:
             for proc in parent_proc.children(recursive=True):
-                try:
+                with contextlib.suppress(psutil.NoSuchProcess, ProcessLookupError):
                     proc.terminate()
-                except (psutil.NoSuchProcess, ProcessLookupError):
-                    pass
             parent_proc.terminate()
         except (psutil.NoSuchProcess, AttributeError):
             logging.debug("Process already gone during terminate")
@@ -110,21 +98,19 @@ def kill_child_processes(parent_proc, timeout=3):
 
     # Wait for graceful exit, then SIGKILL stragglers
     try:
-        gone, alive = psutil.wait_procs(
-            [parent_proc] + parent_proc.children(recursive=True),
+        _, alive = psutil.wait_procs(
+            [parent_proc, *parent_proc.children(recursive=True)],
             timeout=timeout,
         )
         for proc in alive:
             logging.debug("Sending SIGKILL to straggler %s", proc)
-            try:
+            with contextlib.suppress(psutil.NoSuchProcess, ProcessLookupError):
                 proc.kill()
-            except (psutil.NoSuchProcess, ProcessLookupError):
-                pass
     except (psutil.NoSuchProcess, AttributeError):
         logging.debug("Process already gone during wait")
 
 
-def output_to_csv(sources, csv_writeable_file):
+def output_to_csv(sources: dict, csv_writeable_file: str) -> None:
     """Print statistics to csv file"""
     file_exists = os.path.isfile(csv_writeable_file)
 
@@ -133,7 +119,7 @@ def output_to_csv(sources, csv_writeable_file):
         csv_dict.update({"Time": time.strftime("%Y-%m-%d_%H:%M:%S")})
         summaries = [val for key, val in sources.items()]
         for summarie in summaries:
-            update_dict = dict()
+            update_dict = {}
             for prob, val in summarie.source.get_sensors_summary().items():
                 prob = summarie.source.get_source_name() + ":" + prob
                 update_dict[prob] = val
@@ -147,7 +133,7 @@ def output_to_csv(sources, csv_writeable_file):
         writer.writerow(csv_dict)
 
 
-def output_to_terminal(sources):
+def output_to_terminal(sources: list) -> None:
     """Print statistics to the terminal"""
     results = OrderedDict()
     for source in sources:
@@ -163,7 +149,7 @@ def output_to_terminal(sources):
     sys.exit()
 
 
-def output_to_json(sources):
+def output_to_json(sources: list) -> None:
     """Print statistics to the terminal in Json format"""
     results = OrderedDict()
     for source in sources:
@@ -175,7 +161,7 @@ def output_to_json(sources):
     sys.exit()
 
 
-def _get_xdg_config_home():
+def _get_xdg_config_home() -> str:
     """Return the XDG config home directory, with fallback to ~/.config"""
     user_home = os.getenv("XDG_CONFIG_HOME")
     if user_home:
@@ -183,49 +169,49 @@ def _get_xdg_config_home():
     return os.path.expanduser(os.path.join("~", ".config"))
 
 
-def get_config_dir():
+def get_config_dir() -> str:
     """
     Return the path to the user home config directory
     """
     return _get_xdg_config_home()
 
 
-def get_user_config_dir():
+def get_user_config_dir() -> str:
     """
     Return the path to the user s-tui config directory
     """
     return os.path.join(_get_xdg_config_home(), "s-tui")
 
 
-def get_user_config_file():
+def get_user_config_file() -> str:
     """
     Return the path to the user s-tui config file
     """
     return os.path.join(get_user_config_dir(), "s-tui.conf")
 
 
-def user_config_dir_exists():
+def user_config_dir_exists() -> bool:
     """
     Check whether the user s-tui config dir exists or not
     """
     return os.path.isdir(get_user_config_dir())
 
 
-def config_dir_exists():
+def config_dir_exists() -> bool:
     """
     Check whether the home config dir exists or not
     """
     return os.path.isdir(get_config_dir())
 
 
-def user_config_file_exists():
+def user_config_file_exists() -> bool:
     """
     Check whether the user s-tui config file exists or not
     """
     return os.path.isfile(get_user_config_file())
 
 
-def make_user_config_dir():
+def make_user_config_dir() -> str | None:
     """
     Create the user s-tui config directory if it doesn't exist
     """
@@ -248,15 +234,15 @@ def make_user_config_dir():
     return config_path
 
 
-def seconds_to_text(secs):
+def seconds_to_text(secs: float) -> str:
     """Converts seconds to a string of hours:minutes:seconds"""
     hours = (secs) // 3600
     minutes = (secs - hours * 3600) // 60
     seconds = secs - hours * 3600 - minutes * 60
-    return "%02d:%02d:%02d" % (hours, minutes, seconds)
+    return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
 
 
-def str_to_bool(string):
+def str_to_bool(string: str) -> bool:
     """Converts a string to a boolean"""
     if string == "True":
         return True
@@ -265,7 +251,7 @@ def str_to_bool(string):
     raise ValueError
 
 
-def which(program):
+def which(program: str) -> str | None:
     """Find the path of an executable"""
 
     def is_exe(fpath):
@@ -284,19 +270,25 @@ def which(program):
     return None
 
 
-def _open_binary(fname, **kwargs):
+def _open_binary(fname: str, **kwargs: Any) -> IO[bytes]:
     return open(fname, "rb", **kwargs)
 
 
-def _open_text(fname, **kwargs):
-    """On Python 3 opens a file in text mode by using fs encoding and
+def _open_text(fname: str, **kwargs: Any) -> IO[str]:
+    """Opens a file in text mode by using fs encoding and
     a proper en/decoding errors handler.
-    On Python 2 this is just an alias for open(name, 'rt').
     """
-    if PY3:
-        kwargs.setdefault("encoding", ENCODING)
-        kwargs.setdefault("errors", ENCODING_ERRS)
-    return open(fname, "rt", **kwargs)
+    kwargs.setdefault("encoding", ENCODING)
+    kwargs.setdefault("errors", ENCODING_ERRS)
+    return open(fname, **kwargs)
+
+
+@overload
+def cat(fname: str, fallback: object = ..., *, binary: Literal[True]) -> bytes: ...
+@overload
+def cat(fname: str, fallback: object = ..., *, binary: Literal[False]) -> str: ...
+@overload
+def cat(fname: str, fallback: object = ..., binary: bool = ...) -> bytes | str: ...
 
 
 def cat(fname, fallback=_DEFAULT, binary=True):
@@ -308,7 +300,7 @@ def cat(fname, fallback=_DEFAULT, binary=True):
     try:
         with _open_binary(fname) if binary else _open_text(fname) as f_d:
             return f_d.read().strip()
-    except (IOError, OSError):
+    except OSError:
         if fallback is not _DEFAULT:
             return fallback
         raise

@@ -20,10 +20,8 @@
 A class displaying all available sensors
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
-
 import urwid
+
 from s_tui.sturwid.ui_elements import ViListBox
 
 
@@ -113,7 +111,7 @@ class SensorsMenu:
         self.main_window = urwid.LineBox(ViListBox(listw))
 
         max_height = 6
-        for sensor, s_tatus in self.active_sensors.items():
+        for _, s_tatus in self.active_sensors.items():
             max_height = max(max_height, len(s_tatus) + 6)
 
         self.size = max_height, self.MAX_TITLE_LEN

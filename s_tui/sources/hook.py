@@ -16,6 +16,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
+from __future__ import annotations
+
+from collections.abc import Callable
 from datetime import datetime, timedelta
 
 
@@ -26,20 +29,25 @@ class Hook:
     the hook will be suspended for n milliseconds after it's being invoked.
     """
 
-    def __init__(self, callback, timeout_milliseconds=0, *callback_args):
+    def __init__(
+        self,
+        callback: Callable[..., object],
+        timeout_milliseconds: int = 0,
+        *callback_args: object,
+    ) -> None:
         self.callback = callback
         self.timeout_milliseconds = timeout_milliseconds
         self.callback_args = callback_args
         self.ready_time = datetime.now()
 
-    def is_ready(self):
+    def is_ready(self) -> bool:
         """
         Returns whether the hook is ready to invoke its callback or not
         """
 
         return datetime.now() >= self.ready_time
 
-    def invoke(self):
+    def invoke(self) -> None:
         """
         Run callback, optionally passing a variable number
         of arguments `callback_args`

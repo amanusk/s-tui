@@ -1,7 +1,7 @@
 """Shared fixtures, markers, and psutil mock helpers for the s-tui test suite."""
 
 import os
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict, namedtuple
 
 import pytest
 

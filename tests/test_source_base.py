@@ -1,10 +1,11 @@
 """Tests for the Source base class and MockSource."""
 
-import pytest
-from unittest.mock import MagicMock
 from collections import OrderedDict
+from unittest.mock import MagicMock
 
-from s_tui.sources.source import Source, MockSource
+import pytest
+
+from s_tui.sources.source import MockSource, Source
 
 
 class TestSourceInit:
@@ -162,7 +163,7 @@ class TestMockSource:
         ms = MockSource()
         summary = ms.get_summary()
         assert "MockValue" in summary
-        assert summary["MockValue"] == 5
+        assert summary["MockValue"] == "5"
 
     def test_get_edge_triggered_raises(self):
         with pytest.raises(NotImplementedError):

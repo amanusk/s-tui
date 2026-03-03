@@ -16,9 +16,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-from __future__ import absolute_import
+from __future__ import annotations
 
 import logging
+
 import psutil
 
 from s_tui.sources.source import Source
@@ -48,12 +49,12 @@ class FreqSource(Source):
         # cpu_freq can raise NotImplementedError if cores are offline at startup
         try:
             per_cpu_freq = psutil.cpu_freq(True)
-        except (OSError, IOError, NotImplementedError):
+        except (OSError, NotImplementedError):
             per_cpu_freq = None
 
         try:
             overall_freq = psutil.cpu_freq(False)
-        except (OSError, IOError, NotImplementedError):
+        except (OSError, NotImplementedError):
             overall_freq = None
 
         total_cores = self._get_total_core_count()
@@ -75,10 +76,10 @@ class FreqSource(Source):
         if self.top_freq == 0.0 and max(self.last_measurement) >= 0:
             self.max_freq = max(self.last_measurement)
 
-    def update(self):
+    def update(self) -> None:
         try:
             per_cpu_freq = psutil.cpu_freq(True)
-        except (OSError, IOError, AttributeError, NotImplementedError) as e:
+        except (OSError, AttributeError, NotImplementedError) as e:
             logging.debug("cpu_freq() raised %s: %s", type(e).__name__, e)
             for i in range(1, len(self.sensor_available)):
                 self.sensor_available[i] = False
@@ -104,9 +105,9 @@ class FreqSource(Source):
             sum(online_freqs) / len(online_freqs) if online_freqs else 0.0
         )
 
-    def get_maximum(self):
+    def get_maximum(self) -> float:
         return self.max_freq
 
-    def get_top(self):
+    def get_top(self) -> float:
         logging.debug("Returning top %s", self.top_freq)
         return self.top_freq

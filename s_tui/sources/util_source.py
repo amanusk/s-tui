@@ -16,9 +16,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-from __future__ import absolute_import
+from __future__ import annotations
 
 import logging
+
 import psutil
 
 from s_tui.sources.source import Source
@@ -57,7 +58,7 @@ class UtilSource(Source):
 
         self._mark_offline_cores(total_cores, self._cached_online_ids)
 
-    def update(self):
+    def update(self) -> None:
         try:
             per_cpu = psutil.cpu_percent(interval=0.0, percpu=True)
         except OSError:
@@ -98,8 +99,8 @@ class UtilSource(Source):
         )
         logging.info("Utilization recorded %s", self.last_measurement)
 
-    def get_is_available(self):
+    def get_is_available(self) -> bool:
         return self.is_available
 
-    def get_top(self):
+    def get_top(self) -> int:
         return 100

@@ -264,6 +264,38 @@ s-tui uses [urwid](https://github.com/urwid/urwid) as a graphical engine. urwid 
 **Q**: I am not seeing all the stats in the sidebar.  
 **A**: The sidebar is scrollable, you can scroll down with `DOWN` or `j` or scroll to the bottom with `PG-DN` or `G`. You might consider also decreasing the size of the font that you use in your terminal.:)
 
+## Development
+
+Install dev dependencies:
+
+```
+pip install -e ".[test]"
+pip install ruff==0.15.4 pyright==1.1.408
+```
+
+Set up pre-commit hooks (runs ruff + pyright automatically before each push):
+
+```
+pip install pre-commit
+pre-commit install --hook-type pre-push
+```
+
+Run checks manually:
+
+```
+ruff check .          # lint
+ruff format --check . # format check
+pyright s_tui/        # type check
+pytest                # tests
+```
+
+Auto-fix lint and formatting:
+
+```
+ruff check --fix .
+ruff format .
+```
+
 ## Contributing
 
 New issues and Pull Requests are welcome :)

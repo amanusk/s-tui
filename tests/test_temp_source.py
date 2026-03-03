@@ -1,7 +1,8 @@
 """Tests for TempSource with mocked psutil."""
 
-import pytest
 from collections import OrderedDict
+
+import pytest
 
 from s_tui.sources.temp_source import TempSource
 from tests.conftest import SensorTemperature

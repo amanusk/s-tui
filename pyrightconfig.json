@@ -1,0 +1,4 @@
+{
+    "include": ["s_tui"],
+    "exclude": ["build", "dist", "**/__pycache__"]
+}

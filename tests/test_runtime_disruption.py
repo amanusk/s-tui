@@ -9,23 +9,21 @@ crashes without blocking CI.  When each crash is fixed, remove the xfail
 marker so the test becomes a regression guard.
 """
 
-import pytest
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 from unittest.mock import MagicMock
 
-from s_tui.sources.util_source import UtilSource
-from s_tui.sources.freq_source import FreqSource
-from s_tui.sources.temp_source import TempSource
+import pytest
+
 from s_tui.sources.fan_source import FanSource
+from s_tui.sources.freq_source import FreqSource
 from s_tui.sources.rapl_power_source import RaplPowerSource
+from s_tui.sources.temp_source import TempSource
+from s_tui.sources.util_source import UtilSource
 from tests.conftest import (
-    CpuFreq,
-    SensorTemperature,
-    SensorFan,
     RaplStats,
+    SensorTemperature,
     make_cpu_freq_list,
     make_cpu_freq_overall,
-    make_temperatures_dict,
     make_fans_dict,
 )
 
@@ -276,7 +274,7 @@ class TestRaplReaderFailsMidRun:
         assert src.get_is_available() is True
 
         # File disappears
-        reader.read_power.side_effect = IOError("permission denied")
+        reader.read_power.side_effect = OSError("permission denied")
         src.update()  # should not crash
         assert src.get_is_available() is True  # or False, but no crash
 

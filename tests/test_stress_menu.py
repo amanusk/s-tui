@@ -1,7 +1,8 @@
 """Tests for StressMenu: command building, validation helpers, and defaults."""
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from s_tui.stress_menu import StressMenu
 

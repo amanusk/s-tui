@@ -8,16 +8,15 @@ Run locally with::
     pytest -m hardware -v
 """
 
+import psutil
 import pytest
 
-import psutil
-
-from s_tui.sources.util_source import UtilSource
-from s_tui.sources.freq_source import FreqSource
-from s_tui.sources.temp_source import TempSource
 from s_tui.sources.fan_source import FanSource
+from s_tui.sources.freq_source import FreqSource
 from s_tui.sources.rapl_power_source import RaplPowerSource
 from s_tui.sources.rapl_read import get_power_reader
+from s_tui.sources.temp_source import TempSource
+from s_tui.sources.util_source import UtilSource
 
 pytestmark = pytest.mark.hardware
 
@@ -89,7 +88,7 @@ class TestFreqSourceHW:
 class TestTempSourceHW:
     def test_init(self):
         """TempSource should init without crashing."""
-        src = TempSource()
+        TempSource()
 
     def test_update_if_available(self):
         """If available, update produces temperature readings."""
@@ -112,7 +111,7 @@ class TestTempSourceHW:
 class TestFanSourceHW:
     def test_init(self):
         """FanSource should init without crashing."""
-        src = FanSource()
+        FanSource()
 
     def test_update_if_available(self):
         """If available, update produces fan readings."""
@@ -132,7 +131,7 @@ class TestFanSourceHW:
 class TestRaplPowerSourceHW:
     def test_init(self):
         """RaplPowerSource should init without crashing."""
-        src = RaplPowerSource()
+        RaplPowerSource()
 
     def test_update_if_available(self):
         """If available, update produces power readings.
