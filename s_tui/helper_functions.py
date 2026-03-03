@@ -30,8 +30,6 @@ import time
 
 from collections import OrderedDict
 
-import psutil
-
 __version__ = "1.3.0"
 
 _DEFAULT = object()
@@ -83,6 +81,8 @@ def kill_child_processes(parent_proc, timeout=3):
     Attempts SIGTERM via process group first, falls back to per-process
     terminate, then SIGKILL after timeout.
     """
+    import psutil
+
     if parent_proc is None:
         logging.debug("No stress process to kill")
         return
