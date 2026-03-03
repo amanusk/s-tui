@@ -119,7 +119,7 @@ class TempSource(Source):
             logging.debug("sensors_temperatures() raised %s, keeping stale data", e)
             return
 
-        if not sensors_data:
+        if sensors_data is None:
             return
 
         try:

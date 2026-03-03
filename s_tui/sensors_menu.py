@@ -52,7 +52,7 @@ class SensorsMenu:
             source_name = source.get_source_name()
 
             # Build per-sensor visibility from config dict (keyed by name)
-            conf = default_source_conf[source_name]  # dict or empty dict
+            conf = default_source_conf.get(source_name) or {}
             self.sensor_status_dict[source_name] = []
             for sensor in source.get_sensor_list():
                 # ConfigParser lowercases keys, so compare lowercase
