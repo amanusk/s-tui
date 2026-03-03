@@ -17,9 +17,16 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 """This module implements a parent source class for s-tui"""
 
-from collections import OrderedDict
+from __future__ import annotations
+
+import contextlib
 import logging
 import os
+from collections import OrderedDict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from s_tui.sources.hook import Hook
 
 try:
     import psutil
@@ -30,14 +37,14 @@ except ImportError:
 class Source:
     """This is a basic source class for s-tui"""
 
-    def __init__(self):
-        self.edge_hooks = []
+    def __init__(self) -> None:
+        self.edge_hooks: list[Hook] = []
         self.measurement_unit = ""
-        self.last_measurement = []
-        self.last_thresholds = []
+        self.last_measurement: list[float] = []
+        self.last_thresholds: list[float] = []
         self.is_available = True
-        self.available_sensors = []
-        self.sensor_available = []  # Per-sensor availability (True/False)
+        self.available_sensors: list[str] = []
+        self.sensor_available: list[bool] = []  # Per-sensor availability
         self.name = ""
         self.pallet = (
             "temp light",
@@ -47,27 +54,27 @@ class Source:
         )
         self.alert_pallet = None
 
-    def update(self):
+    def update(self) -> None:
         """Updates the last measurement, invokes hooks if present"""
         self.eval_hooks()
 
-    def get_maximum(self):
+    def get_maximum(self) -> float:
         """Returns the maximum measurement as measured so far"""
         raise NotImplementedError("Get maximum is not implemented")
 
-    def get_top(self):
+    def get_top(self) -> float:
         """Returns highest theoretical value the sensors can reach"""
         raise NotImplementedError("get_top is not implemented")
 
-    def get_is_available(self):
+    def get_is_available(self) -> bool:
         """Returns is_available"""
         return self.is_available
 
-    def reset(self):
+    def reset(self) -> None:
         """Resets source state, e.g. current max"""
         raise NotImplementedError("Reset is not implemented")
 
-    def get_sensors_summary(self):
+    def get_sensors_summary(self) -> OrderedDict[str, str]:
         """This returns a dict of sensor of the source and their values"""
         sub_title_list = self.get_sensor_list()
 
@@ -87,46 +94,46 @@ class Source:
 
         return graph_vector_summary
 
-    def get_summary(self):
+    def get_summary(self) -> OrderedDict[str, str]:
         """Returns a dict of source name and sensors with their values"""
         graph_vector_summary = OrderedDict()
         graph_vector_summary[self.get_source_name()] = "[" + self.measurement_unit + "]"
         graph_vector_summary.update(self.get_sensors_summary())
         return graph_vector_summary
 
-    def get_source_name(self):
+    def get_source_name(self) -> str:
         """Returns source name"""
         return self.name
 
-    def get_edge_triggered(self):
+    def get_edge_triggered(self) -> bool:
         """Returns true if a measurement was higher than some thershhold"""
         raise NotImplementedError("Get Edge triggered not implemented")
 
-    def get_measurement_unit(self):
+    def get_measurement_unit(self) -> str:
         """Returns measurement unit of source"""
         return self.measurement_unit
 
-    def get_pallet(self):
+    def get_pallet(self) -> tuple[str, ...]:
         """Returns the pallet of the source for graph plotting"""
         return self.pallet
 
-    def get_alert_pallet(self):
+    def get_alert_pallet(self) -> tuple[str, ...] | None:
         """Returns the 'alert' pallet for graph plotting"""
         return self.alert_pallet
 
-    def get_sensor_list(self):
+    def get_sensor_list(self) -> list[str]:
         """Returns list of a available sensors for source"""
         return self.available_sensors
 
-    def get_reading_list(self):
+    def get_reading_list(self) -> list[float]:
         """Returns a list of the last measurement"""
         return self.last_measurement
 
-    def get_threshold_list(self):
+    def get_threshold_list(self) -> list[float]:
         """Returns a list of the last threshold values"""
         return self.last_thresholds
 
-    def add_edge_hook(self, hook):
+    def add_edge_hook(self, hook: Hook | None) -> None:
         """
         Add hook to be triggered when the threshold of this Source is surpassed
         """
@@ -135,7 +142,7 @@ class Source:
 
         self.edge_hooks.append(hook)
 
-    def eval_hooks(self):
+    def eval_hooks(self) -> None:
         """
         Evaluate the current state of this Source and
         invoke any attached hooks if they've been triggered
@@ -147,7 +154,9 @@ class Source:
                 logging.debug("Hook invoked")
                 hook.invoke()
 
-    def _mark_offline_cores(self, total_cores, online_ids):
+    def _mark_offline_cores(
+        self, total_cores: int, online_ids: list[int] | None
+    ) -> None:
         """Mark cores not in online_ids as unavailable in sensor_available."""
         if online_ids is None:
             return
@@ -157,7 +166,7 @@ class Source:
                 self.sensor_available[core_id + 1] = False
 
     @staticmethod
-    def _get_online_cpu_ids():
+    def _get_online_cpu_ids() -> list[int] | None:
         """Get sorted list of online CPU core IDs using psutil.
 
         Uses Process.cpu_affinity() which reflects which CPUs are online.
@@ -172,7 +181,7 @@ class Source:
             return None
 
     @staticmethod
-    def _get_total_core_count():
+    def _get_total_core_count() -> int:
         """Get the total number of CPU cores, including offline ones.
 
         psutil.cpu_count() and cpu_affinity() may only reflect online cores.
@@ -190,10 +199,8 @@ class Source:
         except (AttributeError, OSError, psutil.Error):
             pass
 
-        try:
+        with contextlib.suppress(AttributeError, ValueError, OSError):
             total = max(total, os.sysconf("SC_NPROCESSORS_CONF"))
-        except (AttributeError, ValueError, OSError):
-            pass
 
         return total
 
@@ -201,11 +208,11 @@ class Source:
 class MockSource(Source):
     """Mock class for testing"""
 
-    def get_maximum(self):
+    def get_maximum(self) -> int:
         return 20
 
-    def get_summary(self):
-        return {"MockValue": 5, "Tahat": 34}
+    def get_summary(self) -> OrderedDict[str, str]:
+        return OrderedDict({"MockValue": "5", "Tahat": "34"})
 
-    def get_edge_triggered(self):
+    def get_edge_triggered(self) -> bool:
         raise NotImplementedError("Get Edge triggered not implemented")

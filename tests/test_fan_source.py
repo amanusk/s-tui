@@ -1,7 +1,5 @@
 """Tests for FanSource with mocked psutil."""
 
-import pytest
-
 from s_tui.sources.fan_source import FanSource
 from tests.conftest import SensorFan
 

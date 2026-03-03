@@ -16,7 +16,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
+from __future__ import annotations
+
 import os
+
 from s_tui.sources.hook_script import ScriptHook
 
 
@@ -25,10 +28,12 @@ class ScriptHookLoader:
     Loads shell scripts from a directory into ScriptHooks for a given Source
     """
 
-    def __init__(self, dir_path):
+    def __init__(self, dir_path: str) -> None:
         self.scripts_dir_path = os.path.join(dir_path, "hooks.d")
 
-    def load_script(self, source_name, timeoutMilliseconds=0):
+    def load_script(
+        self, source_name: str, timeoutMilliseconds: int = 0
+    ) -> ScriptHook | None:
         """
         Return ScriptHook for source_name Source and with a ready timeout
         of timeoutMilliseconds
@@ -42,5 +47,5 @@ class ScriptHookLoader:
             return ScriptHook(script_path, timeoutMilliseconds)
         return None
 
-    def _source_to_script_name(self, source_name):
+    def _source_to_script_name(self, source_name: str) -> str:
         return source_name.lower() + ".sh"

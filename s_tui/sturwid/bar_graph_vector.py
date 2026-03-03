@@ -16,12 +16,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-from __future__ import absolute_import
 
-from s_tui.sturwid.complex_bar_graph import LabeledBarGraphVector
-from s_tui.sturwid.complex_bar_graph import ScalableBarGraph
+import contextlib
 import logging
 import math
+
+from s_tui.sturwid.complex_bar_graph import LabeledBarGraphVector, ScalableBarGraph
 
 logger = logging.getLogger(__name__)
 
@@ -82,9 +82,7 @@ class BarGraphVector(LabeledBarGraphVector):
         for _ in range(graph_count):
             graph = ScalableBarGraph(["bg background", self.color_a, self.color_b])
             w.append(graph)
-        super(BarGraphVector, self).__init__(
-            graph_title, sub_title_list, y_label, w, visible_graph_list
-        )
+        super().__init__(graph_title, sub_title_list, y_label, w, visible_graph_list)
 
         for graph in self.bar_graph_vector:
             graph.set_bar_width(bar_width)
@@ -114,14 +112,11 @@ class BarGraphVector(LabeledBarGraphVector):
 
     def get_label_scale(self, min_val, max_val, size):
         """Dynamically change the scale of the graph (y label)"""
-        if size < self.SCALE_DENSITY:
-            label_cnt = 1
-        else:
-            label_cnt = int(size / self.SCALE_DENSITY)
+        label_cnt = 1 if size < self.SCALE_DENSITY else int(size / self.SCALE_DENSITY)
         try:
             if max_val >= 100:
                 label = [
-                    int((min_val + i * (max_val - min_val) / label_cnt))
+                    int(min_val + i * (max_val - min_val) / label_cnt)
                     for i in range(label_cnt + 1)
                 ]
             else:
@@ -151,10 +146,8 @@ class BarGraphVector(LabeledBarGraphVector):
 
         # NOTE setting edge trigger causes overhead
         triggered = False
-        try:
+        with contextlib.suppress(NotImplementedError):
             triggered = self.source.get_edge_triggered()
-        except NotImplementedError:
-            pass
 
         current_reading = self.source.get_reading_list()
         current_thresholds = self.source.get_threshold_list()

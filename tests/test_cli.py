@@ -1,8 +1,7 @@
 """Tests for CLI argument parsing (get_args) and main() entry paths."""
 
 import sys
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from s_tui.s_tui import get_args
 
@@ -10,7 +9,7 @@ from s_tui.s_tui import get_args
 class TestGetArgs:
     def _parse(self, argv):
         """Helper: parse argv through get_args by patching sys.argv."""
-        with patch.object(sys, "argv", ["s-tui"] + argv):
+        with patch.object(sys, "argv", ["s-tui", *argv]):
             return get_args()
 
     def test_default_args(self):

@@ -17,11 +17,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 """This module implements a Temperature source"""
 
-from __future__ import absolute_import
+from __future__ import annotations
 
-import warnings
 import logging
+import warnings
 from collections import OrderedDict
+
 import psutil
 
 from s_tui.sources.source import Source
@@ -32,7 +33,7 @@ class TempSource(Source):
 
     THRESHOLD_TEMP = 80
 
-    def __init__(self, temp_thresh=None):
+    def __init__(self, temp_thresh: int | str | None = None) -> None:
         warnings.filterwarnings(
             "ignore",
             ".*FileNotFound.*",
@@ -44,7 +45,7 @@ class TempSource(Source):
                 logging.debug("sensors_temperatures() returned empty/None")
                 return
             self.is_available = True
-        except (AttributeError, IOError, OSError):
+        except (AttributeError, OSError):
             self.is_available = False
             logging.debug("cpu temperature is not available from psutil")
             return
@@ -72,7 +73,7 @@ class TempSource(Source):
         sensors_dict = None
         try:
             sensors_dict = OrderedDict(sorted(psutil.sensors_temperatures().items()))
-        except IOError:
+        except OSError:
             logging.debug("Unable to create sensors dict")
             self.is_available = False
             return
@@ -99,7 +100,7 @@ class TempSource(Source):
                 self._sensor_lookup[(key, sensor_idx)] = len(self.available_sensors) - 1
 
         self.sensor_available = [True] * len(self.available_sensors)
-        self.last_measurement = [0] * len(self.available_sensors)
+        self.last_measurement = [0.0] * len(self.available_sensors)
 
         # Set temperature threshold if a custom one is set
         self.temp_thresh = self.THRESHOLD_TEMP
@@ -112,10 +113,10 @@ class TempSource(Source):
         # Initialize individual thresholds
         self.last_thresholds = [self.temp_thresh] * len(self.available_sensors)
 
-    def update(self):
+    def update(self) -> None:
         try:
             sensors_data = psutil.sensors_temperatures()
-        except (IOError, OSError) as e:
+        except OSError as e:
             logging.debug("sensors_temperatures() raised %s, keeping stale data", e)
             return
 
@@ -124,7 +125,7 @@ class TempSource(Source):
 
         try:
             sample = OrderedDict(sorted(sensors_data.items()))
-        except IOError:
+        except OSError:
             return
 
         updated = set()
@@ -164,20 +165,20 @@ class TempSource(Source):
             # Call check for hooks
             Source.update(self)
 
-    def get_edge_triggered(self):
+    def get_edge_triggered(self) -> bool:
         return self.max_last_temp > self.temp_thresh
 
-    def get_max_triggered(self):
+    def get_max_triggered(self) -> bool:
         """Returns whether the current temperature threshold is exceeded"""
         return self.max_temp > self.temp_thresh
 
-    def reset(self):
+    def reset(self) -> None:
         self.max_temp = 10
 
-    def get_maximum(self):
+    def get_maximum(self) -> float:
         raise NotImplementedError("Get maximum is not implemented")
 
-    def get_top(self):
+    def get_top(self) -> int:
         # Cache the top temperature after first calculation
         if hasattr(self, "_cached_top_temp"):
             return self._cached_top_temp
@@ -186,10 +187,11 @@ class TempSource(Source):
         available_temps = psutil.sensors_temperatures().values()
         for temp in available_temps:
             for temp_minor in temp:
-                try:
-                    if temp_minor.high > top_temp:
-                        top_temp = temp_minor.critical
-                except TypeError:
-                    continue
-        self._cached_top_temp = min(top_temp, 99)
+                if (
+                    temp_minor.high is not None
+                    and temp_minor.high > top_temp
+                    and temp_minor.critical is not None
+                ):
+                    top_temp = temp_minor.critical
+        self._cached_top_temp = int(min(top_temp, 99))
         return self._cached_top_temp

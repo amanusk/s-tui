@@ -1,14 +1,14 @@
 """Tests for urwid widget wrappers: ScalableBarGraph, LabeledBarGraphVector,
 BarGraphVector, SummaryTextList, and ViListBox."""
 
-import pytest
-from unittest.mock import MagicMock
 from collections import OrderedDict
+from unittest.mock import MagicMock
 
+import pytest
 import urwid
 
-from s_tui.sturwid.complex_bar_graph import ScalableBarGraph, LabeledBarGraphVector
 from s_tui.sturwid.bar_graph_vector import BarGraphVector
+from s_tui.sturwid.complex_bar_graph import LabeledBarGraphVector, ScalableBarGraph
 from s_tui.sturwid.summary_text_list import SummaryTextList
 from s_tui.sturwid.ui_elements import ViListBox
 

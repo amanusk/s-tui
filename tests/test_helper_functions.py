@@ -1,32 +1,30 @@
 """Tests for s_tui.helper_functions module."""
 
+import json
 import os
 import signal
-import sys
-import json
-import tempfile
+from unittest.mock import MagicMock, patch
 
 import psutil
 import pytest
-from unittest.mock import MagicMock, patch
 
 from s_tui.helper_functions import (
     __version__,
     cat,
+    config_dir_exists,
+    get_config_dir,
     get_processor_name,
+    get_user_config_dir,
+    get_user_config_file,
     kill_child_processes,
     make_user_config_dir,
     output_to_json,
     output_to_terminal,
     seconds_to_text,
     str_to_bool,
-    which,
-    get_config_dir,
-    get_user_config_dir,
-    get_user_config_file,
     user_config_dir_exists,
-    config_dir_exists,
     user_config_file_exists,
+    which,
 )
 
 # ---------------------------------------------------------------------------
@@ -213,9 +211,11 @@ class TestKillChildProcesses:
         parent.pid = 12345
         parent.children.return_value = []
 
-        with patch("os.getpgid", return_value=12345) as mock_getpgid, patch(
-            "os.killpg"
-        ) as mock_killpg, patch("psutil.wait_procs", return_value=([], [])):
+        with (
+            patch("os.getpgid", return_value=12345) as mock_getpgid,
+            patch("os.killpg") as mock_killpg,
+            patch("psutil.wait_procs", return_value=([], [])),
+        ):
             kill_child_processes(parent, timeout=1)
             mock_getpgid.assert_called_once_with(12345)
             mock_killpg.assert_called_once_with(12345, signal.SIGTERM)
@@ -227,8 +227,9 @@ class TestKillChildProcesses:
         parent.pid = 100
         parent.children.return_value = [child]
 
-        with patch("os.getpgid", side_effect=OSError("no pgid")), patch(
-            "psutil.wait_procs", return_value=([], [])
+        with (
+            patch("os.getpgid", side_effect=OSError("no pgid")),
+            patch("psutil.wait_procs", return_value=([], [])),
         ):
             kill_child_processes(parent, timeout=1)
             child.terminate.assert_called_once()
@@ -241,8 +242,10 @@ class TestKillChildProcesses:
         parent.pid = 200
         parent.children.return_value = []
 
-        with patch("os.getpgid", return_value=200), patch("os.killpg"), patch(
-            "psutil.wait_procs", return_value=([], [straggler])
+        with (
+            patch("os.getpgid", return_value=200),
+            patch("os.killpg"),
+            patch("psutil.wait_procs", return_value=([], [straggler])),
         ):
             kill_child_processes(parent, timeout=1)
             straggler.kill.assert_called_once()
@@ -252,8 +255,9 @@ class TestKillChildProcesses:
         parent = MagicMock()
         parent.pid = 300
 
-        with patch("os.getpgid", side_effect=ProcessLookupError()), patch.object(
-            parent, "children", side_effect=psutil.NoSuchProcess(300)
+        with (
+            patch("os.getpgid", side_effect=ProcessLookupError()),
+            patch.object(parent, "children", side_effect=psutil.NoSuchProcess(300)),
         ):
             kill_child_processes(parent, timeout=1)  # should not raise
 

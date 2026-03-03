@@ -86,7 +86,7 @@ class ViListBox(urwid.ListBox):
             key = "enter"
         elif key == "q":
             key = "q"
-        return super(ViListBox, self).keypress(size, key)
+        return super().keypress(size, key)
 
 
 def radio_button(group, label, fn):

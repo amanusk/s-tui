@@ -10,11 +10,12 @@ This test verifies that config files can be saved and loaded correctly even
 when values contain colons (e.g., time strings like "12:34:56").
 """
 
+import configparser
 import os
-import pytest
 from collections import defaultdict
 from unittest.mock import MagicMock, patch
-import configparser
+
+import pytest
 
 from s_tui.helper_functions import get_user_config_file
 
@@ -103,16 +104,16 @@ class TestConfigDelimiter:
 
             # Read the config file and verify it uses '=' as delimiter
             # (not ':' which would corrupt values with colons)
-            with open(config_file, "r") as f:
+            with open(config_file) as f:
                 config_content = f.read()
 
             # The config should use '=' as delimiter
             assert "refresh" in config_content
             # Verify format uses '=' not ':' as key-value separator
             lines = [
-                l.strip()
-                for l in config_content.split("\n")
-                if "refresh" in l and "=" in l
+                line.strip()
+                for line in config_content.split("\n")
+                if "refresh" in line and "=" in line
             ]
             assert len(lines) > 0, "Config file should contain refresh setting"
             # The line should use '=' as delimiter (PR #254 fix)

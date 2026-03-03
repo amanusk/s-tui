@@ -14,9 +14,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
-from __future__ import absolute_import
 
 from setuptools import setup
+
 import s_tui.helper_functions as AUX
 
 setup(
@@ -26,7 +26,7 @@ setup(
     author="Alex Manuskin",
     author_email="amanusk@pm.me",
     description="Stress Terminal UI stress test and monitoring tool",
-    long_description=open("README.md", "r").read(),
+    long_description=open("README.md").read(),  # noqa: SIM115
     long_description_content_type="text/markdown",
     license="GPLv2",
     url="https://github.com/amanusk/s-tui",

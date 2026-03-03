@@ -5,15 +5,14 @@ functions raise AttributeError (missing on platform), return None / empty,
 or raise IOError/OSError during sensor reads.  None of these should crash.
 """
 
-import pytest
 from collections import OrderedDict
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock
 
-from s_tui.sources.util_source import UtilSource
-from s_tui.sources.freq_source import FreqSource
-from s_tui.sources.temp_source import TempSource
 from s_tui.sources.fan_source import FanSource
+from s_tui.sources.freq_source import FreqSource
 from s_tui.sources.rapl_power_source import RaplPowerSource
+from s_tui.sources.temp_source import TempSource
+from s_tui.sources.util_source import UtilSource
 from tests.conftest import SensorTemperature
 
 # ---------------------------------------------------------------------------
@@ -42,13 +41,12 @@ class TestUtilSourceFailures:
 class TestFreqSourceFailures:
     def test_cpu_freq_returns_none(self, mocker):
         """If cpu_freq returns None (no frequency info), handle gracefully."""
+        import contextlib
+
         mocker.patch("psutil.cpu_freq", return_value=None)
         # This may raise or set unavailable - should not crash with unhandled exception
-        try:
-            src = FreqSource()
-        except (TypeError, AttributeError):
-            # Current code may crash here - that's documented behavior
-            pass
+        with contextlib.suppress(TypeError, AttributeError):
+            FreqSource()
 
     def test_cpu_freq_empty_percpu(self, mocker):
         """If cpu_freq(percpu=True) returns empty list."""
@@ -58,11 +56,11 @@ class TestFreqSourceFailures:
                 return []
             return None
 
+        import contextlib
+
         mocker.patch("psutil.cpu_freq", side_effect=_cpu_freq)
-        try:
-            src = FreqSource()
-        except (TypeError, ValueError, ZeroDivisionError):
-            pass
+        with contextlib.suppress(TypeError, ValueError, ZeroDivisionError):
+            FreqSource()
 
 
 # ---------------------------------------------------------------------------
@@ -111,7 +109,7 @@ class TestTempSourceFailures:
             call_count[0] += 1
             if call_count[0] <= 2:  # init calls it twice
                 return temps
-            raise IOError("sensor read failed")
+            raise OSError("sensor read failed")
 
         mocker.patch("psutil.sensors_temperatures", side_effect=_temps_side_effect)
         src = TempSource()
@@ -152,7 +150,7 @@ class TestFanSourceFailures:
             call_count[0] += 1
             if call_count[0] == 1:
                 return {"hw": []}  # truthy for availability check
-            raise IOError("read failed")
+            raise OSError("read failed")
 
         mocker.patch("psutil.sensors_fans", side_effect=_fans)
         src = FanSource()
@@ -240,7 +238,7 @@ class TestRaplPowerSourceFailures:
         assert src.get_is_available() is True
 
         # Now make reader fail on next read
-        reader.read_power.side_effect = IOError("file disappeared")
+        reader.read_power.side_effect = OSError("file disappeared")
         src.update()  # should not crash
         assert src.get_is_available() is True
 

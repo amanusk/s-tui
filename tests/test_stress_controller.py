@@ -1,7 +1,6 @@
 """Tests for StressController: mode management and process lifecycle."""
 
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from s_tui.s_tui import StressController
 

@@ -18,9 +18,11 @@
 
 """A class to control the options of stress in a menu"""
 
-from __future__ import print_function
-import re
+from __future__ import annotations
+
 import logging
+import re
+from collections.abc import Callable
 
 import psutil
 import urwid
@@ -29,7 +31,7 @@ import urwid
 class StressMenu:
     MAX_TITLE_LEN = 50
 
-    def __init__(self, return_fn, stress_exe):
+    def __init__(self, return_fn: Callable[[], None], stress_exe: str | None) -> None:
         self.return_fn = return_fn
 
         self.stress_exe = stress_exe
@@ -39,7 +41,7 @@ class StressMenu:
         try:
             self.sqrt_workers = str(psutil.cpu_count())
             logging.info("num cpus %s", self.sqrt_workers)
-        except (IOError, OSError) as err:
+        except OSError as err:
             logging.debug(err)
 
         self.sync_workers = "0"
@@ -112,7 +114,7 @@ class StressMenu:
 
         self.main_window = urwid.LineBox(urwid.ListBox(self.titles))
 
-    def set_edit_texts(self):
+    def set_edit_texts(self) -> None:
         self.time_out_ctrl.set_edit_text(self.time_out)
         self.sqrt_workers_ctrl.set_edit_text(self.sqrt_workers)
         self.sync_workers_ctrl.set_edit_text(self.sync_workers)
@@ -120,7 +122,7 @@ class StressMenu:
         self.malloc_byte_ctrl.set_edit_text(self.malloc_byte)
         self.byte_touch_cnt_ctrl.set_edit_text(self.byte_touch_cnt)
         self.malloc_delay_ctrl.set_edit_text(self.malloc_delay)
-        self.no_malloc_ctrl.set_state(self.no_malloc)
+        self.no_malloc_ctrl.set_state(bool(self.no_malloc))
         self.write_workers_ctrl.set_edit_text(self.write_workers)
         self.write_bytes_ctrl.set_edit_text(self.write_bytes)
 
@@ -139,7 +141,7 @@ class StressMenu:
         self.set_edit_texts()
         self.return_fn()
 
-    def get_size(self):
+    def get_size(self) -> tuple[int, int]:
         return len(self.titles) + 5, self.MAX_TITLE_LEN
 
     def on_save(self, _):
@@ -177,7 +179,8 @@ class StressMenu:
         self.set_edit_texts()
         self.return_fn()
 
-    def get_stress_cmd(self):
+    def get_stress_cmd(self) -> list[str]:
+        assert self.stress_exe is not None
         stress_cmd = [self.stress_exe]
         if int(self.sqrt_workers) > 0:
             stress_cmd.append("-c")
@@ -211,14 +214,14 @@ class StressMenu:
         return stress_cmd
 
     @staticmethod
-    def get_pos_num(num, default):
+    def get_pos_num(num: str, default: str) -> str:
         num_valid = re.match(r"\A([0-9]+)\Z", num, re.I)
         if num_valid or (num == "none" and default == "none"):
             return num
         return default
 
     @staticmethod
-    def get_valid_byte(num, default):
+    def get_valid_byte(num: str, default: str) -> str:
         """check if the format of number is (num)(G|m|B) i.e 500GB, 200mb. 400
         etc.."""
         num_valid = re.match(r"\A([0-9]+)(M|G|m|g|)(B|b|\b)\Z", num, re.I)

@@ -21,8 +21,6 @@ the current size of the bar graph is also obtainable
 get_size() - returns the tuple (row, col)
 """
 
-from __future__ import absolute_import
-
 import urwid
 
 
@@ -32,7 +30,7 @@ class ScalableBarGraph(urwid.BarGraph):
     _size = (0, 0)
 
     def render(self, size, focus=False):
-        canvas = super(ScalableBarGraph, self).render(size, focus)
+        canvas = super().render(size, focus)
         new_size = (int(canvas.rows()), int(canvas.cols()))
         old_size = self._size
         # check if to raise *on_resize* event
@@ -98,18 +96,18 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         self.bar_graph_vector = []
         self.set_graph(bar_graph_vector)
 
-        self.y_label_and_graphs = urwid.WidgetPlaceholder(urwid.Columns([]))
+        self.y_label_and_graphs = urwid.WidgetPlaceholder(urwid.Columns([]))  # type: ignore[arg-type]
         self.y_label = []
         self.set_y_label(y_label)
 
         list_w = urwid.ListBox(urwid.SimpleFocusListWalker([]))
-        self.title = urwid.WidgetPlaceholder(list_w)
+        self.title = urwid.WidgetPlaceholder(list_w)  # type: ignore[arg-type]
         self.sub_title_list = sub_title_list
         self.set_title(title)
 
         self.sensor_available = [True] * len(bar_graph_vector)
 
-        super(LabeledBarGraphVector, self).__init__(urwid.Pile([]))
+        super().__init__(urwid.Pile([]))  # type: ignore[arg-type]
         self.set_visible_graphs(visible_graph_list)
 
     def set_title(self, title):
@@ -123,7 +121,7 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         if not y_label:
             text = urwid.Text("1")
             pile = urwid.Pile([urwid.ListBox([text])])
-            self.y_label = ("fixed", 1, pile)
+            self.y_label = ("fixed", 1, pile)  # type: ignore[assignment]
             return
 
         str_y_label = [str(i) for i in y_label]
@@ -131,12 +129,12 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         y_list_walker = [(1, urwid.ListBox([urwid.Text(str_y_label[0])]))]
 
         for num in y_label_nums:
-            y_list_walker = [urwid.ListBox([urwid.Text(num)])] + y_list_walker
+            y_list_walker = [urwid.ListBox([urwid.Text(num)]), *y_list_walker]
 
         y_list_walker = urwid.Pile(y_list_walker, focus_item=0)
         y_scale_len = len(max(str_y_label, key=len))
 
-        self.y_label = ("fixed", y_scale_len, y_list_walker)
+        self.y_label = ("fixed", y_scale_len, y_list_walker)  # type: ignore[assignment]
 
     def set_visible_graphs(self, visible_graph_list=None):
         """Show a column of the graph selected for display"""
@@ -160,29 +158,29 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
                     display_widget = graph
 
                 graph_a = [
-                    ("fixed", 1, sub_title_widget),
-                    ("weight", 1, display_widget),
+                    ("fixed", 1, sub_title_widget),  # type: ignore[list-item]
+                    ("weight", 1, display_widget),  # type: ignore[list-item]
                 ]
                 graph_and_title = urwid.Pile(graph_a)
-                graph_vector_column_list.append(("weight", 1, graph_and_title))
-                graph_vector_column_list.append(("fixed", 1, vline))
+                graph_vector_column_list.append(("weight", 1, graph_and_title))  # type: ignore[arg-type]
+                graph_vector_column_list.append(("fixed", 1, vline))  # type: ignore[arg-type]
 
         # if all sub graph are disabled
         if not graph_vector_column_list:
             self.visible_graph_list = visible_graph_list
-            self.original_widget = urwid.Pile([])
+            self.original_widget = urwid.Pile([])  # type: ignore[arg-type]
             return
 
         # remove the last vertical line separator
         graph_vector_column_list.pop()
 
-        y_label_a = ("weight", 1, urwid.Columns(graph_vector_column_list))
+        y_label_a = ("weight", 1, urwid.Columns(graph_vector_column_list))  # type: ignore[var-type]
         y_label_and_graphs = [self.y_label, y_label_a]
-        column_w = urwid.Columns(y_label_and_graphs, dividechars=1)
-        y_label_and_graphs_widget = urwid.WidgetPlaceholder(column_w)
+        column_w = urwid.Columns(y_label_and_graphs, dividechars=1)  # type: ignore[arg-type]
+        y_label_and_graphs_widget = urwid.WidgetPlaceholder(column_w)  # type: ignore[arg-type]
 
         init_widget = urwid.Pile(
-            [("fixed", 1, self.title), ("weight", 1, y_label_and_graphs_widget)]
+            [("fixed", 1, self.title), ("weight", 1, y_label_and_graphs_widget)]  # type: ignore[list-item]
         )
 
         self.visible_graph_list = visible_graph_list
@@ -193,7 +191,4 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
 
     @staticmethod
     def check_label(label):
-        if len(label) >= 2 and not (None in label) or not label or label is None:
-            return True
-
-        return False
+        return (len(label) >= 2 and None not in label) or not label or label is None

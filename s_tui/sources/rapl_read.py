@@ -17,15 +17,16 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 """This module reads intel power measurements"""
 
-from __future__ import absolute_import
+from __future__ import annotations
 
-import logging
 import glob
+import logging
 import os
 import re
 from collections import namedtuple
 from multiprocessing import cpu_count
 from sys import byteorder
+
 from s_tui.helper_functions import cat
 
 INTER_RAPL_DIR = "/sys/class/powercap/intel-rapl/"
@@ -43,20 +44,20 @@ RaplStats = namedtuple("rapl", ["label", "current", "max"])
 
 
 class RaplReader:
-    def __init__(self):
+    def __init__(self) -> None:
         basenames = glob.glob("/sys/class/powercap/intel-rapl:*/")
         self.basenames = sorted(set(basenames))
 
-    def read_power(self):
+    def read_power(self) -> list[RaplStats]:
         """Read power stats and return dictionary"""
 
         pjoin = os.path.join
-        ret = list()
+        ret = []
         for path in self.basenames:
             name = None
             try:
                 name = cat(pjoin(path, "name"), fallback=None, binary=False)
-            except (IOError, OSError, ValueError) as err:
+            except (OSError, ValueError) as err:
                 logging.warning("ignoring %r for file %r", (err, path), RuntimeWarning)
                 continue
             if name:
@@ -64,19 +65,19 @@ class RaplReader:
                     current = cat(pjoin(path, "energy_uj"))
                     max_reading = 0.0
                     ret.append(RaplStats(name, float(current), max_reading))
-                except (IOError, OSError, ValueError) as err:
+                except (OSError, ValueError) as err:
                     logging.warning(
                         "ignoring %r for file %r", (err, path), RuntimeWarning
                     )
         return ret
 
     @staticmethod
-    def available():
+    def available() -> bool:
         return os.path.exists("/sys/class/powercap/intel-rapl")
 
 
 class AMDEnergyReader:
-    def __init__(self):
+    def __init__(self) -> None:
         self.inputs = list(
             zip(
                 (
@@ -94,18 +95,20 @@ class AMDEnergyReader:
         self.inputs.sort(key=lambda x: self.get_input_position(x[0], socket_number))
 
     @staticmethod
-    def match_label(label):
+    def match_label(label: str) -> re.Match[str] | None:
         return re.search(r"E(core|socket)([0-9]+)", label)
 
     @staticmethod
-    def get_input_position(label, socket_number):
-        num = int(AMDEnergyReader.match_label(label).group(2))
+    def get_input_position(label: str, socket_number: int) -> int:
+        m = AMDEnergyReader.match_label(label)
+        assert m is not None, f"Unexpected label format: {label}"
+        num = int(m.group(2))
         if "socket" in label:
             return num
         else:
             return num + socket_number
 
-    def read_power(self):
+    def read_power(self) -> list[RaplStats]:
         ret = []
         for label, inp in self.inputs:
             value = cat(inp)
@@ -113,12 +116,12 @@ class AMDEnergyReader:
         return ret
 
     @staticmethod
-    def available():
+    def available() -> bool:
         return os.path.exists("/sys/devices/platform/amd_energy.0")
 
 
 class AMDRaplMsrReader:
-    def __init__(self):
+    def __init__(self) -> None:
         self.core_msr_files = {}
         self.package_msr_files = {}
         for i in range(cpu_count()):
@@ -143,14 +146,12 @@ class AMDRaplMsrReader:
                 self.package_msr_files[curr_package_id] = "/dev/cpu/" + str(i) + "/msr"
 
     @staticmethod
-    def read_msr(filename, register):
-        f = open(filename, "rb")
-        f.seek(register)
-        res = int.from_bytes(f.read(8), byteorder)
-        f.close()
-        return res
+    def read_msr(filename: str, register: int) -> int:
+        with open(filename, "rb") as f:
+            f.seek(register)
+            return int.from_bytes(f.read(8), byteorder)
 
-    def read_power(self):
+    def read_power(self) -> list[RaplStats]:
         ret = []
         # Read UNIT_MSR once - it's the same for all cores/packages
         first_msr_file = next(iter(self.package_msr_files.values()))
@@ -180,7 +181,7 @@ class AMDRaplMsrReader:
         return ret
 
     @staticmethod
-    def available():
+    def available() -> bool:
         try:
             cpuinfo = cat("/proc/cpuinfo", binary=False)
             # The reader only supports family 17h CPUs
@@ -193,6 +194,8 @@ class AMDRaplMsrReader:
                 return False
 
             m = re.search(r"cpu family[\s]+: ([0-9]+)", cpuinfo)
+            if not m:
+                return False
             if int(m[1]) != 0x17:
                 return False
         except (FileNotFoundError, PermissionError):
@@ -215,13 +218,13 @@ class AMDRaplMsrReader:
 
         # Check whether MSRs are available and we have permission to read them
         try:
-            open("/dev/cpu/0/msr")
-            return True
+            with open("/dev/cpu/0/msr"):
+                return True
         except (FileNotFoundError, PermissionError):
             return False
 
 
-def get_power_reader():
+def get_power_reader() -> RaplReader | AMDEnergyReader | AMDRaplMsrReader | None:
     for ReaderType in (RaplReader, AMDEnergyReader, AMDRaplMsrReader):
         if ReaderType.available():
             return ReaderType()

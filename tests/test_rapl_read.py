@@ -1,18 +1,13 @@
 """Tests for rapl_read module: reader classes and get_power_reader selection."""
 
-import os
-import pytest
-from unittest.mock import MagicMock, mock_open, patch, call
-from collections import namedtuple
+from unittest.mock import MagicMock
 
 from s_tui.sources.rapl_read import (
-    RaplReader,
     AMDEnergyReader,
     AMDRaplMsrReader,
+    RaplReader,
     RaplStats,
     get_power_reader,
-    INTER_RAPL_DIR,
-    MICRO_JOULE_IN_JOULE,
 )
 
 # =====================================================================
@@ -77,7 +72,7 @@ class TestRaplReader:
         mocker.patch(
             "s_tui.sources.rapl_read.cat",
             side_effect=[
-                IOError("read failed"),  # name read for :0
+                OSError("read failed"),  # name read for :0
                 "package-1",  # name read for :1
                 "999",  # energy_uj for :1
             ],

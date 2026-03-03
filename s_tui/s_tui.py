@@ -20,66 +20,58 @@
 
 """CPU stress and monitoring utility"""
 
-from __future__ import absolute_import
-
 import argparse
 import atexit
-import signal
+import configparser
+import contextlib
 import logging
 import os
+import signal
 import subprocess
+import sys
 import time
 import timeit
-from collections import OrderedDict
-from collections import defaultdict
-import sys
+from collections import OrderedDict, defaultdict
 
 import psutil
 import urwid
 
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
-
 # Menus
 from s_tui.about_menu import AboutMenu
-from s_tui.help_menu import HelpMenu
-from s_tui.help_menu import HELP_MESSAGE
-from s_tui.stress_menu import StressMenu
-from s_tui.sensors_menu import SensorsMenu
+from s_tui.help_menu import HELP_MESSAGE, HelpMenu
 
 # Helpers
-from s_tui.helper_functions import __version__
-from s_tui.helper_functions import get_processor_name
-from s_tui.helper_functions import kill_child_processes
-from s_tui.helper_functions import output_to_csv
-from s_tui.helper_functions import output_to_terminal
-from s_tui.helper_functions import output_to_json
-from s_tui.helper_functions import get_user_config_dir
-from s_tui.helper_functions import get_user_config_file
-from s_tui.helper_functions import make_user_config_dir
-from s_tui.helper_functions import user_config_dir_exists
-from s_tui.helper_functions import user_config_file_exists
-from s_tui.helper_functions import seconds_to_text
-from s_tui.helper_functions import str_to_bool
-from s_tui.helper_functions import which
-
-# Ui Elements
-from s_tui.sturwid.ui_elements import ViListBox
-from s_tui.sturwid.ui_elements import radio_button
-from s_tui.sturwid.ui_elements import button
-from s_tui.sturwid.ui_elements import DEFAULT_PALETTE
-from s_tui.sturwid.bar_graph_vector import BarGraphVector
-from s_tui.sturwid.summary_text_list import SummaryTextList
+from s_tui.helper_functions import (
+    __version__,
+    get_processor_name,
+    get_user_config_dir,
+    get_user_config_file,
+    kill_child_processes,
+    make_user_config_dir,
+    output_to_csv,
+    output_to_json,
+    output_to_terminal,
+    seconds_to_text,
+    str_to_bool,
+    user_config_dir_exists,
+    user_config_file_exists,
+    which,
+)
+from s_tui.sensors_menu import SensorsMenu
+from s_tui.sources.fan_source import FanSource
+from s_tui.sources.freq_source import FreqSource
+from s_tui.sources.rapl_power_source import RaplPowerSource
+from s_tui.sources.script_hook_loader import ScriptHookLoader
+from s_tui.sources.temp_source import TempSource
 
 # Sources
 from s_tui.sources.util_source import UtilSource
-from s_tui.sources.freq_source import FreqSource
-from s_tui.sources.temp_source import TempSource
-from s_tui.sources.rapl_power_source import RaplPowerSource
-from s_tui.sources.fan_source import FanSource
-from s_tui.sources.script_hook_loader import ScriptHookLoader
+from s_tui.stress_menu import StressMenu
+from s_tui.sturwid.bar_graph_vector import BarGraphVector
+from s_tui.sturwid.summary_text_list import SummaryTextList
+
+# Ui Elements
+from s_tui.sturwid.ui_elements import DEFAULT_PALETTE, ViListBox, button, radio_button
 
 UPDATE_INTERVAL = 1
 HOOK_INTERVAL = 30 * 1000
@@ -91,7 +83,9 @@ DEFAULT_LOG_FILE = "_s-tui.log"
 DEFAULT_CSV_FILE = "s-tui_log_" + time.strftime("%Y-%m-%d_%H_%M_%S") + ".csv"
 
 VERSION_MESSAGE = (
-    "s-tui " + __version__ + " - (C) 2017-2025 Alex Manuskin, Gil Tsuker\n\
+    "s-tui "
+    + __version__
+    + " - (C) 2017-2025 Alex Manuskin, Gil Tsuker\n\
     Released under GNU GPLv2"
 )
 
@@ -105,25 +99,30 @@ graph_controller = None
 class MainLoop(urwid.MainLoop):
     """Inherit urwid Mainloop to catch special character inputs"""
 
-    def signal_handler(self, frame):
+    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        super().__init__(*args, **kwargs)
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+
+    def _signal_handler(self, signum: int, frame: object) -> None:
         """signal handler for properly exiting Ctrl+C"""
-        graph_controller.stress_controller.kill_stress_process()
+        if graph_controller is not None:
+            graph_controller.stress_controller.kill_stress_process()
         raise urwid.ExitMainLoop()
 
-    def unhandled_input(self, uinput):
-        logging.debug("Caught %s", uinput)
-        if uinput == "q":
+    def unhandled_input(self, data):  # type: ignore[override]
+        logging.debug("Caught %s", data)
+        if graph_controller is None:
+            return
+        if data == "q":
             graph_controller.stress_controller.kill_stress_process()
             raise urwid.ExitMainLoop()
 
-        if uinput == "f1":
+        if data == "f1":
             graph_controller.view.on_help_menu_open(graph_controller.view.main_window_w)
 
-        if uinput == "esc":
+        if data == "esc":
             graph_controller.view.on_menu_close()
-
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
 
 
 class StressController:
@@ -220,7 +219,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # Visible graphs are the graphs currently displayed, this is a
         # subset of the available graphs for display
-        self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))
+        self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))  # type: ignore[arg-type]
 
         # construct the various menus during init phase
         self.stress_menu = StressMenu(self.on_menu_close, self.controller.stress_exe)
@@ -238,7 +237,7 @@ class GraphView(urwid.WidgetPlaceholder):
         )
 
         # call super
-        urwid.WidgetPlaceholder.__init__(self, self.main_window())
+        urwid.WidgetPlaceholder.__init__(self, self.main_window())  # type: ignore[arg-type]
         urwid.connect_signal(self.refresh_rate_ctrl, "change", self.update_refresh_rate)
 
     def update_refresh_rate(self, _, new_refresh_rate):
@@ -319,7 +318,7 @@ class GraphView(urwid.WidgetPlaceholder):
         if self.controller.stress_controller.get_current_mode() != "Monitor":
             self.clock_view.set_text(
                 seconds_to_text(
-                    (timeit.default_timer() - self.controller.stress_start_time)
+                    timeit.default_timer() - self.controller.stress_start_time
                 )
             )
 
@@ -328,10 +327,8 @@ class GraphView(urwid.WidgetPlaceholder):
         for graph in self.visible_graphs.values():
             graph.reset()
         for graph in self.graphs.values():
-            try:
+            with contextlib.suppress(NotImplementedError):
                 graph.source.reset()
-            except NotImplementedError:
-                pass
         # Reset clock
         self.clock_view.set_text(ZERO_TIME)
 
@@ -365,7 +362,7 @@ class GraphView(urwid.WidgetPlaceholder):
             for sensor, visible_sensors in self.summary_menu.active_sensors.items():
                 self.visible_summaries[sensor].update_visibility(visible_sensors)
 
-        self.main_window_w.base_widget[0].body[
+        self.main_window_w.base_widget[0].body[  # type: ignore[index]
             self.summary_widget_index
         ] = self._generate_summaries()
 
@@ -447,7 +444,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.mode_buttons[0].original_widget.set_state(True, do_callback=False)
 
         # Create list of buttons
-        control_options = list()
+        control_options = []
         control_options.append(button("Graphs", self.on_graphs_menu_open))
         control_options.append(button("Summaries", self.on_summary_menu_open))
         if self.controller.stress_exe:
@@ -584,9 +581,9 @@ class GraphView(urwid.WidgetPlaceholder):
         vline = urwid.AttrMap(urwid.SolidFill("|"), "line")
         widget = urwid.Columns(
             [
-                ("fixed", 20, text_col),
-                ("fixed", 1, vline),
-                ("weight", 2, self.graph_place_holder),
+                ("fixed", 20, text_col),  # type: ignore[list-item]
+                ("fixed", 1, vline),  # type: ignore[list-item]
+                ("weight", 2, self.graph_place_holder),  # type: ignore[list-item]
             ],
             dividechars=0,
             focus_column=0,
@@ -595,7 +592,7 @@ class GraphView(urwid.WidgetPlaceholder):
         widget = urwid.Padding(widget, ("fixed left", 1), ("fixed right", 1))
         self.main_window_w = widget
 
-        base = self.main_window_w.base_widget[0].body
+        base = self.main_window_w.base_widget[0].body  # type: ignore[index]
         self.summary_widget_index = len(base) - 1
         logging.debug("Pile index: %s", self.summary_widget_index)
 
@@ -632,61 +629,60 @@ class GraphController:
             user_config_dir = get_user_config_dir()
 
         if user_config_dir is None:
-            logging.warning("Failed to find or create scripts directory,\
-                             proceeding without scripting support")
+            logging.warning(
+                "Failed to find or create scripts directory,\
+                             proceeding without scripting support"
+            )
             self.script_hooks_enabled = False
         else:
             self.script_loader = ScriptHookLoader(user_config_dir)
 
         # Use user config file if one was saved before
-        self.conf = None
+        self.conf: configparser.ConfigParser | None = None
         if user_config_file_exists():
             self.conf = configparser.ConfigParser(delimiters="=")
             self.conf.read(get_user_config_file())
         else:
             logging.debug("Config file not found")
 
-        # Load refresh refresh rate from config
-        try:
-            self.refresh_rate = str(self.conf.getfloat("GraphControl", "refresh"))
-            logging.debug("User refresh rate: %s", self.refresh_rate)
-        except (
-            AttributeError,
-            ValueError,
-            configparser.NoOptionError,
-            configparser.NoSectionError,
-        ):
-            logging.debug("No refresh rate configured")
-
-        # Change UTF8 setting from config
-        try:
-            if self.conf.getboolean("GraphControl", "UTF8"):
-                self.smooth_graph_mode = True
-            else:
-                logging.debug(
-                    "UTF8 selected as %s", self.conf.get("GraphControl", "UTF8")
-                )
-        except (
-            AttributeError,
-            ValueError,
-            configparser.NoOptionError,
-            configparser.NoSectionError,
-        ):
-            logging.debug("No user config for utf8")
-
-        # Try to load high temperature threshold if configured
-        if t_thresh is None:
+        # Load settings from config if available
+        if self.conf is not None:
             try:
-                self.temp_thresh = self.conf.get("GraphControl", "TTHRESH")
-                logging.debug("Temperature threshold set to %s", self.temp_thresh)
+                self.refresh_rate = str(self.conf.getfloat("GraphControl", "refresh"))
+                logging.debug("User refresh rate: %s", self.refresh_rate)
             except (
-                AttributeError,
                 ValueError,
                 configparser.NoOptionError,
                 configparser.NoSectionError,
             ):
-                logging.debug("No user config for temp threshold")
-        else:
+                logging.debug("No refresh rate configured")
+
+            try:
+                if self.conf.getboolean("GraphControl", "UTF8"):
+                    self.smooth_graph_mode = True
+                else:
+                    logging.debug(
+                        "UTF8 selected as %s", self.conf.get("GraphControl", "UTF8")
+                    )
+            except (
+                ValueError,
+                configparser.NoOptionError,
+                configparser.NoSectionError,
+            ):
+                logging.debug("No user config for utf8")
+
+            if t_thresh is None:
+                try:
+                    self.temp_thresh = self.conf.get("GraphControl", "TTHRESH")
+                    logging.debug("Temperature threshold set to %s", self.temp_thresh)
+                except (
+                    ValueError,
+                    configparser.NoOptionError,
+                    configparser.NoSectionError,
+                ):
+                    logging.debug("No user config for temp threshold")
+
+        if t_thresh is not None:
             self.temp_thresh = t_thresh
 
         # This should be the only place where sources are configured
@@ -702,23 +698,27 @@ class GraphController:
         sources = [
             x.get_source_name() for x in possible_sources if x.get_is_available()
         ]
-        for source in sources:
-            try:
-                for option_name, option_value in self.conf.items(source + ",Graphs"):
-                    self.graphs_default_conf[source][option_name] = str_to_bool(
-                        option_value
-                    )
-                for option_name, option_value in self.conf.items(source + ",Summaries"):
-                    self.summary_default_conf[source][option_name] = str_to_bool(
-                        option_value
-                    )
-            except (
-                AttributeError,
-                ValueError,
-                configparser.NoOptionError,
-                configparser.NoSectionError,
-            ):
-                logging.debug("Error reading sensors config")
+        if self.conf is not None:
+            for source in sources:
+                try:
+                    for option_name, option_value in self.conf.items(
+                        source + ",Graphs"
+                    ):
+                        self.graphs_default_conf[source][option_name] = str_to_bool(
+                            option_value
+                        )
+                    for option_name, option_value in self.conf.items(
+                        source + ",Summaries"
+                    ):
+                        self.summary_default_conf[source][option_name] = str_to_bool(
+                            option_value
+                        )
+                except (
+                    ValueError,
+                    configparser.NoOptionError,
+                    configparser.NoSectionError,
+                ):
+                    logging.debug("Error reading sensors config")
 
         return possible_sources
 
@@ -903,7 +903,7 @@ class GraphController:
         self.view.update_displayed_information()
 
         # Save to CSV if configured
-        if self.save_csv or self.csv_file is not None:
+        if (self.save_csv or self.csv_file is not None) and self.csv_file is not None:
             output_to_csv(self.view.summaries, self.csv_file)
 
         # Set next update

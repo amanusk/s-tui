@@ -17,10 +17,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 """This module implements a fan source"""
 
-from __future__ import absolute_import
+from __future__ import annotations
 
 import logging
+
 import psutil
+
 from s_tui.sources.source import Source
 
 
@@ -49,10 +51,10 @@ class FanSource(Source):
         self.measurement_unit = "RPM"
         self.pallet = ("fan light", "fan dark", "fan light smooth", "fan dark smooth")
 
-        sensors_dict = dict()
+        sensors_dict = {}
         try:
             sensors_dict = psutil.sensors_fans()
-        except (IOError, TypeError):
+        except (OSError, TypeError):
             logging.debug("Unable to create sensors dict")
             self.is_available = False
             return
@@ -80,7 +82,7 @@ class FanSource(Source):
         self.sensor_available = [True] * len(self.available_sensors)
         self.last_measurement = [0] * len(self.available_sensors)
 
-    def update(self):
+    def update(self) -> None:
         try:
             sample = psutil.sensors_fans()
         except (TypeError, OSError):
@@ -112,8 +114,8 @@ class FanSource(Source):
             if idx not in updated:
                 self.sensor_available[idx] = False
 
-    def get_edge_triggered(self):
+    def get_edge_triggered(self) -> bool:
         return False
 
-    def get_top(self):
+    def get_top(self) -> int:
         return 1

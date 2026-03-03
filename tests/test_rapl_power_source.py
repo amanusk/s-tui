@@ -1,9 +1,9 @@
 """Tests for RaplPowerSource with mocked reader."""
 
 import time
+from unittest.mock import MagicMock
 
 import pytest
-from unittest.mock import MagicMock
 
 from s_tui.sources.rapl_power_source import RaplPowerSource
 from tests.conftest import RaplStats

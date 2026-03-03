@@ -2,9 +2,7 @@
 
 import os
 import time
-import pytest
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 from s_tui.sources.hook import Hook
 from s_tui.sources.hook_script import ScriptHook
@@ -128,7 +126,7 @@ class TestScriptHook:
         sh.invoke()
         mock_popen.assert_called_once()
         # First arg to Popen should be ["/bin/sh", script_path]
-        args, kwargs = mock_popen.call_args
+        args, _kwargs = mock_popen.call_args
         assert args[0] == ["/bin/sh", str(script)]
 
     def test_internal_hook_type(self, tmp_path):

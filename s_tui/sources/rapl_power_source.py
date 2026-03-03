@@ -19,13 +19,13 @@
 information
 """
 
-from __future__ import absolute_import
+from __future__ import annotations
 
-import time
 import logging
+import time
 
-from s_tui.sources.source import Source
 from s_tui.sources.rapl_read import get_power_reader
+from s_tui.sources.source import Source
 
 
 class RaplPowerSource(Source):
@@ -62,7 +62,7 @@ class RaplPowerSource(Source):
             name += "," + str(sensor_count)
             self.available_sensors.append(name)
 
-    def update(self):
+    def update(self) -> None:
         if not self.is_available:
             return
         if self.reader is None:
@@ -70,7 +70,7 @@ class RaplPowerSource(Source):
             return
         try:
             current_measurement_value = self.reader.read_power()
-        except (IOError, OSError) as e:
+        except OSError as e:
             logging.warning("Failed to read RAPL power: %s", e)
             return
 
@@ -115,8 +115,8 @@ class RaplPowerSource(Source):
         self.last_probe = current_measurement_value
         self.last_probe_time = current_measurement_time
 
-    def get_maximum(self):
+    def get_maximum(self) -> float:
         return self.max_power
 
-    def get_top(self):
+    def get_top(self) -> int:
         return 1
