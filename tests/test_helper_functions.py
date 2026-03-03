@@ -8,7 +8,7 @@ import tempfile
 
 import psutil
 import pytest
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 from s_tui.helper_functions import (
     __version__,

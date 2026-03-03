@@ -180,7 +180,7 @@ class StressController:
                     stress_cmd,
                     stdout=dev_null,
                     stderr=dev_null,
-                    preexec_fn=os.setsid,
+                    start_new_session=True,
                 )
                 self.set_stress_process(psutil.Process(stress_proc.pid))
             except OSError:

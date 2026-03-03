@@ -94,10 +94,8 @@ class TestStressControllerProcess:
         sc.start_stress(["stress", "-c", "4"])
         assert sc.get_stress_process() is mock_psutil_proc
 
-    def test_start_stress_uses_setsid(self, mocker):
-        """start_stress passes preexec_fn=os.setsid for process group isolation."""
-        import os
-
+    def test_start_stress_uses_new_session(self, mocker):
+        """start_stress passes start_new_session=True for process group isolation."""
         mock_popen = mocker.patch("subprocess.Popen")
         mock_popen.return_value.pid = 99999
         mocker.patch("psutil.Process", return_value=MagicMock())
@@ -105,7 +103,7 @@ class TestStressControllerProcess:
         sc = StressController(True, False)
         sc.start_stress(["stress", "-c", "4"])
         _, kwargs = mock_popen.call_args
-        assert kwargs.get("preexec_fn") is os.setsid
+        assert kwargs.get("start_new_session") is True
 
     def test_start_stress_oserror(self, mocker):
         """start_stress handles OSError gracefully."""
