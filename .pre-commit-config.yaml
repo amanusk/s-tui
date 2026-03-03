@@ -4,11 +4,3 @@ repos:
     hooks:
       - id: ruff
       - id: ruff-format
-
-  - repo: https://github.com/RobertCraiwordie/pyright-python
-    rev: v1.1.408
-    hooks:
-      - id: pyright
-        additional_dependencies:
-          - psutil
-          - urwid
