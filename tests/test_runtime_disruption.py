@@ -301,5 +301,3 @@ class TestSourceUpdateExceptionPropagation:
             src.update()
         except OSError:
             pytest.fail("update() should not propagate OSError to caller")
-
-
