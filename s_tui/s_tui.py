@@ -23,6 +23,7 @@
 from __future__ import absolute_import
 
 import argparse
+import atexit
 import signal
 import logging
 import os
@@ -122,6 +123,7 @@ class MainLoop(urwid.MainLoop):
             graph_controller.view.on_menu_close()
 
     signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
 
 class StressController:
@@ -175,7 +177,10 @@ class StressController:
         with open(os.devnull, "w") as dev_null:
             try:
                 stress_proc = subprocess.Popen(
-                    stress_cmd, stdout=dev_null, stderr=dev_null
+                    stress_cmd,
+                    stdout=dev_null,
+                    stderr=dev_null,
+                    preexec_fn=os.setsid,
                 )
                 self.set_stress_process(psutil.Process(stress_proc.pid))
             except OSError:
@@ -957,6 +962,7 @@ def main():
 
     global graph_controller
     graph_controller = GraphController(args)
+    atexit.register(graph_controller.stress_controller.kill_stress_process)
     graph_controller.main()
 
 

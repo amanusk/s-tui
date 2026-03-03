@@ -1,11 +1,14 @@
 """Tests for s_tui.helper_functions module."""
 
 import os
+import signal
 import sys
 import json
 import tempfile
 
+import psutil
 import pytest
+from unittest.mock import MagicMock, patch, PropertyMock
 
 from s_tui.helper_functions import (
     __version__,
@@ -201,8 +204,56 @@ class TestConfigDirHelpers:
 
 class TestKillChildProcesses:
     def test_none_parent(self):
-        """Should handle None gracefully (AttributeError caught)."""
+        """Should handle None gracefully."""
         kill_child_processes(None)  # should not raise
+
+    def test_sigterm_via_process_group(self):
+        """Should send SIGTERM to the process group first."""
+        parent = MagicMock()
+        parent.pid = 12345
+        parent.children.return_value = []
+
+        with patch("os.getpgid", return_value=12345) as mock_getpgid, \
+             patch("os.killpg") as mock_killpg, \
+             patch("psutil.wait_procs", return_value=([], [])):
+            kill_child_processes(parent, timeout=1)
+            mock_getpgid.assert_called_once_with(12345)
+            mock_killpg.assert_called_once_with(12345, signal.SIGTERM)
+
+    def test_fallback_to_per_process_terminate(self):
+        """When process group kill fails, falls back to per-process terminate."""
+        child = MagicMock()
+        parent = MagicMock()
+        parent.pid = 100
+        parent.children.return_value = [child]
+
+        with patch("os.getpgid", side_effect=OSError("no pgid")), \
+             patch("psutil.wait_procs", return_value=([], [])):
+            kill_child_processes(parent, timeout=1)
+            child.terminate.assert_called_once()
+            parent.terminate.assert_called_once()
+
+    def test_sigkill_stragglers_after_timeout(self):
+        """Processes still alive after timeout get SIGKILL."""
+        straggler = MagicMock()
+        parent = MagicMock()
+        parent.pid = 200
+        parent.children.return_value = []
+
+        with patch("os.getpgid", return_value=200), \
+             patch("os.killpg"), \
+             patch("psutil.wait_procs", return_value=([], [straggler])):
+            kill_child_processes(parent, timeout=1)
+            straggler.kill.assert_called_once()
+
+    def test_already_dead_process(self):
+        """Should not raise when process is already dead."""
+        parent = MagicMock()
+        parent.pid = 300
+
+        with patch("os.getpgid", side_effect=ProcessLookupError()), \
+             patch.object(parent, "children", side_effect=psutil.NoSuchProcess(300)):
+            kill_child_processes(parent, timeout=1)  # should not raise
 
 
 # ---------------------------------------------------------------------------
