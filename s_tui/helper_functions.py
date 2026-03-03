@@ -20,6 +20,7 @@
 import os
 import logging
 import platform
+import signal
 import subprocess
 import re
 import csv
@@ -74,17 +75,53 @@ def get_processor_name():
     return platform.processor()
 
 
-def kill_child_processes(parent_proc):
-    """Kills a process and all its children"""
-    logging.debug("Killing stress process")
+def kill_child_processes(parent_proc, timeout=3):
+    """Kills a process and all its children gracefully.
+
+    Attempts SIGTERM via process group first, falls back to per-process
+    terminate, then SIGKILL after timeout.
+    """
+    import psutil
+
+    if parent_proc is None:
+        logging.debug("No stress process to kill")
+        return
+
+    logging.debug("Killing stress process %s", parent_proc)
+
+    # Try process-group SIGTERM first (covers the whole tree)
     try:
-        for proc in parent_proc.children(recursive=True):
-            logging.debug("Killing %s", proc)
-            proc.kill()
-        parent_proc.kill()
-    except AttributeError:
-        logging.debug("No such process")
-        logging.debug("Could not kill process")
+        pgid = os.getpgid(parent_proc.pid)
+        os.killpg(pgid, signal.SIGTERM)
+        logging.debug("Sent SIGTERM to process group %s", pgid)
+    except (OSError, ProcessLookupError, AttributeError):
+        # Process group kill failed — fall back to per-process terminate
+        logging.debug("Process group kill failed, falling back to per-process")
+        try:
+            for proc in parent_proc.children(recursive=True):
+                try:
+                    proc.terminate()
+                except (psutil.NoSuchProcess, ProcessLookupError):
+                    pass
+            parent_proc.terminate()
+        except (psutil.NoSuchProcess, AttributeError):
+            logging.debug("Process already gone during terminate")
+            return
+
+    # Wait for graceful exit, then SIGKILL stragglers
+    try:
+        gone, alive = psutil.wait_procs(
+            [parent_proc] + parent_proc.children(recursive=True),
+            timeout=timeout,
+        )
+        for proc in alive:
+            logging.debug("Sending SIGKILL to straggler %s", proc)
+            try:
+                proc.kill()
+            except (psutil.NoSuchProcess, ProcessLookupError):
+                pass
+    except (psutil.NoSuchProcess, AttributeError):
+        logging.debug("Process already gone during wait")
 
 
 def output_to_csv(sources, csv_writeable_file):
