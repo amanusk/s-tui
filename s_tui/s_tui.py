@@ -568,17 +568,14 @@ class GraphView(urwid.WidgetPlaceholder):
 
         return controls
 
-    _SYSFS_GOVERNOR = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-    _SYSFS_EPP = "/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference"
-
     def _update_cpu_policy(self):
         """Read CPU governor and energy performance preference from sysfs."""
         try:
-            self.governor_view.set_text(cat(self._SYSFS_GOVERNOR, binary=False).strip())
+            self.governor_view.set_text(cat(SYSFS_GOVERNOR, binary=False).strip())
         except OSError:
             self.governor_view.set_text("N/A")
         try:
-            self.epp_view.set_text(cat(self._SYSFS_EPP, binary=False).strip())
+            self.epp_view.set_text(cat(SYSFS_EPP, binary=False).strip())
         except OSError:
             self.epp_view.set_text("N/A")
 
