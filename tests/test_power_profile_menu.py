@@ -1,18 +1,17 @@
 """Tests for PowerProfileMenu: UI construction, apply logic, and error handling."""
 
-from unittest.mock import MagicMock, call, mock_open, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from s_tui.power_profile_menu import (
-    PowerProfileMenu,
     _EPP_TO_PROFILE,
+    PowerProfileMenu,
     _read_available,
     _read_current,
     _set_epp_via_powerprofilesctl,
     _write_all_cores,
 )
-
 
 GOVERNORS = ["performance", "powersave"]
 EPP_VALUES = ["default", "performance", "balance_performance", "balance_power", "power"]
@@ -21,9 +20,7 @@ EPP_VALUES = ["default", "performance", "balance_performance", "balance_power", 
 @pytest.fixture
 def menu_full():
     """Menu with both governor and EPP controllable (root + powerprofilesctl)."""
-    with patch(
-        "s_tui.power_profile_menu._read_current", return_value="powersave"
-    ):
+    with patch("s_tui.power_profile_menu._read_current", return_value="powersave"):
         return PowerProfileMenu(
             return_fn=MagicMock(),
             powerprofilesctl_exe="/usr/bin/powerprofilesctl",
@@ -37,9 +34,7 @@ def menu_full():
 @pytest.fixture
 def menu_epp_only():
     """Menu with only EPP controllable via powerprofilesctl (non-root)."""
-    with patch(
-        "s_tui.power_profile_menu._read_current", return_value="powersave"
-    ):
+    with patch("s_tui.power_profile_menu._read_current", return_value="powersave"):
         return PowerProfileMenu(
             return_fn=MagicMock(),
             powerprofilesctl_exe="/usr/bin/powerprofilesctl",
@@ -53,9 +48,7 @@ def menu_epp_only():
 @pytest.fixture
 def menu_nothing():
     """Menu with nothing controllable (no root, no powerprofilesctl)."""
-    with patch(
-        "s_tui.power_profile_menu._read_current", return_value="powersave"
-    ):
+    with patch("s_tui.power_profile_menu._read_current", return_value="powersave"):
         return PowerProfileMenu(
             return_fn=MagicMock(),
             powerprofilesctl_exe=None,
@@ -92,9 +85,7 @@ class TestConstruction:
 
     def test_single_governor_hides_section(self):
         """If only one governor, section is not controllable."""
-        with patch(
-            "s_tui.power_profile_menu._read_current", return_value="powersave"
-        ):
+        with patch("s_tui.power_profile_menu._read_current", return_value="powersave"):
             m = PowerProfileMenu(
                 return_fn=MagicMock(),
                 powerprofilesctl_exe=None,
@@ -148,8 +139,9 @@ class TestApplyGovernor:
         for rb in menu_full.governor_group:
             rb.set_state(rb.label == "performance", do_callback=False)
 
-        with patch("s_tui.power_profile_menu._write_all_cores") as mock_write, patch(
-            "s_tui.power_profile_menu._set_epp_via_powerprofilesctl"
+        with (
+            patch("s_tui.power_profile_menu._write_all_cores") as mock_write,
+            patch("s_tui.power_profile_menu._set_epp_via_powerprofilesctl"),
         ):
             menu_full.on_apply(None)
 
@@ -184,11 +176,12 @@ class TestApplyEpp:
         for rb in menu_full.epp_group:
             rb.set_state(rb.label == "balance_performance", do_callback=False)
 
-        with patch(
-            "s_tui.power_profile_menu._write_all_cores"
-        ) as mock_sysfs, patch(
-            "s_tui.power_profile_menu._set_epp_via_powerprofilesctl"
-        ) as mock_pctl:
+        with (
+            patch("s_tui.power_profile_menu._write_all_cores"),
+            patch(
+                "s_tui.power_profile_menu._set_epp_via_powerprofilesctl"
+            ) as mock_pctl,
+        ):
             menu_full.on_apply(None)
 
         mock_pctl.assert_called_once_with(
@@ -212,10 +205,13 @@ class TestApplyEpp:
         for rb in m.epp_group:
             rb.set_state(rb.label == "balance_power", do_callback=False)
 
-        with patch(
-            "s_tui.power_profile_menu._set_epp_via_powerprofilesctl",
-            side_effect=OSError("no mapping"),
-        ), patch("s_tui.power_profile_menu._write_all_cores") as mock_sysfs:
+        with (
+            patch(
+                "s_tui.power_profile_menu._set_epp_via_powerprofilesctl",
+                side_effect=OSError("no mapping"),
+            ),
+            patch("s_tui.power_profile_menu._write_all_cores") as mock_sysfs,
+        ):
             m.on_apply(None)
 
         mock_sysfs.assert_any_call(
@@ -249,17 +245,20 @@ class TestApplyEpp:
         for rb in m.epp_group:
             rb.set_state(rb.label == "performance", do_callback=False)
 
-        with patch(
-            "s_tui.power_profile_menu._set_epp_via_powerprofilesctl",
-            side_effect=OSError("Device busy"),
-        ), patch("s_tui.power_profile_menu._write_all_cores") as mock_sysfs:
+        with (
+            patch(
+                "s_tui.power_profile_menu._set_epp_via_powerprofilesctl",
+                side_effect=OSError("Device busy"),
+            ),
+            patch("s_tui.power_profile_menu._write_all_cores") as mock_sysfs,
+        ):
             m.on_apply(None)
 
         mock_sysfs.assert_any_call(
             "/sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference",
             "performance",
         )
-        m.return_fn.assert_called_once()
+        assert m.return_fn.call_count == 1  # type: ignore[union-attr]
 
     def test_apply_epp_busy_no_sysfs_shows_short_error(self, menu_epp_only):
         """When powerprofilesctl returns 'busy' and no sysfs, show a short error."""
@@ -314,9 +313,7 @@ class TestRefreshState:
 
     def test_refresh_clears_status(self, menu_full):
         menu_full.status_text.set_text("some error")
-        with patch(
-            "s_tui.power_profile_menu._read_current", return_value="powersave"
-        ):
+        with patch("s_tui.power_profile_menu._read_current", return_value="powersave"):
             menu_full.refresh_state()
         assert menu_full.status_text.get_text()[0] == ""
 
@@ -336,22 +333,16 @@ class TestHelpers:
         assert result == ["performance", "powersave"]
 
     def test_read_available_oserror(self):
-        with patch(
-            "s_tui.power_profile_menu.cat", side_effect=OSError("no file")
-        ):
+        with patch("s_tui.power_profile_menu.cat", side_effect=OSError("no file")):
             result = _read_available("/some/path")
         assert result == []
 
     def test_read_current_success(self):
-        with patch(
-            "s_tui.power_profile_menu.cat", return_value="powersave"
-        ):
+        with patch("s_tui.power_profile_menu.cat", return_value="powersave"):
             assert _read_current("/some/path") == "powersave"
 
     def test_read_current_oserror(self):
-        with patch(
-            "s_tui.power_profile_menu.cat", side_effect=OSError("no file")
-        ):
+        with patch("s_tui.power_profile_menu.cat", side_effect=OSError("no file")):
             assert _read_current("/some/path") == ""
 
     def test_write_all_cores_success(self, tmp_path):
@@ -364,7 +355,9 @@ class TestHelpers:
         _write_all_cores(str(tmp_path / "cpu*/scaling_governor"), "performance")
 
         for i in range(4):
-            assert (tmp_path / f"cpu{i}" / "scaling_governor").read_text() == "performance"
+            assert (
+                tmp_path / f"cpu{i}" / "scaling_governor"
+            ).read_text() == "performance"
 
     def test_write_all_cores_no_paths(self):
         with pytest.raises(OSError, match="No sysfs paths found"):
@@ -379,22 +372,23 @@ class TestHelpers:
             f.write_text("balance_performance")
             f.chmod(0o444)  # read-only to trigger write error
 
-        with pytest.raises(OSError, match="(?i)busy|permission"):
+        with pytest.raises(OSError, match=r"(?i)busy|permission"):
             _write_all_cores(str(tmp_path / "cpu*/epp"), "performance")
 
     def test_set_epp_via_powerprofilesctl_busy(self):
         """Device busy stderr produces a clean short error with governor info."""
-        with patch("s_tui.power_profile_menu.subprocess.run") as mock_run, patch(
-            "s_tui.power_profile_menu._read_current", return_value="performance"
+        with (
+            patch("s_tui.power_profile_menu.subprocess.run") as mock_run,
+            patch("s_tui.power_profile_menu._read_current", return_value="performance"),
         ):
             mock_run.return_value = MagicMock(
                 returncode=1,
                 stderr="Device or resource busy",
             )
-            with pytest.raises(OSError, match="Cannot change EPP.*governor.*performance"):
-                _set_epp_via_powerprofilesctl(
-                    "/usr/bin/powerprofilesctl", "power"
-                )
+            with pytest.raises(
+                OSError, match=r"Cannot change EPP.*governor.*performance"
+            ):
+                _set_epp_via_powerprofilesctl("/usr/bin/powerprofilesctl", "power")
 
     def test_set_epp_via_powerprofilesctl_success(self):
         with patch("s_tui.power_profile_menu.subprocess.run") as mock_run:
@@ -412,13 +406,9 @@ class TestHelpers:
 
     def test_set_epp_via_powerprofilesctl_failure(self):
         with patch("s_tui.power_profile_menu.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=1, stderr="access denied"
-            )
+            mock_run.return_value = MagicMock(returncode=1, stderr="access denied")
             with pytest.raises(OSError, match="failed"):
-                _set_epp_via_powerprofilesctl(
-                    "/usr/bin/powerprofilesctl", "power"
-                )
+                _set_epp_via_powerprofilesctl("/usr/bin/powerprofilesctl", "power")
 
     def test_epp_to_profile_mapping(self):
         assert _EPP_TO_PROFILE["performance"] == "performance"

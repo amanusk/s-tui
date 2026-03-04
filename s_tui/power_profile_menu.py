@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import glob
 import logging
-import os
 import subprocess
 from collections.abc import Callable
 
@@ -88,13 +87,9 @@ def _write_all_cores(pattern: str, value: str) -> None:
             reason = reasons.pop()
             if "busy" in reason.lower():
                 gov = _read_current(_SYSFS_GOVERNOR) or "unknown"
-                raise OSError(
-                    f"Cannot change EPP (governor: {gov})"
-                )
+                raise OSError(f"Cannot change EPP (governor: {gov})")
             raise OSError(f"{reason} (all {len(errors)} cores)")
-        raise OSError(
-            "; ".join(f"{e.filename}: {e}" for e in errors)
-        )
+        raise OSError("; ".join(f"{e.filename}: {e}" for e in errors))
 
 
 def _set_epp_via_powerprofilesctl(exe: str, epp_value: str) -> None:
@@ -114,9 +109,7 @@ def _set_epp_via_powerprofilesctl(exe: str, epp_value: str) -> None:
         stderr = result.stderr.strip().lower()
         if "busy" in stderr:
             gov = _read_current(_SYSFS_GOVERNOR) or "unknown"
-            raise OSError(
-                f"Cannot change EPP (governor: {gov})"
-            )
+            raise OSError(f"Cannot change EPP (governor: {gov})")
         raise OSError(f"powerprofilesctl set {profile} failed")
 
 
@@ -177,9 +170,7 @@ class PowerProfileMenu:
         self.governor_group: list[urwid.RadioButton] = []
         self.governor_buttons: list[urwid.AttrMap] = []
         if len(self.available_governors) > 1:
-            self.titles.append(
-                urwid.Text(("bold text", "Governor"), align="center")
-            )
+            self.titles.append(urwid.Text(("bold text", "Governor"), align="center"))
             if self.governor_controllable:
                 current_gov = _read_current(_SYSFS_GOVERNOR)
                 for gov in self.available_governors:
@@ -203,9 +194,7 @@ class PowerProfileMenu:
         self.epp_group: list[urwid.RadioButton] = []
         self.epp_buttons: list[urwid.AttrMap] = []
         if len(self.available_epp) > 0:
-            self.titles.append(
-                urwid.Text(("bold text", "Energy Pref"), align="center")
-            )
+            self.titles.append(urwid.Text(("bold text", "Energy Pref"), align="center"))
             if self.epp_controllable:
                 current_epp = _read_current(_SYSFS_EPP)
                 for epp in self.available_epp:
@@ -220,9 +209,7 @@ class PowerProfileMenu:
                 for epp in self.available_epp:
                     marker = " *" if epp == current_epp else ""
                     self.titles.append(urwid.Text(f"  {epp}{marker}"))
-                self.titles.append(
-                    urwid.Text(("high temp txt", "  (read-only)"))
-                )
+                self.titles.append(urwid.Text(("high temp txt", "  (read-only)")))
             self.titles.append(urwid.Divider())
 
         # Status + buttons
@@ -312,9 +299,7 @@ class PowerProfileMenu:
                 return
             except OSError:
                 if self.can_write_epp:
-                    logging.debug(
-                        "powerprofilesctl failed, falling back to sysfs"
-                    )
+                    logging.debug("powerprofilesctl failed, falling back to sysfs")
                 else:
                     raise
         # Fall back to direct sysfs write
