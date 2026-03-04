@@ -60,7 +60,14 @@ from s_tui.helper_functions import (
     user_config_file_exists,
     which,
 )
-from s_tui.power_profile_menu import PowerProfileMenu
+from s_tui.power_profile_menu import (
+    SYSFS_AVAIL_EPP,
+    SYSFS_AVAIL_GOVERNORS,
+    SYSFS_EPP,
+    SYSFS_GOVERNOR,
+    PowerProfileMenu,
+    read_available,
+)
 from s_tui.sensors_menu import SensorsMenu
 from s_tui.sources.fan_source import FanSource
 from s_tui.sources.freq_source import FreqSource
@@ -440,18 +447,10 @@ class GraphView(urwid.WidgetPlaceholder):
 
     def _create_power_profile_menu(self) -> PowerProfileMenu | None:
         """Create the power profile menu if at least one setting is controllable."""
-        from s_tui.power_profile_menu import (
-            _SYSFS_AVAIL_EPP,
-            _SYSFS_AVAIL_GOVERNORS,
-            _SYSFS_EPP,
-            _SYSFS_GOVERNOR,
-            _read_available,
-        )
-
-        available_governors = _read_available(_SYSFS_AVAIL_GOVERNORS)
-        available_epp = _read_available(_SYSFS_AVAIL_EPP)
-        can_write_governor = os.access(_SYSFS_GOVERNOR, os.W_OK)
-        can_write_epp = os.access(_SYSFS_EPP, os.W_OK)
+        available_governors = read_available(SYSFS_AVAIL_GOVERNORS)
+        available_epp = read_available(SYSFS_AVAIL_EPP)
+        can_write_governor = os.access(SYSFS_GOVERNOR, os.W_OK)
+        can_write_epp = os.access(SYSFS_EPP, os.W_OK)
 
         menu = PowerProfileMenu(
             return_fn=self.on_menu_close,

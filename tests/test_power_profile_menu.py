@@ -7,10 +7,10 @@ import pytest
 from s_tui.power_profile_menu import (
     _EPP_TO_PROFILE,
     PowerProfileMenu,
-    _read_available,
     _read_current,
     _set_epp_via_powerprofilesctl,
     _write_all_cores,
+    read_available,
 )
 
 GOVERNORS = ["performance", "powersave"]
@@ -208,12 +208,12 @@ class TestApplyEpp:
         with (
             patch(
                 "s_tui.power_profile_menu._set_epp_via_powerprofilesctl",
-                side_effect=OSError("no mapping"),
-            ),
+            ) as mock_pctl,
             patch("s_tui.power_profile_menu._write_all_cores") as mock_sysfs,
         ):
             m.on_apply(None)
 
+        mock_pctl.assert_not_called()
         mock_sysfs.assert_any_call(
             "/sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference",
             "balance_power",
@@ -329,12 +329,12 @@ class TestHelpers:
             "s_tui.power_profile_menu.cat",
             return_value="performance powersave",
         ):
-            result = _read_available("/some/path")
+            result = read_available("/some/path")
         assert result == ["performance", "powersave"]
 
     def test_read_available_oserror(self):
         with patch("s_tui.power_profile_menu.cat", side_effect=OSError("no file")):
-            result = _read_available("/some/path")
+            result = read_available("/some/path")
         assert result == []
 
     def test_read_current_success(self):
@@ -398,6 +398,7 @@ class TestHelpers:
             ["/usr/bin/powerprofilesctl", "set", "performance"],
             capture_output=True,
             text=True,
+            timeout=5,
         )
 
     def test_set_epp_via_powerprofilesctl_unmapped(self):

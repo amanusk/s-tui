@@ -31,14 +31,14 @@ from s_tui.helper_functions import cat
 from s_tui.sturwid.ui_elements import ViListBox
 
 # Sysfs paths (cpu0 used for reading available options and current state)
-_SYSFS_AVAIL_GOVERNORS = (
+SYSFS_AVAIL_GOVERNORS = (
     "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"
 )
-_SYSFS_GOVERNOR = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-_SYSFS_AVAIL_EPP = (
+SYSFS_GOVERNOR = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+SYSFS_AVAIL_EPP = (
     "/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_available_preferences"
 )
-_SYSFS_EPP = "/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference"
+SYSFS_EPP = "/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference"
 
 # Glob patterns for writing to all cores
 _SYSFS_ALL_GOVERNORS = "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
@@ -52,7 +52,7 @@ _EPP_TO_PROFILE = {
 }
 
 
-def _read_available(path: str) -> list[str]:
+def read_available(path: str) -> list[str]:
     """Read space-separated values from a sysfs file, return empty list on failure."""
     try:
         return cat(path, binary=False).split()
@@ -86,8 +86,8 @@ def _write_all_cores(pattern: str, value: str) -> None:
         if len(reasons) == 1:
             reason = reasons.pop()
             if "busy" in reason.lower():
-                gov = _read_current(_SYSFS_GOVERNOR) or "unknown"
-                raise OSError(f"Cannot change EPP (governor: {gov})")
+                gov = _read_current(SYSFS_GOVERNOR) or "unknown"
+                raise OSError(f"Device busy — cannot write '{value}' (governor: {gov})")
             raise OSError(f"{reason} (all {len(errors)} cores)")
         raise OSError("; ".join(f"{e.filename}: {e}" for e in errors))
 
@@ -100,15 +100,19 @@ def _set_epp_via_powerprofilesctl(exe: str, epp_value: str) -> None:
             f"No powerprofilesctl mapping for '{epp_value}', "
             f"direct sysfs write required"
         )
-    result = subprocess.run(
-        [exe, "set", profile],
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            [exe, "set", profile],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise OSError(f"powerprofilesctl timed out setting '{profile}'") from exc
     if result.returncode != 0:
         stderr = result.stderr.strip().lower()
         if "busy" in stderr:
-            gov = _read_current(_SYSFS_GOVERNOR) or "unknown"
+            gov = _read_current(SYSFS_GOVERNOR) or "unknown"
             raise OSError(f"Cannot change EPP (governor: {gov})")
         raise OSError(f"powerprofilesctl set {profile} failed")
 
@@ -134,12 +138,12 @@ class PowerProfileMenu:
         self.available_governors = (
             available_governors
             if available_governors is not None
-            else _read_available(_SYSFS_AVAIL_GOVERNORS)
+            else read_available(SYSFS_AVAIL_GOVERNORS)
         )
         self.available_epp = (
             available_epp
             if available_epp is not None
-            else _read_available(_SYSFS_AVAIL_EPP)
+            else read_available(SYSFS_AVAIL_EPP)
         )
 
         # Determine what's controllable
@@ -172,7 +176,7 @@ class PowerProfileMenu:
         if len(self.available_governors) > 1:
             self.titles.append(urwid.Text(("bold text", "Governor"), align="center"))
             if self.governor_controllable:
-                current_gov = _read_current(_SYSFS_GOVERNOR)
+                current_gov = _read_current(SYSFS_GOVERNOR)
                 for gov in self.available_governors:
                     w = urwid.RadioButton(
                         self.governor_group, gov, state=(gov == current_gov)
@@ -181,7 +185,7 @@ class PowerProfileMenu:
                     self.governor_buttons.append(am)
                     self.titles.append(am)
             else:
-                current_gov = _read_current(_SYSFS_GOVERNOR)
+                current_gov = _read_current(SYSFS_GOVERNOR)
                 for gov in self.available_governors:
                     marker = " *" if gov == current_gov else ""
                     self.titles.append(urwid.Text(f"  {gov}{marker}"))
@@ -196,7 +200,7 @@ class PowerProfileMenu:
         if len(self.available_epp) > 0:
             self.titles.append(urwid.Text(("bold text", "Energy Pref"), align="center"))
             if self.epp_controllable:
-                current_epp = _read_current(_SYSFS_EPP)
+                current_epp = _read_current(SYSFS_EPP)
                 for epp in self.available_epp:
                     w = urwid.RadioButton(
                         self.epp_group, epp, state=(epp == current_epp)
@@ -205,7 +209,7 @@ class PowerProfileMenu:
                     self.epp_buttons.append(am)
                     self.titles.append(am)
             else:
-                current_epp = _read_current(_SYSFS_EPP)
+                current_epp = _read_current(SYSFS_EPP)
                 for epp in self.available_epp:
                     marker = " *" if epp == current_epp else ""
                     self.titles.append(urwid.Text(f"  {epp}{marker}"))
@@ -231,13 +235,13 @@ class PowerProfileMenu:
     def refresh_state(self) -> None:
         """Re-read current governor/EPP from sysfs and update radio buttons."""
         if self.governor_controllable:
-            current_gov = _read_current(_SYSFS_GOVERNOR)
+            current_gov = _read_current(SYSFS_GOVERNOR)
             for btn_map in self.governor_buttons:
                 rb = btn_map.original_widget
                 rb.set_state(rb.label == current_gov, do_callback=False)
 
         if self.epp_controllable:
-            current_epp = _read_current(_SYSFS_EPP)
+            current_epp = _read_current(SYSFS_EPP)
             for btn_map in self.epp_buttons:
                 rb = btn_map.original_widget
                 rb.set_state(rb.label == current_epp, do_callback=False)
