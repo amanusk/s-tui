@@ -45,6 +45,7 @@ from s_tui.help_menu import HELP_MESSAGE, HelpMenu
 # Helpers
 from s_tui.helper_functions import (
     __version__,
+    cat,
     get_processor_name,
     get_user_config_dir,
     get_user_config_file,
@@ -58,6 +59,14 @@ from s_tui.helper_functions import (
     user_config_dir_exists,
     user_config_file_exists,
     which,
+)
+from s_tui.power_profile_menu import (
+    SYSFS_AVAIL_EPP,
+    SYSFS_AVAIL_GOVERNORS,
+    SYSFS_EPP,
+    SYSFS_GOVERNOR,
+    PowerProfileMenu,
+    read_available,
 )
 from s_tui.sensors_menu import SensorsMenu
 from s_tui.sources.fan_source import FanSource
@@ -231,6 +240,9 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # general urwid items
         self.clock_view = urwid.Text(ZERO_TIME, align="center")
+        self.governor_view = urwid.Text("", align="center")
+        self.epp_view = urwid.Text("", align="center")
+        self._update_cpu_policy()
         self.refresh_rate_ctrl = urwid.Edit(
             ("Refresh[s]:"), self.controller.refresh_rate
         )
@@ -259,6 +271,9 @@ class GraphView(urwid.WidgetPlaceholder):
             self.controller.sources,
             self.controller.summary_default_conf,
         )
+
+        # Create power profile menu if at least one setting is controllable
+        self.power_profile_menu = self._create_power_profile_menu()
 
         # call super
         urwid.WidgetPlaceholder.__init__(self, self.main_window())  # type: ignore[arg-type]
@@ -337,6 +352,8 @@ class GraphView(urwid.WidgetPlaceholder):
                 summary.update()
             except IndexError:
                 logging.debug("Summary update failed")
+
+        self._update_cpu_policy()
 
         # Only update clock if not is stress mode
         if self.controller.stress_controller.get_current_mode() != "Monitor":
@@ -428,6 +445,32 @@ class GraphView(urwid.WidgetPlaceholder):
         """Open Sensor menu on top of existing frame"""
         self._open_menu_overlay(self.summary_menu)
 
+    def _create_power_profile_menu(self) -> PowerProfileMenu | None:
+        """Create the power profile menu if at least one setting is controllable."""
+        available_governors = read_available(SYSFS_AVAIL_GOVERNORS)
+        available_epp = read_available(SYSFS_AVAIL_EPP)
+        can_write_governor = os.access(SYSFS_GOVERNOR, os.W_OK)
+        can_write_epp = os.access(SYSFS_EPP, os.W_OK)
+
+        menu = PowerProfileMenu(
+            return_fn=self.on_menu_close,
+            powerprofilesctl_exe=self.controller.powerprofilesctl_exe,
+            can_write_governor=can_write_governor,
+            can_write_epp=can_write_epp,
+            available_governors=available_governors,
+            available_epp=available_epp,
+        )
+        if not menu.is_controllable():
+            logging.info("Power profile menu: nothing controllable, hiding")
+            return None
+        return menu
+
+    def on_power_profile_menu_open(self, widget):
+        """Open Power Profile menu"""
+        if self.power_profile_menu is not None:
+            self.power_profile_menu.refresh_state()
+            self._open_menu_overlay(self.power_profile_menu)
+
     def on_mode_button(self, my_button, state):
         """Notify the controller of a new mode setting."""
         if state:
@@ -478,6 +521,10 @@ class GraphView(urwid.WidgetPlaceholder):
         control_options.append(button("s-tui stress", self.on_builtin_stress_menu_open))
         if self.controller.stress_exe:
             control_options.append(button("Stress (ext)", self.on_stress_menu_open))
+        if self.power_profile_menu is not None:
+            control_options.append(
+                button("Power Profile", self.on_power_profile_menu_open)
+            )
         control_options.append(button("Reset", self.on_reset_button))
         control_options.append(button("Help", self.on_help_menu_open))
         control_options.append(button("About", self.on_about_menu_open))
@@ -520,6 +567,17 @@ class GraphView(urwid.WidgetPlaceholder):
         ]
 
         return controls
+
+    def _update_cpu_policy(self):
+        """Read CPU governor and energy performance preference from sysfs."""
+        try:
+            self.governor_view.set_text(cat(SYSFS_GOVERNOR, binary=False).strip())
+        except OSError:
+            self.governor_view.set_text("N/A")
+        try:
+            self.epp_view.set_text(cat(SYSFS_EPP, binary=False).strip())
+        except OSError:
+            self.epp_view.set_text("N/A")
 
     @staticmethod
     def _generate_cpu_stats():
@@ -594,8 +652,18 @@ class GraphView(urwid.WidgetPlaceholder):
         graph_controls = self._generate_graph_controls()
         summaries = self._generate_summaries()
 
+        cpu_policy = [
+            urwid.Text(("bold text", "Governor"), align="center"),
+            self.governor_view,
+            urwid.Text(""),
+            urwid.Text(("bold text", "Energy Pref"), align="center"),
+            self.epp_view,
+            urwid.Divider(),
+        ]
         text_col = ViListBox(
-            urwid.SimpleListWalker(cpu_stats + graph_controls + [summaries])
+            urwid.SimpleListWalker(
+                cpu_stats + cpu_policy + graph_controls + [summaries]
+            )
         )
 
         vline = urwid.AttrMap(urwid.SolidFill("|"), "line")
@@ -777,6 +845,8 @@ class GraphController:
         self.args = args
 
         self.stress_controller = self._config_stress()
+
+        self.powerprofilesctl_exe = which("powerprofilesctl")
 
         self.handle_mouse = not args.no_mouse
 
