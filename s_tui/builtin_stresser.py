@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from multiprocessing.synchronize import Event as EventType
 
 try:
-    import numpy  # noqa: F401
+    import numpy  # noqa: F401  # pyright: ignore[reportMissingImports]
 
     _HAS_NUMPY = True
 except ImportError:
@@ -74,7 +74,7 @@ def _worker_numpy(stop_event: EventType) -> None:
     (which actually *reduce* thermal output).  Benchmarks show this
     approach matches external ``stress`` in temperature generation.
     """
-    import numpy as np
+    import numpy as np  # pyright: ignore[reportMissingImports]
 
     # 100K doubles = 800KB — fits in L2, large enough to minimize
     # Python loop overhead relative to time spent in numpy C code.
