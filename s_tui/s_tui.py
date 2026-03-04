@@ -39,6 +39,7 @@ import urwid
 # Menus
 from s_tui.about_menu import AboutMenu
 from s_tui.help_menu import HELP_MESSAGE, HelpMenu
+from s_tui.power_profile_menu import PowerProfileMenu
 
 # Helpers
 from s_tui.helper_functions import (
@@ -240,6 +241,9 @@ class GraphView(urwid.WidgetPlaceholder):
             self.controller.summary_default_conf,
         )
 
+        # Create power profile menu if at least one setting is controllable
+        self.power_profile_menu = self._create_power_profile_menu()
+
         # call super
         urwid.WidgetPlaceholder.__init__(self, self.main_window())  # type: ignore[arg-type]
         urwid.connect_signal(self.refresh_rate_ctrl, "change", self.update_refresh_rate)
@@ -406,6 +410,40 @@ class GraphView(urwid.WidgetPlaceholder):
         """Open Sensor menu on top of existing frame"""
         self._open_menu_overlay(self.summary_menu)
 
+    def _create_power_profile_menu(self) -> PowerProfileMenu | None:
+        """Create the power profile menu if at least one setting is controllable."""
+        from s_tui.power_profile_menu import (
+            _SYSFS_AVAIL_EPP,
+            _SYSFS_AVAIL_GOVERNORS,
+            _SYSFS_EPP,
+            _SYSFS_GOVERNOR,
+            _read_available,
+        )
+
+        available_governors = _read_available(_SYSFS_AVAIL_GOVERNORS)
+        available_epp = _read_available(_SYSFS_AVAIL_EPP)
+        can_write_governor = os.access(_SYSFS_GOVERNOR, os.W_OK)
+        can_write_epp = os.access(_SYSFS_EPP, os.W_OK)
+
+        menu = PowerProfileMenu(
+            return_fn=self.on_menu_close,
+            powerprofilesctl_exe=self.controller.powerprofilesctl_exe,
+            can_write_governor=can_write_governor,
+            can_write_epp=can_write_epp,
+            available_governors=available_governors,
+            available_epp=available_epp,
+        )
+        if not menu.is_controllable():
+            logging.info("Power profile menu: nothing controllable, hiding")
+            return None
+        return menu
+
+    def on_power_profile_menu_open(self, widget):
+        """Open Power Profile menu"""
+        if self.power_profile_menu is not None:
+            self.power_profile_menu.refresh_state()
+            self._open_menu_overlay(self.power_profile_menu)
+
     def on_mode_button(self, my_button, state):
         """Notify the controller of a new mode setting."""
         if state:
@@ -455,6 +493,10 @@ class GraphView(urwid.WidgetPlaceholder):
         control_options.append(button("Summaries", self.on_summary_menu_open))
         if self.controller.stress_exe:
             control_options.append(button("Stress Options", self.on_stress_menu_open))
+        if self.power_profile_menu is not None:
+            control_options.append(
+                button("Power Profile", self.on_power_profile_menu_open)
+            )
         control_options.append(button("Reset", self.on_reset_button))
         control_options.append(button("Help", self.on_help_menu_open))
         control_options.append(button("About", self.on_about_menu_open))
@@ -798,6 +840,8 @@ class GraphController:
         self.args = args
 
         self.stress_controller = self._config_stress()
+
+        self.powerprofilesctl_exe = which("powerprofilesctl")
 
         self.handle_mouse = not args.no_mouse
 
