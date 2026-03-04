@@ -3,12 +3,12 @@
 import time
 
 from s_tui.builtin_stresser import (
+    _HAS_NUMPY,
     STRATEGIES,
     STRATEGY_HASHLIB,
     STRATEGY_LABELS,
     STRATEGY_NUMPY,
     BuiltinStresser,
-    _HAS_NUMPY,
     get_default_strategy,
     strategy_available,
 )

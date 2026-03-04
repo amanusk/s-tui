@@ -475,9 +475,7 @@ class GraphView(urwid.WidgetPlaceholder):
         control_options = []
         control_options.append(button("Graphs", self.on_graphs_menu_open))
         control_options.append(button("Summaries", self.on_summary_menu_open))
-        control_options.append(
-            button("s-tui stress", self.on_builtin_stress_menu_open)
-        )
+        control_options.append(button("s-tui stress", self.on_builtin_stress_menu_open))
         if self.controller.stress_exe:
             control_options.append(button("Stress (ext)", self.on_stress_menu_open))
         control_options.append(button("Reset", self.on_reset_button))

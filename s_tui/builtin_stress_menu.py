@@ -96,7 +96,9 @@ class BuiltinStressMenu:
 
         self.main_window = urwid.LineBox(urwid.ListBox(self.titles))
 
-    def _on_strategy_change(self, button: urwid.RadioButton, state: bool, key: str) -> None:
+    def _on_strategy_change(
+        self, button: urwid.RadioButton, state: bool, key: str
+    ) -> None:
         if state:
             self._pending_strategy = key
 

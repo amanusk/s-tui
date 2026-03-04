@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from multiprocessing.synchronize import Event as EventType
 
 try:
-    import numpy as np
+    import numpy  # noqa: F401
 
     _HAS_NUMPY = True
 except ImportError:
@@ -51,6 +51,7 @@ STRATEGY_LABELS = {
     STRATEGY_NUMPY: "numpy FP burn",
     STRATEGY_HASHLIB: "hashlib SHA-256",
 }
+
 
 def get_default_strategy() -> str:
     """Return the best available strategy key."""
@@ -73,7 +74,7 @@ def _worker_numpy(stop_event: EventType) -> None:
     (which actually *reduce* thermal output).  Benchmarks show this
     approach matches external ``stress`` in temperature generation.
     """
-    import numpy as np  # noqa: F811
+    import numpy as np
 
     # 100K doubles = 800KB — fits in L2, large enough to minimize
     # Python loop overhead relative to time spent in numpy C code.
