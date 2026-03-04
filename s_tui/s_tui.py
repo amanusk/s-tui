@@ -39,7 +39,6 @@ import urwid
 # Menus
 from s_tui.about_menu import AboutMenu
 from s_tui.help_menu import HELP_MESSAGE, HelpMenu
-from s_tui.power_profile_menu import PowerProfileMenu
 
 # Helpers
 from s_tui.helper_functions import (
@@ -59,6 +58,7 @@ from s_tui.helper_functions import (
     user_config_file_exists,
     which,
 )
+from s_tui.power_profile_menu import PowerProfileMenu
 from s_tui.sensors_menu import SensorsMenu
 from s_tui.sources.fan_source import FanSource
 from s_tui.sources.freq_source import FreqSource
