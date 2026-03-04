@@ -32,7 +32,6 @@ Stress-Terminal UI, s-tui, monitors CPU temperature, frequency, power and utiliz
     - [Saving a configuration](#saving-a-configuration)
     - [Adding threshold scripts](#adding-threshold-scripts)
   - [Run from source code](#run-from-source-code)
-    - [OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)](#optional-integration-of-firestarter-via-submodule-does-not-work-on-all-systems)
   - [Compatibility](#compatibility)
   - [FAQ](#faq)
   - [Contributing](#contributing)
@@ -43,7 +42,8 @@ Stress-Terminal UI, s-tui, monitors CPU temperature, frequency, power and utiliz
 - Monitoring your CPU temperature/utilization/frequency/power
 - Shows performance dips caused by thermal throttling
 - Requires no X-server
-- Built-in options for stressing the CPU (stress/stress-ng/FIRESTARTER)
+- Built-in CPU stress test (zero dependencies, works out of the box)
+- Optional integration with external stress tools (stress/stress-ng)
 
 ## Usage
 
@@ -170,7 +170,21 @@ optional arguments:
 
 ## Dependencies
 
-s-tui is great for monitoring. If you would like to stress your system, install stress. Stress options will then show up in s-tui (optional)
+s-tui includes a built-in CPU stress test that works out of the box with no extra dependencies. For better stress performance, install numpy:
+
+```
+pip install s-tui[stress]
+```
+
+or install numpy directly:
+
+```
+pip install numpy
+```
+
+When numpy is available, the built-in stresser uses mixed floating-point operations (multiply, sqrt, sin) for maximum thermal output. Without numpy, it falls back to hashlib SHA-256 hashing which still provides good CPU load.
+
+For additional stress options (memory, I/O, sync workers), you can optionally install the external `stress` or `stress-ng` tool:
 
 ```
 sudo apt-get install stress
@@ -221,27 +235,6 @@ Run the .py file
 ```
 python -m s_tui.s_tui
 ```
-
-### OPTIONAL integration of FIRESTARTER (via submodule, does not work on all systems)
-
-[FIRESTARTER](https://github.com/tud-zih-energy/FIRESTARTER) is a great tool to stress your system to the extreme.
-If you would like, you can integrate FIRESTARTER submodule into s-tui.
-
-To build FIRESTARTER:
-
-```
-git submodule init
-git submodule update
-cd ./FIRESTARTER
-./code-generator.py
-make
-```
-
-Once you have completed these steps, you can either:
-
-- Install FIRESTARTER to make it accessible to s-tui, e.g make a soft-link to FIRESTARTER in /usr/local/bin.
-- Run s-tui from the main project directory with `python -m s_tui.s_tui`  
-  An option to run FIRESTARTER will then be available in s-tui
 
 ## Compatibility
 
