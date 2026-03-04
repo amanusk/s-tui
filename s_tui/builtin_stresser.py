@@ -126,10 +126,19 @@ class BuiltinStresser:
 
         self.stop()  # clean up any previous run
         self._stop_event = Event()
-        for _ in range(num_workers):
-            p = Process(target=worker_fn, args=(self._stop_event,), daemon=True)
-            p.start()
-            self._workers.append(p)
+        try:
+            for _ in range(num_workers):
+                p = Process(target=worker_fn, args=(self._stop_event,), daemon=True)
+                p.start()
+                self._workers.append(p)
+        except OSError:
+            logging.exception(
+                "Failed to start all built-in stress workers; cleaning up %d "
+                "already-started workers",
+                len(self._workers),
+            )
+            self.stop()
+            raise
         logging.info(
             "Built-in stresser started %d workers (strategy: %s)",
             num_workers,

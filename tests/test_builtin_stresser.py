@@ -91,18 +91,13 @@ class TestStrategySelection:
         assert stresser.is_running()
         stresser.stop(timeout=3)
 
-    def test_start_with_unavailable_strategy_falls_back(self):
+    def test_start_with_unavailable_strategy_falls_back(self, mocker):
         """Requesting unavailable strategy falls back to hashlib."""
-        if _HAS_NUMPY:
-            # numpy is available so we can't test fallback easily; just
-            # verify it starts with numpy without error
-            stresser = BuiltinStresser()
-            stresser.start(1, strategy=STRATEGY_NUMPY)
-            assert stresser.is_running()
-            stresser.stop(timeout=3)
-        else:
-            # numpy not available — requesting it should fall back to hashlib
-            stresser = BuiltinStresser()
-            stresser.start(1, strategy=STRATEGY_NUMPY)
-            assert stresser.is_running()
-            stresser.stop(timeout=3)
+        mocker.patch("s_tui.builtin_stresser.strategy_available", return_value=False)
+        mock_warn = mocker.patch("s_tui.builtin_stresser.logging.warning")
+        stresser = BuiltinStresser()
+        stresser.start(1, strategy=STRATEGY_NUMPY)
+        assert stresser.is_running()
+        mock_warn.assert_called_once()
+        assert "falling back to hashlib" in mock_warn.call_args[0][0]
+        stresser.stop(timeout=3)
