@@ -43,6 +43,7 @@ from s_tui.help_menu import HELP_MESSAGE, HelpMenu
 # Helpers
 from s_tui.helper_functions import (
     __version__,
+    cat,
     get_processor_name,
     get_user_config_dir,
     get_user_config_file,
@@ -208,6 +209,9 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # general urwid items
         self.clock_view = urwid.Text(ZERO_TIME, align="center")
+        self.governor_view = urwid.Text("", align="center")
+        self.epp_view = urwid.Text("", align="center")
+        self._update_cpu_policy()
         self.refresh_rate_ctrl = urwid.Edit(
             ("Refresh[s]:"), self.controller.refresh_rate
         )
@@ -313,6 +317,8 @@ class GraphView(urwid.WidgetPlaceholder):
                 summary.update()
             except IndexError:
                 logging.debug("Summary update failed")
+
+        self._update_cpu_policy()
 
         # Only update clock if not is stress mode
         if self.controller.stress_controller.get_current_mode() != "Monitor":
@@ -501,6 +507,20 @@ class GraphView(urwid.WidgetPlaceholder):
 
         return controls
 
+    _SYSFS_GOVERNOR = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    _SYSFS_EPP = "/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference"
+
+    def _update_cpu_policy(self):
+        """Read CPU governor and energy performance preference from sysfs."""
+        try:
+            self.governor_view.set_text(cat(self._SYSFS_GOVERNOR, binary=False).strip())
+        except OSError:
+            self.governor_view.set_text("N/A")
+        try:
+            self.epp_view.set_text(cat(self._SYSFS_EPP, binary=False).strip())
+        except OSError:
+            self.epp_view.set_text("N/A")
+
     @staticmethod
     def _generate_cpu_stats():
         """Read and display processor name"""
@@ -574,8 +594,18 @@ class GraphView(urwid.WidgetPlaceholder):
         graph_controls = self._generate_graph_controls()
         summaries = self._generate_summaries()
 
+        cpu_policy = [
+            urwid.Text(("bold text", "Governor"), align="center"),
+            self.governor_view,
+            urwid.Text(""),
+            urwid.Text(("bold text", "Energy Pref"), align="center"),
+            self.epp_view,
+            urwid.Divider(),
+        ]
         text_col = ViListBox(
-            urwid.SimpleListWalker(cpu_stats + graph_controls + [summaries])
+            urwid.SimpleListWalker(
+                cpu_stats + cpu_policy + graph_controls + [summaries]
+            )
         )
 
         vline = urwid.AttrMap(urwid.SolidFill("|"), "line")
