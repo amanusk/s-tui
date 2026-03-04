@@ -7,10 +7,11 @@ from s_tui.builtin_stresser import STRATEGY_HASHLIB, get_default_strategy
 
 
 class TestBuiltinStressMenu:
-    def test_default_worker_count(self):
+    def test_default_worker_count(self, monkeypatch):
         """Default worker count matches CPU count."""
+        monkeypatch.setattr(psutil, "cpu_count", lambda: 4)
         menu = BuiltinStressMenu(return_fn=lambda: None)
-        assert menu.get_num_workers() == psutil.cpu_count()
+        assert menu.get_num_workers() == 4
 
     def test_get_size(self):
         """get_size returns a (height, width) tuple of ints."""

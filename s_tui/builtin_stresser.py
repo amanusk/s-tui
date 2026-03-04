@@ -142,7 +142,7 @@ class BuiltinStresser:
         logging.info(
             "Built-in stresser started %d workers (strategy: %s)",
             num_workers,
-            STRATEGY_LABELS[strategy],
+            STRATEGY_LABELS.get(strategy, strategy),
         )
 
     def stop(self, timeout: int = 3) -> None:
