@@ -38,6 +38,8 @@ import urwid
 
 # Menus
 from s_tui.about_menu import AboutMenu
+from s_tui.builtin_stress_menu import BuiltinStressMenu
+from s_tui.builtin_stresser import BuiltinStresser
 from s_tui.help_menu import HELP_MESSAGE, HelpMenu
 
 # Helpers
@@ -131,17 +133,16 @@ class StressController:
     and operation
     """
 
-    def __init__(self, stress_installed, firestarter_installed):
+    def __init__(self, stress_installed):
         self.stress_modes = ["Monitor"]
+        self.stress_modes.append("s-tui stress")
 
         if stress_installed:
-            self.stress_modes.append("Stress")
-
-        if firestarter_installed:
-            self.stress_modes.append("FIRESTARTER")
+            self.stress_modes.append("Stress (ext)")
 
         self.current_mode = self.stress_modes[0]
         self.stress_process = None
+        self._builtin_stresser = None
 
     def get_modes(self):
         """Returns all possible stress_modes for stress operations"""
@@ -163,6 +164,18 @@ class StressController:
         """Sets the current stress process running"""
         self.stress_process = proc
 
+    @property
+    def builtin_stresser(self):
+        """Lazy-init BuiltinStresser on first use.
+
+        Avoids creating multiprocessing primitives at startup, which can
+        fail in restricted environments (e.g. containers without
+        /dev/shm).
+        """
+        if self._builtin_stresser is None:
+            self._builtin_stresser = BuiltinStresser()
+        return self._builtin_stresser
+
     def kill_stress_process(self):
         """Kills the current running stress process"""
         try:
@@ -170,6 +183,8 @@ class StressController:
         except psutil.NoSuchProcess:
             logging.debug("Stress process no longer exists")
         self.stress_process = None
+        if self._builtin_stresser is not None:
+            self._builtin_stresser.stop()
 
     def start_stress(self, stress_cmd):
         """Starts a new stress process with a given cmd"""
@@ -184,6 +199,14 @@ class StressController:
                 self.set_stress_process(psutil.Process(stress_proc.pid))
             except OSError:
                 logging.debug("Unable to start stress")
+
+    def start_builtin_stress(self, num_workers, strategy=None):
+        """Starts the built-in Python CPU stresser."""
+        try:
+            self.builtin_stresser.start(num_workers, strategy=strategy)
+        except OSError as err:
+            logging.error("Unable to start built-in stresser: %s", err)
+            self.current_mode = "Monitor"
 
 
 class GraphView(urwid.WidgetPlaceholder):
@@ -223,6 +246,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # construct the various menus during init phase
         self.stress_menu = StressMenu(self.on_menu_close, self.controller.stress_exe)
+        self.builtin_stress_menu = BuiltinStressMenu(self.on_menu_close)
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
         self.graphs_menu = SensorsMenu(
@@ -384,6 +408,10 @@ class GraphView(urwid.WidgetPlaceholder):
         """Open stress options"""
         self._open_menu_overlay(self.stress_menu)
 
+    def on_builtin_stress_menu_open(self, widget):
+        """Open built-in stress options"""
+        self._open_menu_overlay(self.builtin_stress_menu)
+
     def on_help_menu_open(self, widget):
         """Open Help menu"""
         self._open_menu_overlay(self.help_menu)
@@ -447,8 +475,9 @@ class GraphView(urwid.WidgetPlaceholder):
         control_options = []
         control_options.append(button("Graphs", self.on_graphs_menu_open))
         control_options.append(button("Summaries", self.on_summary_menu_open))
+        control_options.append(button("s-tui stress", self.on_builtin_stress_menu_open))
         if self.controller.stress_exe:
-            control_options.append(button("Stress Options", self.on_stress_menu_open))
+            control_options.append(button("Stress (ext)", self.on_stress_menu_open))
         control_options.append(button("Reset", self.on_reset_button))
         control_options.append(button("Help", self.on_help_menu_open))
         control_options.append(button("About", self.on_about_menu_open))
@@ -469,23 +498,14 @@ class GraphView(urwid.WidgetPlaceholder):
         else:
             unicode_checkbox = urwid.Text("[N/A] UTF-8")
 
-        install_stress_message = urwid.Text("")
-        if not self.controller.firestarter and not self.controller.stress_exe:
-            install_stress_message = urwid.Text(
-                ("button normal", "(N/A) install stress")
-            )
-
-        clock_widget = []
-        # if self.controller.stress_exe or self.controller.firestarter:
-        if self.controller.stress_exe or self.controller.firestarter:
-            clock_widget = [
-                urwid.Text(("bold text", "Stress Timer"), align="center"),
-                self.clock_view,
-            ]
+        clock_widget = [
+            urwid.Text(("bold text", "Stress Timer"), align="center"),
+            self.clock_view,
+        ]
 
         controls = [urwid.Text(("bold text", "Modes"), align="center")]
         controls += self.mode_buttons
-        controls += [install_stress_message]
+        controls += [urwid.Divider()]
         controls += clock_widget
         controls += [
             urwid.Divider(),
@@ -735,18 +755,7 @@ class GraphController:
             if self.stress_exe:
                 stress_installed = True
 
-        self.firestarter = None
-        firestarter_installed = False
-        if os.path.isfile("./FIRESTARTER/FIRESTARTER"):
-            self.firestarter = os.path.join(os.getcwd(), "FIRESTARTER", "FIRESTARTER")
-            firestarter_installed = True
-        else:
-            firestarter_exe = which("FIRESTARTER")
-            if firestarter_exe is not None:
-                self.firestarter = firestarter_exe
-                firestarter_installed = True
-
-        return StressController(stress_installed, firestarter_installed)
+        return StressController(stress_installed)
 
     def __init__(self, args):
         self.conf = None
@@ -835,12 +844,13 @@ class GraphController:
         self.view.clock_view.set_text(ZERO_TIME)
         self.stress_start_time = timeit.default_timer()
 
-        if self.stress_controller.get_current_mode() == "Stress":
-            stress_cmd = self.view.stress_menu.get_stress_cmd()
-            self.stress_controller.start_stress(stress_cmd)
+        if self.stress_controller.get_current_mode() == "s-tui stress":
+            num_workers = self.view.builtin_stress_menu.get_num_workers()
+            strategy = self.view.builtin_stress_menu.get_strategy()
+            self.stress_controller.start_builtin_stress(num_workers, strategy)
 
-        elif self.stress_controller.get_current_mode() == "FIRESTARTER":
-            stress_cmd = [self.firestarter]
+        elif self.stress_controller.get_current_mode() == "Stress (ext)":
+            stress_cmd = self.view.stress_menu.get_stress_cmd()
             self.stress_controller.start_stress(stress_cmd)
 
     def save_settings(self):

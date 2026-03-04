@@ -44,6 +44,9 @@ setup(
         "psutil>=7.0.0",
     ],
     extras_require={
+        "stress": [
+            "numpy",
+        ],
         "test": [
             "pytest>=7.0",
             "pytest-mock>=3.10",
