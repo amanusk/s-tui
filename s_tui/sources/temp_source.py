@@ -178,6 +178,8 @@ class TempSource(Source):
                 if idx < len(self.last_thresholds)
                 else None
             )
+            if not self.sensor_available[idx]:
+                continue
             if (threshold is None and triggered) or (
                 threshold is not None
                 and self.last_measurement[idx] > threshold

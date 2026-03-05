@@ -228,15 +228,16 @@ class FreqSource(Source):
         """Return per-sensor throttle reason suffixes for TUI display."""
         suffixes = [""] * len(self.available_sensors)
 
-        # Avg (index 0)
+        # Avg (index 0) — always available
         if any(self._core_throttled):
             suffixes[0] = "Tc"
         elif self._pkg_throttled:
             suffixes[0] = "Tp"
 
-        # Per-core
+        # Per-core — skip unavailable sensors
         for idx in range(1, len(self.available_sensors)):
-            suffixes[idx] = self._get_throttle_label(idx - 1)
+            if idx < len(self.sensor_available) and self.sensor_available[idx]:
+                suffixes[idx] = self._get_throttle_label(idx - 1)
 
         return suffixes
 
@@ -250,7 +251,7 @@ class FreqSource(Source):
 
         for core_id in range(len(self._core_throttled)):
             sensor_idx = core_id + 1
-            if sensor_idx < len(alerts):
+            if sensor_idx < len(alerts) and self.sensor_available[sensor_idx]:
                 if self._core_throttled[core_id] or self._pkg_throttled:
                     alerts[sensor_idx] = "throttle txt"
         return alerts
