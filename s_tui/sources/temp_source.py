@@ -168,6 +168,23 @@ class TempSource(Source):
     def get_edge_triggered(self) -> bool:
         return self.max_last_temp > self.temp_thresh
 
+    def get_sensor_alerts(self) -> list[str | None]:
+        """Return per-sensor alert attributes matching graph bar coloring."""
+        triggered = self.max_last_temp > self.temp_thresh
+        alerts: list[str | None] = [None] * len(self.available_sensors)
+        for idx in range(len(self.available_sensors)):
+            threshold = (
+                self.last_thresholds[idx]
+                if idx < len(self.last_thresholds)
+                else None
+            )
+            if (threshold is None and triggered) or (
+                threshold is not None
+                and self.last_measurement[idx] > threshold
+            ):
+                alerts[idx] = "high temp txt"
+        return alerts
+
     def get_max_triggered(self) -> bool:
         """Returns whether the current temperature threshold is exceeded"""
         return self.max_temp > self.temp_thresh

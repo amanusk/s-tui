@@ -45,6 +45,17 @@ Stress-Terminal UI, s-tui, monitors CPU temperature, frequency, power and utiliz
 - Built-in CPU stress test (zero dependencies, works out of the box)
 - Optional integration with external stress tools (stress/stress-ng)
 
+## Throttle Indicators
+
+When CPU throttling is detected, s-tui changes the frequency graph color to yellow and appends a reason label to the summary values. The following indicators are available:
+
+| Label | Meaning | Source |
+|-------|---------|--------|
+| `Tc` | Core thermal throttle — this core's temperature exceeded its thermal limit | sysfs `core_throttle_count` |
+| `Tp` | Package thermal throttle — the CPU package was thermally throttled (affects all cores) | sysfs `package_throttle_count` |
+
+These indicators are detected via generic Linux sysfs counters (`/sys/devices/system/cpu/cpu*/thermal_throttle/`) and require no special permissions.
+
 ## Usage
 
 ```

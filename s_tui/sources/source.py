@@ -41,7 +41,7 @@ class Source:
         self.edge_hooks: list[Hook] = []
         self.measurement_unit = ""
         self.last_measurement: list[float] = []
-        self.last_thresholds: list[float] = []
+        self.last_thresholds: list[float | None] = []
         self.is_available = True
         self.available_sensors: list[str] = []
         self.sensor_available: list[bool] = []  # Per-sensor availability
@@ -121,6 +121,24 @@ class Source:
         """Returns the 'alert' pallet for graph plotting"""
         return self.alert_pallet
 
+    def get_sensor_alerts(self) -> list[str | None]:
+        """Returns per-sensor alert attribute name for summary coloring.
+
+        Each entry is either an urwid text attribute name (e.g. "throttle txt")
+        when the sensor is in an alert state, or None for normal display.
+        The list is aligned with get_sensor_list().
+        """
+        return [None] * len(self.available_sensors)
+
+    def get_sensor_suffixes(self) -> list[str]:
+        """Returns per-sensor display suffixes (e.g. throttle reason labels).
+
+        These are appended to summary values in the TUI only — they do not
+        affect CSV, JSON, or terminal output.
+        The list is aligned with get_sensor_list().
+        """
+        return [""] * len(self.available_sensors)
+
     def get_sensor_list(self) -> list[str]:
         """Returns list of a available sensors for source"""
         return self.available_sensors
@@ -129,7 +147,7 @@ class Source:
         """Returns a list of the last measurement"""
         return self.last_measurement
 
-    def get_threshold_list(self) -> list[float]:
+    def get_threshold_list(self) -> list[float | None]:
         """Returns a list of the last threshold values"""
         return self.last_thresholds
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from s_tui.sources.freq_source import FreqSource
+from s_tui.sources.freq_source import FreqSource, _read_throttle_count
 
 
 class TestFreqSourceInit:
@@ -52,3 +52,202 @@ class TestFreqSourceUpdate:
         summary = src.get_sensors_summary()
         assert "Avg" in summary
         assert "Core 0" in summary
+        # Frequency summary uses integer values (no decimal)
+        assert summary["Avg"] == "2400"
+
+
+class TestFreqSourceThrottle:
+    """Tests for sysfs-based throttle detection in FreqSource."""
+
+    def test_no_throttle_by_default(self, mock_cpu_freq):
+        """When sysfs is unavailable, no throttle indicators appear."""
+        src = FreqSource()
+        src.update()
+        summary = src.get_sensors_summary()
+        for val in summary.values():
+            assert "Tc" not in val
+            assert "Tp" not in val
+
+    def test_no_throttle_alerts_by_default(self, mock_cpu_freq):
+        """When not throttled, all sensor alerts should be None."""
+        src = FreqSource()
+        src.update()
+        alerts = src.get_sensor_alerts()
+        assert all(a is None for a in alerts)
+
+    def test_edge_triggered_always_false(self, mock_cpu_freq):
+        """FreqSource uses per-sensor thresholds, not global edge trigger."""
+        src = FreqSource()
+        assert src.get_edge_triggered() is False
+
+    def test_alert_pallet_set(self, mock_cpu_freq):
+        """FreqSource should have an alert pallet for throttle coloring."""
+        src = FreqSource()
+        assert src.get_alert_pallet() is not None
+        assert "throttle" in src.get_alert_pallet()[0]
+
+    def test_core_throttle_detected(self, mock_cpu_freq, mocker):
+        """When core_throttle_count increases, core gets 'Tc' suffix."""
+        call_count = [0]
+
+        def fake_read(core_id, counter):
+            if counter == "core_throttle_count":
+                # First call (init): baseline. Second call (update): increased for core 0.
+                if core_id == 0:
+                    call_count[0] += 1
+                    return 100 if call_count[0] <= 1 else 101
+                return 100
+            if counter == "package_throttle_count":
+                return 200
+            return None
+
+        mocker.patch(
+            "s_tui.sources.freq_source._read_throttle_count",
+            side_effect=fake_read,
+        )
+        src = FreqSource()
+        src.update()
+        suffixes = src.get_sensor_suffixes()
+        assert "Tc" in suffixes[0]  # Avg
+        assert "Tc" in suffixes[1]  # Core 0
+        assert suffixes[2] == ""  # Core 1 - not throttled
+
+    def test_core_throttle_sets_threshold(self, mock_cpu_freq, mocker):
+        """Throttled core should have threshold 0.0 to trigger alert colors."""
+        call_count = [0]
+
+        def fake_read(core_id, counter):
+            if counter == "core_throttle_count":
+                if core_id == 0:
+                    call_count[0] += 1
+                    return 100 if call_count[0] <= 1 else 101
+                return 100
+            if counter == "package_throttle_count":
+                return 200
+            return None
+
+        mocker.patch(
+            "s_tui.sources.freq_source._read_throttle_count",
+            side_effect=fake_read,
+        )
+        src = FreqSource()
+        src.update()
+        # Core 0 (sensor index 1) should have threshold 0.0
+        assert src.last_thresholds[1] == 0.0
+        # Core 1 (sensor index 2) should have no threshold
+        assert src.last_thresholds[2] is None
+        # Avg (sensor index 0) should be triggered (any core throttled)
+        assert src.last_thresholds[0] == 0.0
+
+    def test_core_throttle_sets_alert(self, mock_cpu_freq, mocker):
+        """Throttled core should have alert attribute for summary coloring."""
+        call_count = [0]
+
+        def fake_read(core_id, counter):
+            if counter == "core_throttle_count":
+                if core_id == 0:
+                    call_count[0] += 1
+                    return 100 if call_count[0] <= 1 else 101
+                return 100
+            if counter == "package_throttle_count":
+                return 200
+            return None
+
+        mocker.patch(
+            "s_tui.sources.freq_source._read_throttle_count",
+            side_effect=fake_read,
+        )
+        src = FreqSource()
+        src.update()
+        alerts = src.get_sensor_alerts()
+        assert alerts[0] == "throttle txt"  # Avg
+        assert alerts[1] == "throttle txt"  # Core 0
+        assert alerts[2] is None  # Core 1
+
+    def test_package_throttle_detected(self, mock_cpu_freq, mocker):
+        """When package_throttle_count increases, all cores show 'Tp'."""
+        pkg_call_count = [0]
+
+        def fake_read(core_id, counter):
+            if counter == "core_throttle_count":
+                return 100
+            if counter == "package_throttle_count":
+                pkg_call_count[0] += 1
+                return 200 if pkg_call_count[0] <= 1 else 201
+            return None
+
+        mocker.patch(
+            "s_tui.sources.freq_source._read_throttle_count",
+            side_effect=fake_read,
+        )
+        src = FreqSource()
+        src.update()
+        suffixes = src.get_sensor_suffixes()
+        assert suffixes[0] == "Tp"  # Avg
+        assert suffixes[1] == "Tp"  # Core 0
+
+    def test_throttle_clears_after_interval(self, mock_cpu_freq, mocker):
+        """When counts stop increasing, throttle indicators disappear."""
+        update_count = [0]
+
+        def fake_read(core_id, counter):
+            if counter == "core_throttle_count":
+                if core_id == 0:
+                    # Init: 100, first update: 101 (throttled),
+                    # second update: 101 (not throttled)
+                    update_count[0] += 1
+                    if update_count[0] <= 1:
+                        return 100
+                    return 101
+                return 100
+            if counter == "package_throttle_count":
+                return 200
+            return None
+
+        mocker.patch(
+            "s_tui.sources.freq_source._read_throttle_count",
+            side_effect=fake_read,
+        )
+        src = FreqSource()
+        src.update()  # first update: throttled
+        assert src.last_thresholds[1] == 0.0
+        src.update()  # second update: count unchanged, no longer throttled
+        assert src.last_thresholds[1] is None
+
+    def test_sysfs_unavailable_graceful(self, mock_cpu_freq, mocker):
+        """When sysfs files don't exist, throttle detection is disabled."""
+        mocker.patch(
+            "s_tui.sources.freq_source._read_throttle_count",
+            return_value=None,
+        )
+        src = FreqSource()
+        assert src._throttle_available is False
+        src.update()
+        # No crash, no throttle indicators
+        summary = src.get_sensors_summary()
+        for val in summary.values():
+            assert "Tc" not in val
+            assert "Tp" not in val
+
+
+class TestReadThrottleCount:
+    """Tests for the _read_throttle_count helper."""
+
+    def test_reads_sysfs_value(self, tmp_path):
+        """Reads an integer from a sysfs-like file."""
+        throttle_dir = tmp_path / "cpu0" / "thermal_throttle"
+        throttle_dir.mkdir(parents=True)
+        (throttle_dir / "core_throttle_count").write_text("42\n")
+
+        import s_tui.sources.freq_source as mod
+
+        orig = mod.SYSFS_THERMAL_THROTTLE
+        mod.SYSFS_THERMAL_THROTTLE = str(tmp_path / "cpu{}" / "thermal_throttle")
+        try:
+            assert _read_throttle_count(0, "core_throttle_count") == 42
+        finally:
+            mod.SYSFS_THERMAL_THROTTLE = orig
+
+    def test_returns_none_on_missing(self):
+        """Returns None for non-existent files."""
+        assert _read_throttle_count(999, "core_throttle_count") is None
