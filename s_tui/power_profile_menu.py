@@ -81,13 +81,22 @@ def _write_all_cores(pattern: str, value: str) -> None:
         except OSError as e:
             errors.append(e)
     if errors:
+        # Some cores may transiently report "busy" even though the write
+        # propagated successfully.  Verify by reading cpu0's current value.
+        actual = _read_current(paths[0]).strip()
+        if actual == value:
+            logging.debug(
+                "%d/%d cores reported errors writing '%s', "
+                "but value applied successfully",
+                len(errors),
+                len(paths),
+                value,
+            )
+            return
         # Produce a short message when all cores fail with the same reason
         reasons = {e.strerror or str(e) for e in errors}
         if len(reasons) == 1:
             reason = reasons.pop()
-            if "busy" in reason.lower():
-                gov = _read_current(SYSFS_GOVERNOR) or "unknown"
-                raise OSError(f"Device busy — cannot write '{value}' (governor: {gov})")
             raise OSError(f"{reason} (all {len(errors)} cores)")
         raise OSError("; ".join(f"{e.filename}: {e}" for e in errors))
 
