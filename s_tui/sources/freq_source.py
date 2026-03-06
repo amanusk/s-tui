@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import logging
 import os
-from collections import OrderedDict
 
 import psutil
 
@@ -126,43 +125,32 @@ class FreqSource(Source):
         if not self._throttle_available:
             return
 
-        num_cores = len(self._core_throttled)
-        any_core_throttled = False
-
-        for core_id in range(num_cores):
+        for core_id in range(len(self._core_throttled)):
             count = _read_throttle_count(core_id, "core_throttle_count")
             prev = self._prev_core_throttle[core_id]
-            if count is not None and prev is not None:
-                self._core_throttled[core_id] = count > prev
-                if self._core_throttled[core_id]:
-                    any_core_throttled = True
+            self._core_throttled[core_id] = (
+                count is not None and prev is not None and count > prev
+            )
+            if count is not None:
                 self._prev_core_throttle[core_id] = count
-            else:
-                self._core_throttled[core_id] = False
-                if count is not None:
-                    self._prev_core_throttle[core_id] = count
+            # Threshold 0.0 triggers alert colors for any positive reading
+            throttled = self._core_throttled[core_id] or self._pkg_throttled
+            self.last_thresholds[core_id + 1] = 0.0 if throttled else None
 
         pkg_count = _read_throttle_count(0, "package_throttle_count")
         prev_pkg = self._prev_pkg_throttle
-        if pkg_count is not None and prev_pkg is not None:
-            self._pkg_throttled = pkg_count > prev_pkg
+        self._pkg_throttled = (
+            pkg_count is not None and prev_pkg is not None and pkg_count > prev_pkg
+        )
+        if pkg_count is not None:
             self._prev_pkg_throttle = pkg_count
-        else:
-            self._pkg_throttled = False
-            if pkg_count is not None:
-                self._prev_pkg_throttle = pkg_count
 
-        # Update per-sensor thresholds to trigger alert colors in BarGraphVector.
-        # Threshold of 0.0 means any positive frequency reading triggers the alert.
-        any_throttled = any_core_throttled or self._pkg_throttled
-        for core_id in range(num_cores):
-            if self._core_throttled[core_id] or self._pkg_throttled:
-                self.last_thresholds[core_id + 1] = 0.0
-            else:
-                self.last_thresholds[core_id + 1] = None
-
-        # Avg sensor (index 0): throttled if any core is throttled
+        # Re-evaluate thresholds now that _pkg_throttled is known
+        any_throttled = any(self._core_throttled) or self._pkg_throttled
         self.last_thresholds[0] = 0.0 if any_throttled else None
+        if self._pkg_throttled:
+            for core_id in range(len(self._core_throttled)):
+                self.last_thresholds[core_id + 1] = 0.0
 
     def update(self) -> None:
         try:
@@ -195,65 +183,40 @@ class FreqSource(Source):
 
         self._update_throttle_state()
 
+    def _format_measurement(self, value: float) -> str:
+        return str(int(value))
+
     def get_edge_triggered(self) -> bool:
-        # Per-sensor thresholds handle individual core alerts;
-        # no global trigger needed.
         return False
 
-    def _get_throttle_label(self, core_id: int) -> str:
-        """Return throttle reason label for a core, or empty string.
-
-        Tc = core-level thermal throttle, Tp = package-level thermal throttle.
-        """
-        if core_id < len(self._core_throttled) and self._core_throttled[core_id]:
-            return "Tc"
-        if self._pkg_throttled:
-            return "Tp"
-        return ""
-
-    def get_sensors_summary(self) -> OrderedDict[str, str]:
-        """Return summary with integer MHz values (saves sidebar space)."""
-        sub_title_list = self.get_sensor_list()
-        summary = OrderedDict()
-        for idx, name in enumerate(sub_title_list):
-            if idx < len(self.sensor_available) and not self.sensor_available[idx]:
-                summary[name] = "N/A"
-            elif idx < len(self.last_measurement):
-                summary[name] = str(int(self.last_measurement[idx]))
-            else:
-                summary[name] = "N/A"
-        return summary
-
     def get_sensor_suffixes(self) -> list[str]:
-        """Return per-sensor throttle reason suffixes for TUI display."""
         suffixes = [""] * len(self.available_sensors)
-
-        # Avg (index 0) — always available
         if any(self._core_throttled):
             suffixes[0] = "Tc"
         elif self._pkg_throttled:
             suffixes[0] = "Tp"
-
-        # Per-core — skip unavailable sensors
-        for idx in range(1, len(self.available_sensors)):
-            if idx < len(self.sensor_available) and self.sensor_available[idx]:
-                suffixes[idx] = self._get_throttle_label(idx - 1)
-
+        for core_id in range(len(self._core_throttled)):
+            idx = core_id + 1
+            if idx < len(suffixes) and self.sensor_available[idx]:
+                if self._core_throttled[core_id]:
+                    suffixes[idx] = "Tc"
+                elif self._pkg_throttled:
+                    suffixes[idx] = "Tp"
         return suffixes
 
     def get_sensor_alerts(self) -> list[str | None]:
-        """Return per-sensor alert attribute for summary text coloring."""
         alerts: list[str | None] = [None] * len(self.available_sensors)
         any_throttled = any(self._core_throttled) or self._pkg_throttled
-
         if any_throttled:
             alerts[0] = "throttle txt"
-
         for core_id in range(len(self._core_throttled)):
-            sensor_idx = core_id + 1
-            if sensor_idx < len(alerts) and self.sensor_available[sensor_idx]:
-                if self._core_throttled[core_id] or self._pkg_throttled:
-                    alerts[sensor_idx] = "throttle txt"
+            idx = core_id + 1
+            if (
+                idx < len(alerts)
+                and self.sensor_available[idx]
+                and (self._core_throttled[core_id] or self._pkg_throttled)
+            ):
+                alerts[idx] = "throttle txt"
         return alerts
 
     def get_maximum(self) -> float:

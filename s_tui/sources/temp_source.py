@@ -173,16 +173,11 @@ class TempSource(Source):
         triggered = self.max_last_temp > self.temp_thresh
         alerts: list[str | None] = [None] * len(self.available_sensors)
         for idx in range(len(self.available_sensors)):
-            threshold = (
-                self.last_thresholds[idx]
-                if idx < len(self.last_thresholds)
-                else None
-            )
             if not self.sensor_available[idx]:
                 continue
-            if (threshold is None and triggered) or (
-                threshold is not None
-                and self.last_measurement[idx] > threshold
+            thresh = self.last_thresholds[idx]
+            if (thresh is None and triggered) or (
+                thresh is not None and self.last_measurement[idx] > thresh
             ):
                 alerts[idx] = "high temp txt"
         return alerts

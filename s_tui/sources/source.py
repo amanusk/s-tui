@@ -74,25 +74,21 @@ class Source:
         """Resets source state, e.g. current max"""
         raise NotImplementedError("Reset is not implemented")
 
+    def _format_measurement(self, value: float) -> str:
+        """Format a single measurement value for display. Override to customise."""
+        return str(round(value, 1))
+
     def get_sensors_summary(self) -> OrderedDict[str, str]:
         """This returns a dict of sensor of the source and their values"""
-        sub_title_list = self.get_sensor_list()
-
-        graph_vector_summary = OrderedDict()
-        for graph_idx, sensor_name in enumerate(sub_title_list):
-            # Show N/A if sensor is marked unavailable
-            if (
-                graph_idx < len(self.sensor_available)
-                and not self.sensor_available[graph_idx]
-            ):
-                graph_vector_summary[sensor_name] = "N/A"
-            elif graph_idx < len(self.last_measurement):
-                val_str = str(round(self.last_measurement[graph_idx], 1))
-                graph_vector_summary[sensor_name] = val_str
+        summary = OrderedDict()
+        for idx, name in enumerate(self.get_sensor_list()):
+            if idx < len(self.sensor_available) and not self.sensor_available[idx]:
+                summary[name] = "N/A"
+            elif idx < len(self.last_measurement):
+                summary[name] = self._format_measurement(self.last_measurement[idx])
             else:
-                graph_vector_summary[sensor_name] = "N/A"
-
-        return graph_vector_summary
+                summary[name] = "N/A"
+        return summary
 
     def get_summary(self) -> OrderedDict[str, str]:
         """Returns a dict of source name and sensors with their values"""
@@ -122,21 +118,11 @@ class Source:
         return self.alert_pallet
 
     def get_sensor_alerts(self) -> list[str | None]:
-        """Returns per-sensor alert attribute name for summary coloring.
-
-        Each entry is either an urwid text attribute name (e.g. "throttle txt")
-        when the sensor is in an alert state, or None for normal display.
-        The list is aligned with get_sensor_list().
-        """
+        """Per-sensor urwid attribute for summary coloring, or None."""
         return [None] * len(self.available_sensors)
 
     def get_sensor_suffixes(self) -> list[str]:
-        """Returns per-sensor display suffixes (e.g. throttle reason labels).
-
-        These are appended to summary values in the TUI only — they do not
-        affect CSV, JSON, or terminal output.
-        The list is aligned with get_sensor_list().
-        """
+        """Per-sensor TUI-only display suffixes (e.g. throttle labels)."""
         return [""] * len(self.available_sensors)
 
     def get_sensor_list(self) -> list[str]:

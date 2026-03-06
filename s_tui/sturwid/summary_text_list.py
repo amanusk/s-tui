@@ -39,23 +39,12 @@ class SummaryTextList:
 
     @staticmethod
     def _format_display_val(val, alerts, suffixes, sensor_idx):
-        """Return urwid text markup for a summary value.
-
-        Appends any TUI-only suffix (e.g. throttle label) and applies alert
-        coloring when the source signals an alert for this sensor.
-        sensor_idx is 0-based aligned with get_sensor_list(); pass -1 for the
-        source title row (never colored, never suffixed).
-        """
+        """Return urwid text markup for a summary value with optional suffix/color."""
         text = str(val)
         if 0 <= sensor_idx < len(suffixes):
             text += suffixes[sensor_idx]
-
-        alert_attr = (
-            alerts[sensor_idx]
-            if 0 <= sensor_idx < len(alerts) and alerts[sensor_idx]
-            else None
-        )
-        return (alert_attr, text) if alert_attr else text
+        attr = alerts[sensor_idx] if 0 <= sensor_idx < len(alerts) else None
+        return (attr, text) if attr else text
 
     def get_text_item_list(self):
         summery_text_list = []
@@ -65,9 +54,7 @@ class SummaryTextList:
         for item_idx, (key, val) in enumerate(summary_items):
             label_w = urwid.Text(str(key[0 : self.MAX_LABEL_L]))
             # item_idx 0 is the source title row; sensor alerts start at index 1.
-            display_val = self._format_display_val(
-                val, alerts, suffixes, item_idx - 1
-            )
+            display_val = self._format_display_val(val, alerts, suffixes, item_idx - 1)
             value_w = urwid.Text(display_val, align="right")
             # This can be accessed by the update method
             self.summary_text_items[key] = value_w
