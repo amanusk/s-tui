@@ -23,6 +23,7 @@ import os
 
 import psutil
 
+from s_tui.helper_functions import cat
 from s_tui.sources import intel_therm
 from s_tui.sources.source import Source
 
@@ -32,10 +33,10 @@ SYSFS_THERMAL_THROTTLE = "/sys/devices/system/cpu/cpu{}/thermal_throttle"
 def _read_throttle_count(core_id: int, counter: str) -> int | None:
     """Read a thermal_throttle counter from sysfs. Returns None if unavailable."""
     path = os.path.join(SYSFS_THERMAL_THROTTLE.format(core_id), counter)
+    raw = cat(path, fallback=None, binary=False)
     try:
-        with open(path) as f:
-            return int(f.read().strip())
-    except (OSError, ValueError):
+        return int(raw) if raw is not None else None
+    except ValueError:
         return None
 
 
@@ -108,7 +109,6 @@ class FreqSource(Source):
         # sysfs fallback state (only used when MSR is unavailable)
         self._prev_core_throttle: list[int | None] = [None] * total_cores
         self._prev_pkg_throttle: int | None = None
-        self._pkg_throttled: bool = False
         self._throttle_available = self._use_msr or self._init_sysfs(total_cores)
 
     def _init_sysfs(self, total_cores: int) -> bool:
@@ -180,14 +180,14 @@ class FreqSource(Source):
 
         pkg_count = _read_throttle_count(0, "package_throttle_count")
         prev_pkg = self._prev_pkg_throttle
-        self._pkg_throttled = (
+        pkg_throttled = (
             pkg_count is not None and prev_pkg is not None and pkg_count > prev_pkg
         )
         if pkg_count is not None:
             self._prev_pkg_throttle = pkg_count
 
         # Package throttle applies to all cores without a core-level label
-        if self._pkg_throttled:
+        if pkg_throttled:
             for core_id in range(self._num_cores):
                 if not self._throttle_labels[core_id]:
                     self._throttle_labels[core_id] = "Tp"

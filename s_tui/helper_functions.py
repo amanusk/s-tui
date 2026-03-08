@@ -136,9 +136,7 @@ def output_to_csv(sources: dict, csv_writeable_file: str) -> None:
             for prob, val in source.get_sensors_summary().items():
                 csv_dict[prefix + prob] = val
 
-        csv_dict["Throttle"] = _get_throttle_label(
-            [s.source for s in summaries]
-        )
+        csv_dict["Throttle"] = _get_throttle_label([s.source for s in summaries])
 
         fieldnames = list(csv_dict.keys())
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)

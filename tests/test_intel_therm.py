@@ -20,14 +20,26 @@ class TestThrottleStatus:
         assert s.label == ""
 
     def test_single_reason(self):
-        s = ThrottleStatus(thermal=True, prochot=False, critical=False,
-                           power_limit=False, current_limit=False, cross_domain=False)
+        s = ThrottleStatus(
+            thermal=True,
+            prochot=False,
+            critical=False,
+            power_limit=False,
+            current_limit=False,
+            cross_domain=False,
+        )
         assert s.any_active is True
         assert s.label == "T"
 
     def test_multiple_reasons(self):
-        s = ThrottleStatus(thermal=True, prochot=False, critical=False,
-                           power_limit=True, current_limit=False, cross_domain=False)
+        s = ThrottleStatus(
+            thermal=True,
+            prochot=False,
+            critical=False,
+            power_limit=True,
+            current_limit=False,
+            cross_domain=False,
+        )
         assert s.label == "T/W"
 
     def test_all_reasons(self):
@@ -58,8 +70,12 @@ class TestReadThermStatus:
 
     def test_all_status_bits(self, mocker):
         val = (
-            THERMAL_STATUS | PROCHOT_STATUS | CRITICAL_STATUS
-            | POWER_LIMIT_STATUS | CURRENT_LIMIT_STATUS | CROSS_DOMAIN_STATUS
+            THERMAL_STATUS
+            | PROCHOT_STATUS
+            | CRITICAL_STATUS
+            | POWER_LIMIT_STATUS
+            | CURRENT_LIMIT_STATUS
+            | CROSS_DOMAIN_STATUS
         )
         mocker.patch("s_tui.sources.intel_therm.read_msr", return_value=val)
         status = read_therm_status(0)

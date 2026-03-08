@@ -269,6 +269,13 @@ class TestKillChildProcesses:
 # ---------------------------------------------------------------------------
 
 
+class _Summary:
+    """Minimal wrapper matching the dict-of-summary objects used by output_to_csv."""
+
+    def __init__(self, source):
+        self.source = source
+
+
 class TestOutputFunctions:
     def _make_mock_source(self, name, sensors_summary, suffixes=None):
         """Create a minimal mock source object."""
@@ -358,10 +365,6 @@ class TestOutputFunctions:
     def test_csv_throttle_is_last_column(self, tmp_path):
         csv_file = str(tmp_path / "test.csv")
 
-        class _Summary:
-            def __init__(self, s):
-                self.source = s
-
         src = self._make_mock_source(
             "Frequency",
             {"Avg": "2400", "Core 0": "2400"},
@@ -380,10 +383,6 @@ class TestOutputFunctions:
 
     def test_csv_throttle_empty_when_no_throttling(self, tmp_path):
         csv_file = str(tmp_path / "test.csv")
-
-        class _Summary:
-            def __init__(self, s):
-                self.source = s
 
         src = self._make_mock_source("Frequency", {"Avg": "2400"})
         sources = {"Frequency": _Summary(src)}
