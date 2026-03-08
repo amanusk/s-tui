@@ -47,14 +47,25 @@ Stress-Terminal UI, s-tui, monitors CPU temperature, frequency, power and utiliz
 
 ## Throttle Indicators
 
-When CPU throttling is detected, s-tui changes the frequency graph color to yellow and appends a reason label to the summary values. The following indicators are available:
+When CPU throttling is detected, s-tui changes the frequency graph and summary text color and appends a reason label. Labels may be combined with `/` (e.g. `T/W`).
 
-| Label | Meaning | Source |
-|-------|---------|--------|
-| `Tc` | Core thermal throttle — this core's temperature exceeded its thermal limit | sysfs `core_throttle_count` |
-| `Tp` | Package thermal throttle — the CPU package was thermally throttled (affects all cores) | sysfs `package_throttle_count` |
+**With root + `msr` module** (detailed per-core reasons via `IA32_THERM_STATUS`):
 
-These indicators are detected via generic Linux sysfs counters (`/sys/devices/system/cpu/cpu*/thermal_throttle/`) and require no special permissions.
+| Label | Meaning |
+|-------|---------|
+| `T` | Thermal — core temperature exceeded TjMax |
+| `H` | PROCHOT — external thermal signal (VRM, GPU, battery) |
+| `C` | Critical — near emergency shutdown temperature |
+| `W` | Power limit — PL1/PL2 watt budget exceeded |
+| `A` | Current limit — electrical current (amps) limit hit |
+| `X` | Cross-domain — throttled by another domain (e.g. GPU) |
+
+**Without root** (sysfs fallback, thermal only):
+
+| Label | Meaning |
+|-------|---------|
+| `Tc` | Core thermal throttle |
+| `Tp` | Package thermal throttle (affects all cores) |
 
 ## Usage
 

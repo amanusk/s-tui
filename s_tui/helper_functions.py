@@ -110,6 +110,18 @@ def kill_child_processes(parent_proc: psutil.Process | None, timeout: int = 3) -
         logging.debug("Process already gone during wait")
 
 
+def _get_throttle_label(sources: Any) -> str:
+    """Return the aggregate throttle label from the first source that has one."""
+    for source in sources:
+        if not source.get_is_available():
+            continue
+        suffixes = source.get_sensor_suffixes()
+        for s in suffixes:
+            if s:
+                return s
+    return ""
+
+
 def output_to_csv(sources: dict, csv_writeable_file: str) -> None:
     """Print statistics to csv file"""
     file_exists = os.path.isfile(csv_writeable_file)
@@ -119,13 +131,16 @@ def output_to_csv(sources: dict, csv_writeable_file: str) -> None:
         csv_dict.update({"Time": time.strftime("%Y-%m-%d_%H:%M:%S")})
         summaries = [val for key, val in sources.items()]
         for summarie in summaries:
-            update_dict = {}
-            for prob, val in summarie.source.get_sensors_summary().items():
-                prob = summarie.source.get_source_name() + ":" + prob
-                update_dict[prob] = val
-            csv_dict.update(update_dict)
+            source = summarie.source
+            prefix = source.get_source_name() + ":"
+            for prob, val in source.get_sensors_summary().items():
+                csv_dict[prefix + prob] = val
 
-        fieldnames = [key for key, val in csv_dict.items()]
+        csv_dict["Throttle"] = _get_throttle_label(
+            [s.source for s in summaries]
+        )
+
+        fieldnames = list(csv_dict.keys())
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         if not file_exists:
@@ -141,6 +156,9 @@ def output_to_terminal(sources: list) -> None:
             source.update()
             source_name = source.get_source_name()
             results[source_name] = source.get_sensors_summary()
+    throttle = _get_throttle_label(sources)
+    if throttle:
+        results["Throttle"] = {"reason": throttle}
     for key, value in results.items():
         sys.stdout.write(str(key) + ": ")
         for skey, svalue in value.items():
@@ -157,6 +175,8 @@ def output_to_json(sources: list) -> None:
             source.update()
             source_name = source.get_source_name()
             results[source_name] = source.get_sensors_summary()
+    throttle = _get_throttle_label(sources)
+    results["Throttle"] = throttle
     print(json.dumps(results, indent=4))
     sys.exit()
 

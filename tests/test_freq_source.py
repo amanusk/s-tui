@@ -183,8 +183,8 @@ class TestFreqSourceThrottle:
         src = FreqSource()
         src.update()
         suffixes = src.get_sensor_suffixes()
-        assert suffixes[0] == "Tp"  # Avg
-        assert suffixes[1] == "Tp"  # Core 0
+        assert suffixes[0] == " Tp"  # Avg
+        assert suffixes[1] == " Tp"  # Core 0
 
     def test_throttle_clears_after_interval(self, mock_cpu_freq, mocker):
         """When counts stop increasing, throttle indicators disappear."""
@@ -251,3 +251,93 @@ class TestReadThrottleCount:
     def test_returns_none_on_missing(self):
         """Returns None for non-existent files."""
         assert _read_throttle_count(999, "core_throttle_count") is None
+
+
+class TestFreqSourceMsrThrottle:
+    """Tests for MSR-based throttle detection in FreqSource."""
+
+    def test_msr_label_shown_when_available(self, mock_cpu_freq, mocker):
+        """When MSR is available, per-core labels come from IA32_THERM_STATUS."""
+        from s_tui.sources.intel_therm import ThrottleStatus
+
+        mocker.patch("s_tui.sources.freq_source.intel_therm.available", return_value=True)
+        mocker.patch(
+            "s_tui.sources.freq_source._read_throttle_count", return_value=None
+        )
+        src = FreqSource()
+        assert src._use_msr is True
+
+        # Simulate MSR reporting thermal + power limit on core 0
+        status_tw = ThrottleStatus(True, False, False, True, False, False)
+        status_none = ThrottleStatus(False, False, False, False, False, False)
+
+        def fake_read(cpu):
+            return status_tw if cpu == 0 else status_none
+
+        mocker.patch(
+            "s_tui.sources.freq_source.intel_therm.read_therm_status",
+            side_effect=fake_read,
+        )
+        src.update()
+        suffixes = src.get_sensor_suffixes()
+        assert suffixes[0] == " T/W"  # Avg gets first non-empty
+        assert suffixes[1] == " T/W"  # Core 0
+        assert suffixes[2] == ""     # Core 1
+
+    def test_msr_sets_alerts(self, mock_cpu_freq, mocker):
+        """MSR throttle labels trigger alert coloring."""
+        from s_tui.sources.intel_therm import ThrottleStatus
+
+        mocker.patch("s_tui.sources.freq_source.intel_therm.available", return_value=True)
+        mocker.patch(
+            "s_tui.sources.freq_source._read_throttle_count", return_value=None
+        )
+        src = FreqSource()
+
+        status_w = ThrottleStatus(False, False, False, True, False, False)
+        mocker.patch(
+            "s_tui.sources.freq_source.intel_therm.read_therm_status",
+            return_value=status_w,
+        )
+        src.update()
+        alerts = src.get_sensor_alerts()
+        assert alerts[0] == "throttle txt"
+        assert alerts[1] == "throttle txt"
+
+    def test_msr_oserror_clears_label(self, mock_cpu_freq, mocker):
+        """If MSR read fails for a core, its label is cleared."""
+        mocker.patch("s_tui.sources.freq_source.intel_therm.available", return_value=True)
+        mocker.patch(
+            "s_tui.sources.freq_source._read_throttle_count", return_value=None
+        )
+        src = FreqSource()
+        mocker.patch(
+            "s_tui.sources.freq_source.intel_therm.read_therm_status",
+            side_effect=OSError("permission denied"),
+        )
+        src.update()
+        assert all(label == "" for label in src._throttle_labels)
+
+    def test_falls_back_to_sysfs(self, mock_cpu_freq, mocker):
+        """When MSR unavailable, sysfs detection still works."""
+        mocker.patch("s_tui.sources.freq_source.intel_therm.available", return_value=False)
+        call_count = [0]
+
+        def fake_read(core_id, counter):
+            if counter == "core_throttle_count":
+                if core_id == 0:
+                    call_count[0] += 1
+                    return 100 if call_count[0] <= 1 else 101
+                return 100
+            if counter == "package_throttle_count":
+                return 200
+            return None
+
+        mocker.patch(
+            "s_tui.sources.freq_source._read_throttle_count", side_effect=fake_read
+        )
+        src = FreqSource()
+        assert src._use_msr is False
+        src.update()
+        suffixes = src.get_sensor_suffixes()
+        assert "Tc" in suffixes[1]

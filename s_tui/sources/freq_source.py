@@ -23,6 +23,7 @@ import os
 
 import psutil
 
+from s_tui.sources import intel_therm
 from s_tui.sources.source import Source
 
 SYSFS_THERMAL_THROTTLE = "/sys/devices/system/cpu/cpu{}/thermal_throttle"
@@ -97,45 +98,85 @@ class FreqSource(Source):
         if self.top_freq == 0.0 and max(self.last_measurement) >= 0:
             self.max_freq = max(self.last_measurement)
 
-        # Throttle detection state
+        # Throttle detection — per-core label ("T/W", "Tc", "Tp", or "")
+        self._num_cores = total_cores
+        self._throttle_labels: list[str] = [""] * total_cores
+        self._cached_suffixes: list[str] = [""] * len(self.available_sensors)
+        self._cached_alerts: list[str | None] = [None] * len(self.available_sensors)
+        self._use_msr = intel_therm.available()
+
+        # sysfs fallback state (only used when MSR is unavailable)
         self._prev_core_throttle: list[int | None] = [None] * total_cores
         self._prev_pkg_throttle: int | None = None
-        self._core_throttled: list[bool] = [False] * total_cores
         self._pkg_throttled: bool = False
-        self._throttle_available = self._init_throttle_counters(total_cores)
+        self._throttle_available = self._use_msr or self._init_sysfs(total_cores)
 
-    def _init_throttle_counters(self, total_cores: int) -> bool:
-        """Initialize throttle counter baselines. Returns True if sysfs is available."""
+    def _init_sysfs(self, total_cores: int) -> bool:
+        """Initialize sysfs throttle counter baselines."""
         any_available = False
         for core_id in range(total_cores):
             count = _read_throttle_count(core_id, "core_throttle_count")
             if count is not None:
                 self._prev_core_throttle[core_id] = count
                 any_available = True
-
         pkg_count = _read_throttle_count(0, "package_throttle_count")
         if pkg_count is not None:
             self._prev_pkg_throttle = pkg_count
             any_available = True
-
         return any_available
 
     def _update_throttle_state(self) -> None:
-        """Check sysfs throttle counters for changes since last poll."""
+        """Update per-core throttle labels, thresholds, and cached outputs."""
         if not self._throttle_available:
             return
 
-        for core_id in range(len(self._core_throttled)):
+        if self._use_msr:
+            self._update_throttle_msr()
+        else:
+            self._update_throttle_sysfs()
+
+        # Update per-sensor thresholds (0.0 triggers alert colors)
+        any_throttled = any(self._throttle_labels)
+        self.last_thresholds[0] = 0.0 if any_throttled else None
+        for core_id in range(self._num_cores):
+            self.last_thresholds[core_id + 1] = (
+                0.0 if self._throttle_labels[core_id] else None
+            )
+
+        # Rebuild cached suffixes and alerts
+        suffixes = [""] * len(self.available_sensors)
+        alerts: list[str | None] = [None] * len(self.available_sensors)
+        for core_id in range(self._num_cores):
+            idx = core_id + 1
+            if idx < len(suffixes) and self.sensor_available[idx]:
+                label = self._throttle_labels[core_id]
+                if label:
+                    suffixes[idx] = " " + label
+                    alerts[idx] = "throttle txt"
+        if any_throttled:
+            suffixes[0] = " " + next(lbl for lbl in self._throttle_labels if lbl)
+            alerts[0] = "throttle txt"
+        self._cached_suffixes = suffixes
+        self._cached_alerts = alerts
+
+    def _update_throttle_msr(self) -> None:
+        """Read IA32_THERM_STATUS per core for precise throttle reasons."""
+        for core_id in range(self._num_cores):
+            try:
+                status = intel_therm.read_therm_status(core_id)
+                self._throttle_labels[core_id] = status.label
+            except OSError:
+                self._throttle_labels[core_id] = ""
+
+    def _update_throttle_sysfs(self) -> None:
+        """Detect throttling via sysfs counter deltas."""
+        for core_id in range(self._num_cores):
             count = _read_throttle_count(core_id, "core_throttle_count")
             prev = self._prev_core_throttle[core_id]
-            self._core_throttled[core_id] = (
-                count is not None and prev is not None and count > prev
-            )
+            core_throttled = count is not None and prev is not None and count > prev
             if count is not None:
                 self._prev_core_throttle[core_id] = count
-            # Threshold 0.0 triggers alert colors for any positive reading
-            throttled = self._core_throttled[core_id] or self._pkg_throttled
-            self.last_thresholds[core_id + 1] = 0.0 if throttled else None
+            self._throttle_labels[core_id] = "Tc" if core_throttled else ""
 
         pkg_count = _read_throttle_count(0, "package_throttle_count")
         prev_pkg = self._prev_pkg_throttle
@@ -145,12 +186,11 @@ class FreqSource(Source):
         if pkg_count is not None:
             self._prev_pkg_throttle = pkg_count
 
-        # Re-evaluate thresholds now that _pkg_throttled is known
-        any_throttled = any(self._core_throttled) or self._pkg_throttled
-        self.last_thresholds[0] = 0.0 if any_throttled else None
+        # Package throttle applies to all cores without a core-level label
         if self._pkg_throttled:
-            for core_id in range(len(self._core_throttled)):
-                self.last_thresholds[core_id + 1] = 0.0
+            for core_id in range(self._num_cores):
+                if not self._throttle_labels[core_id]:
+                    self._throttle_labels[core_id] = "Tp"
 
     def update(self) -> None:
         try:
@@ -190,34 +230,10 @@ class FreqSource(Source):
         return False
 
     def get_sensor_suffixes(self) -> list[str]:
-        suffixes = [""] * len(self.available_sensors)
-        if any(self._core_throttled):
-            suffixes[0] = "Tc"
-        elif self._pkg_throttled:
-            suffixes[0] = "Tp"
-        for core_id in range(len(self._core_throttled)):
-            idx = core_id + 1
-            if idx < len(suffixes) and self.sensor_available[idx]:
-                if self._core_throttled[core_id]:
-                    suffixes[idx] = "Tc"
-                elif self._pkg_throttled:
-                    suffixes[idx] = "Tp"
-        return suffixes
+        return self._cached_suffixes
 
     def get_sensor_alerts(self) -> list[str | None]:
-        alerts: list[str | None] = [None] * len(self.available_sensors)
-        any_throttled = any(self._core_throttled) or self._pkg_throttled
-        if any_throttled:
-            alerts[0] = "throttle txt"
-        for core_id in range(len(self._core_throttled)):
-            idx = core_id + 1
-            if (
-                idx < len(alerts)
-                and self.sensor_available[idx]
-                and (self._core_throttled[core_id] or self._pkg_throttled)
-            ):
-                alerts[idx] = "throttle txt"
-        return alerts
+        return self._cached_alerts
 
     def get_maximum(self) -> float:
         return self.max_freq
