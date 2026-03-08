@@ -63,6 +63,11 @@ DEFAULT_PALETTE = [
     ("pg normal", "white", "default", "standout"),
     ("pg complete", "white", "dark magenta"),
     ("high temp txt", "light red", "default"),
+    ("throttle txt", "yellow", "default"),
+    ("freq throttle dark", "default", "brown", "standout"),
+    ("freq throttle dark smooth", "brown", "default"),
+    ("freq throttle light", "default", "yellow", "standout"),
+    ("freq throttle light smooth", "yellow", "default"),
     ("pg smooth", "dark magenta", "default"),
 ]
 

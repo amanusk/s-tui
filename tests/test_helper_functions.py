@@ -1,5 +1,6 @@
 """Tests for s_tui.helper_functions module."""
 
+import csv
 import json
 import os
 import signal
@@ -18,6 +19,7 @@ from s_tui.helper_functions import (
     get_user_config_file,
     kill_child_processes,
     make_user_config_dir,
+    output_to_csv,
     output_to_json,
     output_to_terminal,
     seconds_to_text,
@@ -267,9 +269,18 @@ class TestKillChildProcesses:
 # ---------------------------------------------------------------------------
 
 
+class _Summary:
+    """Minimal wrapper matching the dict-of-summary objects used by output_to_csv."""
+
+    def __init__(self, source):
+        self.source = source
+
+
 class TestOutputFunctions:
-    def _make_mock_source(self, name, sensors_summary):
+    def _make_mock_source(self, name, sensors_summary, suffixes=None):
         """Create a minimal mock source object."""
+        sensor_names = list(sensors_summary.keys())
+        _suffixes = suffixes or [""] * len(sensor_names)
 
         class _MockSrc:
             def get_is_available(self):
@@ -283,6 +294,12 @@ class TestOutputFunctions:
 
             def get_sensors_summary(self):
                 return sensors_summary
+
+            def get_sensor_list(self):
+                return sensor_names
+
+            def get_sensor_suffixes(self):
+                return _suffixes
 
         return _MockSrc()
 
@@ -313,6 +330,68 @@ class TestOutputFunctions:
         captured = capsys.readouterr()
         # Only newline should be printed
         assert captured.out.strip() == ""
+
+    def test_json_includes_throttle(self, capsys):
+        src = self._make_mock_source(
+            "Frequency",
+            {"Avg": "2400", "Core 0": "2400"},
+            suffixes=["T/W", "T/W"],
+        )
+        with pytest.raises(SystemExit):
+            output_to_json([src])
+        data = json.loads(capsys.readouterr().out)
+        assert data["Frequency"]["Avg"] == "2400"
+        assert data["Throttle"] == "T/W"
+
+    def test_json_throttle_empty_when_no_throttling(self, capsys):
+        src = self._make_mock_source("Frequency", {"Avg": "2400"})
+        with pytest.raises(SystemExit):
+            output_to_json([src])
+        data = json.loads(capsys.readouterr().out)
+        assert data["Throttle"] == ""
+
+    def test_terminal_includes_throttle(self, capsys):
+        src = self._make_mock_source(
+            "Frequency",
+            {"Avg": "2400"},
+            suffixes=["W"],
+        )
+        with pytest.raises(SystemExit):
+            output_to_terminal([src])
+        out = capsys.readouterr().out
+        assert "Throttle" in out
+        assert "W" in out
+
+    def test_csv_throttle_is_last_column(self, tmp_path):
+        csv_file = str(tmp_path / "test.csv")
+
+        src = self._make_mock_source(
+            "Frequency",
+            {"Avg": "2400", "Core 0": "2400"},
+            suffixes=["T/W", ""],
+        )
+        sources = {"Frequency": _Summary(src)}
+        output_to_csv(sources, csv_file)
+
+        with open(csv_file) as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames
+            row = next(reader)
+        assert fieldnames[-1] == "Throttle"
+        assert row["Throttle"] == "T/W"
+        assert row["Frequency:Avg"] == "2400"
+
+    def test_csv_throttle_empty_when_no_throttling(self, tmp_path):
+        csv_file = str(tmp_path / "test.csv")
+
+        src = self._make_mock_source("Frequency", {"Avg": "2400"})
+        sources = {"Frequency": _Summary(src)}
+        output_to_csv(sources, csv_file)
+
+        with open(csv_file) as f:
+            reader = csv.DictReader(f)
+            row = next(reader)
+        assert row["Throttle"] == ""
 
 
 # ---------------------------------------------------------------------------

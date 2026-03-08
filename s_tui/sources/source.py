@@ -41,7 +41,7 @@ class Source:
         self.edge_hooks: list[Hook] = []
         self.measurement_unit = ""
         self.last_measurement: list[float] = []
-        self.last_thresholds: list[float] = []
+        self.last_thresholds: list[float | None] = []
         self.is_available = True
         self.available_sensors: list[str] = []
         self.sensor_available: list[bool] = []  # Per-sensor availability
@@ -74,25 +74,21 @@ class Source:
         """Resets source state, e.g. current max"""
         raise NotImplementedError("Reset is not implemented")
 
+    def _format_measurement(self, value: float) -> str:
+        """Format a single measurement value for display. Override to customise."""
+        return str(round(value, 1))
+
     def get_sensors_summary(self) -> OrderedDict[str, str]:
         """This returns a dict of sensor of the source and their values"""
-        sub_title_list = self.get_sensor_list()
-
-        graph_vector_summary = OrderedDict()
-        for graph_idx, sensor_name in enumerate(sub_title_list):
-            # Show N/A if sensor is marked unavailable
-            if (
-                graph_idx < len(self.sensor_available)
-                and not self.sensor_available[graph_idx]
-            ):
-                graph_vector_summary[sensor_name] = "N/A"
-            elif graph_idx < len(self.last_measurement):
-                val_str = str(round(self.last_measurement[graph_idx], 1))
-                graph_vector_summary[sensor_name] = val_str
+        summary = OrderedDict()
+        for idx, name in enumerate(self.get_sensor_list()):
+            if idx < len(self.sensor_available) and not self.sensor_available[idx]:
+                summary[name] = "N/A"
+            elif idx < len(self.last_measurement):
+                summary[name] = self._format_measurement(self.last_measurement[idx])
             else:
-                graph_vector_summary[sensor_name] = "N/A"
-
-        return graph_vector_summary
+                summary[name] = "N/A"
+        return summary
 
     def get_summary(self) -> OrderedDict[str, str]:
         """Returns a dict of source name and sensors with their values"""
@@ -121,6 +117,14 @@ class Source:
         """Returns the 'alert' pallet for graph plotting"""
         return self.alert_pallet
 
+    def get_sensor_alerts(self) -> list[str | None]:
+        """Per-sensor urwid attribute for summary coloring, or None."""
+        return [None] * len(self.available_sensors)
+
+    def get_sensor_suffixes(self) -> list[str]:
+        """Per-sensor TUI-only display suffixes (e.g. throttle labels)."""
+        return [""] * len(self.available_sensors)
+
     def get_sensor_list(self) -> list[str]:
         """Returns list of a available sensors for source"""
         return self.available_sensors
@@ -129,7 +133,7 @@ class Source:
         """Returns a list of the last measurement"""
         return self.last_measurement
 
-    def get_threshold_list(self) -> list[float]:
+    def get_threshold_list(self) -> list[float | None]:
         """Returns a list of the last threshold values"""
         return self.last_thresholds
 

@@ -37,11 +37,25 @@ class SummaryTextList:
         # We keep a dict of all the items in the summary list
         self.summary_text_items = OrderedDict()
 
+    @staticmethod
+    def _format_display_val(val, alerts, suffixes, sensor_idx):
+        """Return urwid text markup for a summary value with optional suffix/color."""
+        text = str(val)
+        if 0 <= sensor_idx < len(suffixes):
+            text += suffixes[sensor_idx]
+        attr = alerts[sensor_idx] if 0 <= sensor_idx < len(alerts) else None
+        return (attr, text) if attr else text
+
     def get_text_item_list(self):
         summery_text_list = []
-        for key, val in self.source.get_summary().items():
+        alerts = self.source.get_sensor_alerts()
+        suffixes = self.source.get_sensor_suffixes()
+        summary_items = list(self.source.get_summary().items())
+        for item_idx, (key, val) in enumerate(summary_items):
             label_w = urwid.Text(str(key[0 : self.MAX_LABEL_L]))
-            value_w = urwid.Text(str(val), align="right")
+            # item_idx 0 is the source title row; sensor alerts start at index 1.
+            display_val = self._format_display_val(val, alerts, suffixes, item_idx - 1)
+            value_w = urwid.Text(display_val, align="right")
             # This can be accessed by the update method
             self.summary_text_items[key] = value_w
             col_w = urwid.Columns([("weight", 1.5, label_w), value_w])
@@ -60,9 +74,15 @@ class SummaryTextList:
             self.visible_summaries[sensor] = visible
 
     def update(self):
-        for key, val in self.source.get_summary().items():
+        alerts = self.source.get_sensor_alerts()
+        suffixes = self.source.get_sensor_suffixes()
+        summary_items = list(self.source.get_summary().items())
+        for item_idx, (key, val) in enumerate(summary_items):
             if key in self.summary_text_items:
-                self.summary_text_items[key].set_text(str(val))
+                display_val = self._format_display_val(
+                    val, alerts, suffixes, item_idx - 1
+                )
+                self.summary_text_items[key].set_text(display_val)
 
     def get_is_available(self):
         return self.source.get_is_available()

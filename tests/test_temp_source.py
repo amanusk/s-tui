@@ -126,3 +126,48 @@ class TestTempSourceEdgeTriggered:
         src.update()
         src.reset()
         assert src.max_temp == 10
+
+
+class TestTempSourceAlerts:
+    def test_no_alerts_below_threshold(self, basic_temp_mock):
+        """Sensors at 55/60 with threshold 80 should have no alerts."""
+        src = TempSource()
+        src.update()
+        alerts = src.get_sensor_alerts()
+        assert all(a is None for a in alerts)
+
+    def test_alert_when_above_threshold(self, mocker):
+        """Sensor above its threshold should get 'high temp txt' alert."""
+        sensors = [
+            SensorTemperature(label="Hot", current=85.0, high=80.0, critical=100.0),
+            SensorTemperature(label="Cool", current=50.0, high=80.0, critical=100.0),
+        ]
+        mocker.patch(
+            "psutil.sensors_temperatures", return_value=_make_temp_dict(sensors)
+        )
+        src = TempSource()
+        src.update()
+        alerts = src.get_sensor_alerts()
+        assert alerts[0] == "high temp txt"
+        assert alerts[1] is None
+
+    def test_alert_matches_graph_coloring(self, mocker):
+        """Alert should trigger for exactly the same sensors as graph coloring."""
+        sensors = [
+            SensorTemperature(label="Core 0", current=82.0, high=80.0, critical=100.0),
+            SensorTemperature(label="Core 1", current=78.0, high=80.0, critical=100.0),
+            SensorTemperature(label="Core 2", current=90.0, high=85.0, critical=100.0),
+        ]
+        mocker.patch(
+            "psutil.sensors_temperatures", return_value=_make_temp_dict(sensors)
+        )
+        src = TempSource()
+        src.update()
+        alerts = src.get_sensor_alerts()
+        # Core 0: 82 > 80 threshold → alert
+        assert alerts[0] == "high temp txt"
+        # Core 1: 78 < 80 threshold, but global triggered (82 > 80) and has per-sensor
+        # threshold, so only per-sensor check applies → no alert
+        assert alerts[1] is None
+        # Core 2: 90 > 85 threshold → alert
+        assert alerts[2] == "high temp txt"
