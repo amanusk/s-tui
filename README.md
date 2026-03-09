@@ -45,6 +45,28 @@ Stress-Terminal UI, s-tui, monitors CPU temperature, frequency, power and utiliz
 - Built-in CPU stress test (zero dependencies, works out of the box)
 - Optional integration with external stress tools (stress/stress-ng)
 
+## Throttle Indicators
+
+When CPU throttling is detected, s-tui changes the frequency graph and summary text color and appends a reason label. Labels may be combined with `/` (e.g. `T/W`).
+
+**With root + `msr` module** (detailed per-core reasons via `IA32_THERM_STATUS`):
+
+| Label | Meaning |
+|-------|---------|
+| `T` | Thermal — core temperature exceeded TjMax |
+| `H` | PROCHOT — external thermal signal (VRM, GPU, battery) |
+| `C` | Critical — near emergency shutdown temperature |
+| `W` | Power limit — PL1/PL2 watt budget exceeded |
+| `A` | Current limit — electrical current (amps) limit hit |
+| `X` | Cross-domain — throttled by another domain (e.g. GPU) |
+
+**Without root** (sysfs fallback, thermal only):
+
+| Label | Meaning |
+|-------|---------|
+| `Tc` | Core thermal throttle |
+| `Tp` | Package thermal throttle (affects all cores) |
+
 ## Usage
 
 ```
