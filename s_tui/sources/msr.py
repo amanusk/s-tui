@@ -9,7 +9,13 @@ def read_msr(cpu: int, register: int) -> int:
     """Read a 64-bit MSR value from /dev/cpu/{cpu}/msr."""
     with open(f"/dev/cpu/{cpu}/msr", "rb") as f:
         f.seek(register)
-        return int.from_bytes(f.read(8), byteorder)
+        data = f.read(8)
+        if len(data) != 8:
+            raise OSError(
+                f"Short read from MSR device for CPU {cpu}, register {register:#x}: "
+                f"expected 8 bytes, got {len(data)}"
+            )
+        return int.from_bytes(data, byteorder)
 
 
 def msr_available() -> bool:

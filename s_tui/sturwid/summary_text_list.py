@@ -41,8 +41,8 @@ class SummaryTextList:
     def _format_display_val(val, alerts, suffixes, sensor_idx):
         """Return urwid text markup for a summary value with optional suffix/color."""
         text = str(val)
-        if 0 <= sensor_idx < len(suffixes):
-            text += suffixes[sensor_idx]
+        if 0 <= sensor_idx < len(suffixes) and suffixes[sensor_idx]:
+            text += " " + suffixes[sensor_idx]
         attr = alerts[sensor_idx] if 0 <= sensor_idx < len(alerts) else None
         return (attr, text) if attr else text
 

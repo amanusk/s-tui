@@ -151,10 +151,10 @@ class FreqSource(Source):
             if idx < len(suffixes) and self.sensor_available[idx]:
                 label = self._throttle_labels[core_id]
                 if label:
-                    suffixes[idx] = " " + label
+                    suffixes[idx] = label
                     alerts[idx] = "throttle txt"
         if any_throttled:
-            suffixes[0] = " " + next(lbl for lbl in self._throttle_labels if lbl)
+            suffixes[0] = next(lbl for lbl in self._throttle_labels if lbl)
             alerts[0] = "throttle txt"
         self._cached_suffixes = suffixes
         self._cached_alerts = alerts

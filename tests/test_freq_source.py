@@ -178,8 +178,8 @@ class TestFreqSourceThrottle:
         src = FreqSource()
         src.update()
         suffixes = src.get_sensor_suffixes()
-        assert suffixes[0] == " Tp"  # Avg
-        assert suffixes[1] == " Tp"  # Core 0
+        assert suffixes[0] == "Tp"  # Avg
+        assert suffixes[1] == "Tp"  # Core 0
 
     def test_throttle_clears_after_interval(self, mock_cpu_freq, mocker):
         """When counts stop increasing, throttle indicators disappear."""
@@ -264,8 +264,8 @@ class TestFreqSourceMsrThrottle:
         )
         src.update()
         suffixes = src.get_sensor_suffixes()
-        assert suffixes[0] == " T/W"  # Avg gets first non-empty
-        assert suffixes[1] == " T/W"  # Core 0
+        assert suffixes[0] == "T/W"  # Avg gets first non-empty
+        assert suffixes[1] == "T/W"  # Core 0
         assert suffixes[2] == ""  # Core 1
 
     def test_msr_sets_alerts(self, mock_cpu_freq, mocker):
