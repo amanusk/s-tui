@@ -35,6 +35,7 @@ Stress-Terminal UI, s-tui, monitors CPU temperature, frequency, power and utiliz
   - [Run from source code](#run-from-source-code)
   - [Compatibility](#compatibility)
   - [FAQ](#faq)
+  - [Development](#development)
   - [Contributing](#contributing)
   - [Tip](#tip)
 
