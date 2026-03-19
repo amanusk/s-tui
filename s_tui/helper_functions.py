@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 from collections import OrderedDict
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 _DEFAULT = object()
 POSIX = os.name == "posix"
@@ -136,7 +136,8 @@ def output_to_csv(sources: dict, csv_writeable_file: str) -> None:
             for prob, val in source.get_sensors_summary().items():
                 csv_dict[prefix + prob] = val
 
-        csv_dict["Throttle"] = _get_throttle_label([s.source for s in summaries])
+        csv_dict["Throttle"] = _get_throttle_label(
+            [s.source for s in summaries])
 
         fieldnames = list(csv_dict.keys())
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -302,11 +303,18 @@ def _open_text(fname: str, **kwargs: Any) -> IO[str]:
 
 
 @overload
-def cat(fname: str, fallback: object = ..., *, binary: Literal[True]) -> bytes: ...
+def cat(fname: str, fallback: object = ..., *,
+        binary: Literal[True]) -> bytes: ...
+
+
 @overload
-def cat(fname: str, fallback: object = ..., *, binary: Literal[False]) -> str: ...
+def cat(fname: str, fallback: object = ...,
+        *, binary: Literal[False]) -> str: ...
+
+
 @overload
-def cat(fname: str, fallback: object = ..., binary: bool = ...) -> bytes | str: ...
+def cat(fname: str, fallback: object = ...,
+        binary: bool = ...) -> bytes | str: ...
 
 
 def cat(fname, fallback=_DEFAULT, binary=True):
