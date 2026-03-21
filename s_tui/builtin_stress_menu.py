@@ -43,7 +43,7 @@ class BuiltinStressMenu:
 
         self.num_workers = "1"
         try:
-            self.num_workers = str(psutil.cpu_count())
+            self.num_workers = str(psutil.cpu_count() or 1)
             logging.info("builtin stress default workers %s", self.num_workers)
         except OSError as err:
             logging.debug(err)
