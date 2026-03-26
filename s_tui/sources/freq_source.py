@@ -24,7 +24,7 @@ import os
 import psutil
 
 from s_tui.helper_functions import cat
-from s_tui.sources import intel_therm
+from s_tui.sources import amd_therm, intel_therm
 from s_tui.sources.source import Source
 
 SYSFS_THERMAL_THROTTLE = "/sys/devices/system/cpu/cpu{}/thermal_throttle"
@@ -104,12 +104,18 @@ class FreqSource(Source):
         self._throttle_labels: list[str] = [""] * total_cores
         self._cached_suffixes: list[str] = [""] * len(self.available_sensors)
         self._cached_alerts: list[str | None] = [None] * len(self.available_sensors)
-        self._use_msr = intel_therm.available()
+        self._msr_backend: str | None = None
+        if intel_therm.available():
+            self._msr_backend = "intel_msr"
+        elif amd_therm.available():
+            self._msr_backend = "amd_msr"
 
         # sysfs fallback state (only used when MSR is unavailable)
         self._prev_core_throttle: list[int | None] = [None] * total_cores
         self._prev_pkg_throttle: int | None = None
-        self._throttle_available = self._use_msr or self._init_sysfs(total_cores)
+        self._throttle_available = self._msr_backend is not None or self._init_sysfs(
+            total_cores
+        )
 
     def _init_sysfs(self, total_cores: int) -> bool:
         """Initialize sysfs throttle counter baselines."""
@@ -130,8 +136,10 @@ class FreqSource(Source):
         if not self._throttle_available:
             return
 
-        if self._use_msr:
-            self._update_throttle_msr()
+        if self._msr_backend == "intel_msr":
+            self._update_throttle_intel_msr()
+        elif self._msr_backend == "amd_msr":
+            self._update_throttle_amd_msr()
         else:
             self._update_throttle_sysfs()
 
@@ -159,11 +167,20 @@ class FreqSource(Source):
         self._cached_suffixes = suffixes
         self._cached_alerts = alerts
 
-    def _update_throttle_msr(self) -> None:
+    def _update_throttle_intel_msr(self) -> None:
         """Read IA32_THERM_STATUS per core for precise throttle reasons."""
         for core_id in range(self._num_cores):
             try:
                 status = intel_therm.read_therm_status(core_id)
+                self._throttle_labels[core_id] = status.label
+            except OSError:
+                self._throttle_labels[core_id] = ""
+
+    def _update_throttle_amd_msr(self) -> None:
+        """Read AMD PSTATE_CUR_LIMIT per core for throttle detection."""
+        for core_id in range(self._num_cores):
+            try:
+                status = amd_therm.read_throttle_status(core_id)
                 self._throttle_labels[core_id] = status.label
             except OSError:
                 self._throttle_labels[core_id] = ""
