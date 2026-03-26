@@ -89,6 +89,27 @@ class TestReadThrottleStatus:
         assert status.below_base is False
         assert status.label == ""
 
+    def test_idle_below_base_not_flagged(self, mocker):
+        """Idle core below base freq should NOT set below_base (not throttled)."""
+
+        # PSTATE_CUR_LIMIT: 0x20 -> CurPstateLimit=0 (P0 allowed, not throttled)
+        # HW_PSTATE_STATUS: FID=90, DfsID=10 -> 1800 MHz (idle, P1)
+        # PSTATE_DEF_0: FID=128, DfsID=8 -> 3200 MHz
+        def fake_msr(cpu, reg):
+            if reg == PSTATE_CUR_LIMIT:
+                return 0x20
+            if reg == HW_PSTATE_STATUS:
+                return 0x0000_0000_0000_0A5A  # FID=0x5A=90, DfsID=0x0A=10
+            if reg == PSTATE_DEF_0:
+                return 0x8000_0000_0000_0880  # 3200 MHz
+            return 0
+
+        mocker.patch("s_tui.sources.amd_therm.read_msr", side_effect=fake_msr)
+        status = read_throttle_status(0)
+        assert status.smu_limited is False
+        assert status.below_base is False
+        assert status.label == ""
+
     def test_smu_limited_but_above_base(self, mocker):
         """CurPstateLimit>0 but HW freq is still above P0 base."""
 
