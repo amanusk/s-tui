@@ -60,7 +60,7 @@ def read_throttle_status(cpu: int) -> AmdThrottleStatus:
         if ps0 & (1 << 63):  # PstateEn
             hw_freq = _decode_freq(hw_ps & 0xFF, (hw_ps >> 8) & 0x3F)
             base_freq = _decode_freq(ps0 & 0xFF, (ps0 >> 8) & 0x3F)
-            if hw_freq > 0 and base_freq > 0:
+            if smu_limited and hw_freq > 0 and base_freq > 0:
                 below_base = hw_freq < base_freq
     except (OSError, ValueError):
         pass
