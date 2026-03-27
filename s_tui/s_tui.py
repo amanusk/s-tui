@@ -247,6 +247,9 @@ class GraphView(urwid.WidgetPlaceholder):
             ("Refresh[s]:"), self.controller.refresh_rate
         )
         self.hline = urwid.AttrMap(urwid.SolidFill(" "), "line")
+        self.vline = urwid.WidgetPlaceholder(
+            urwid.AttrMap(urwid.SolidFill("|"), "line")  # type: ignore[arg-type]
+        )
 
         self.mode_buttons = []
 
@@ -487,11 +490,14 @@ class GraphView(urwid.WidgetPlaceholder):
             self.hline = urwid.AttrMap(
                 urwid.SolidFill("\N{LOWER ONE QUARTER BLOCK}"), "line"
             )
+            self.vline.original_widget = urwid.AttrMap(urwid.SolidFill("│"), "line")
         else:
             self.hline = urwid.AttrMap(urwid.SolidFill(" "), "line")
+            self.vline.original_widget = urwid.AttrMap(urwid.SolidFill("|"), "line")
 
         for graph in self.graphs.values():
             graph.set_smooth_colors(state)
+            graph.set_visible_graphs()
 
         self.show_graphs()
 
@@ -544,6 +550,7 @@ class GraphView(urwid.WidgetPlaceholder):
             self.on_unicode_checkbox(state=default_smooth)
         else:
             unicode_checkbox = urwid.Text("[N/A] UTF-8")
+            self.controller.smooth_graph_mode = False
 
         clock_widget = [
             urwid.Text(("bold text", "Stress Timer"), align="center"),
@@ -666,11 +673,12 @@ class GraphView(urwid.WidgetPlaceholder):
             )
         )
 
-        vline = urwid.AttrMap(urwid.SolidFill("|"), "line")
+        vline_char = "│" if self.controller.smooth_graph_mode else "|"
+        self.vline.original_widget = urwid.AttrMap(urwid.SolidFill(vline_char), "line")
         widget = urwid.Columns(
             [
                 ("fixed", 20, text_col),  # type: ignore[list-item]
-                ("fixed", 1, vline),  # type: ignore[list-item]
+                ("fixed", 1, self.vline),  # type: ignore[list-item]
                 ("weight", 2, self.graph_place_holder),  # type: ignore[list-item]
             ],
             dividechars=0,

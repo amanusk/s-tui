@@ -130,6 +130,7 @@ class BarGraphVector(LabeledBarGraphVector):
             return ""
 
     def set_smooth_colors(self, smooth):
+        self.smooth_mode = smooth
         if smooth:
             self.satt = {(1, 0): self.smooth_a, (2, 0): self.smooth_b}
         else:

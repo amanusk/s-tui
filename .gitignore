@@ -24,3 +24,6 @@ pyenv*
 *.spec
 venv*/
 .venv*/
+.aider*
+.opencode/
+.claude/
