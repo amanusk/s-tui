@@ -24,7 +24,7 @@ from __future__ import annotations
 import logging
 import time
 
-from s_tui.sources.rapl_read import get_power_reader
+from s_tui.sources.rapl_read import get_power_reader, ZenpowerReader
 from s_tui.sources.source import Source
 
 
@@ -53,6 +53,7 @@ class RaplPowerSource(Source):
         self.last_probe = self.reader.read_power()
         self.max_power = 1
         self.last_measurement = [0.0] * len(self.last_probe)
+        self._direct_power = isinstance(self.reader, ZenpowerReader)
 
         multi_sensors = []
         for item in self.last_probe:
@@ -90,25 +91,31 @@ class RaplPowerSource(Source):
 
         for m_idx, _ in enumerate(self.last_probe):
             try:
-                joule_used = (
-                    current_measurement_value[m_idx].current
-                    - self.last_probe[m_idx].current
-                ) / float(self.MICRO_JOULE_IN_JOULE)
+                if self._direct_power:
+                    # ZenpowerReader returns direct power reading in microwatts
+                    watts_used = current_measurement_value[m_idx].current / 1000000.0
+                    if watts_used >= 0:
+                        self.last_measurement[m_idx] = watts_used
+                else:
+                    joule_used = (
+                        current_measurement_value[m_idx].current
+                        - self.last_probe[m_idx].current
+                    ) / float(self.MICRO_JOULE_IN_JOULE)
 
-                logging.debug("seconds passed %s", seconds_passed)
-                watts_used = float(joule_used) / float(seconds_passed)
-                logging.debug("watts used %s", watts_used)
-                logging.info(
-                    "Joule_Used %f, seconds passed, %f", joule_used, seconds_passed
-                )
+                    logging.debug("seconds passed %s", seconds_passed)
+                    watts_used = float(joule_used) / float(seconds_passed)
+                    logging.debug("watts used %s", watts_used)
+                    logging.info(
+                        "Joule_Used %f, seconds passed, %f", joule_used, seconds_passed
+                    )
 
-                if watts_used > 0:
-                    # The information on joules used elapses every once in a
-                    # while, this might lead to negative readings.
-                    # To prevent this, we keep the last value until the next
-                    # update
-                    self.last_measurement[m_idx] = watts_used
-                    logging.info("Power reading elapsed")
+                    if watts_used > 0:
+                        # The information on joules used elapses every once in a
+                        # while, this might lead to negative readings.
+                        # To prevent this, we keep the last value until the next
+                        # update
+                        self.last_measurement[m_idx] = watts_used
+                        logging.info("Power reading elapsed")
             except (IndexError, AttributeError) as e:
                 logging.warning("Error reading RAPL sensor %d: %s", m_idx, e)
 
