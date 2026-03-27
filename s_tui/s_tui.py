@@ -248,7 +248,7 @@ class GraphView(urwid.WidgetPlaceholder):
         )
         self.hline = urwid.AttrMap(urwid.SolidFill(" "), "line")
         self.vline = urwid.WidgetPlaceholder(
-            urwid.AttrMap(urwid.SolidFill("|"), "line")
+            urwid.AttrMap(urwid.SolidFill("|"), "line")  # type: ignore[arg-type]
         )
 
         self.mode_buttons = []
