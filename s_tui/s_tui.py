@@ -666,7 +666,7 @@ class GraphView(urwid.WidgetPlaceholder):
             )
         )
 
-        vline = urwid.AttrMap(urwid.SolidFill("|"), "line")
+        vline = urwid.AttrMap(urwid.SolidFill("│"), "line")
         widget = urwid.Columns(
             [
                 ("fixed", 20, text_col),  # type: ignore[list-item]
