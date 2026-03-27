@@ -93,6 +93,7 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
             raise Exception("Y label must be a valid label")
 
         self.visible_graph_list = visible_graph_list
+        self.smooth_mode = False
         self.bar_graph_vector = []
         self.set_graph(bar_graph_vector)
 
@@ -141,7 +142,8 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         if visible_graph_list is None:
             visible_graph_list = self.visible_graph_list
 
-        vline = urwid.AttrMap(urwid.SolidFill("│"), "line")
+        vline_char = "│" if self.smooth_mode else "|"
+        vline = urwid.AttrMap(urwid.SolidFill(vline_char), "line")
 
         graph_vector_column_list = []
         for idx, (state, graph, sub_title) in enumerate(

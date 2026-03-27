@@ -95,6 +95,31 @@ class TestLabeledBarGraphVector:
         v.set_visible_graphs([False, False])
         assert isinstance(v.original_widget, urwid.Pile)
 
+    def test_vline_respects_smooth_mode(self):
+        """Vertical separator uses │ in smooth mode, | otherwise."""
+        v = self._make(2)
+
+        def _get_vline_char(widget):
+            """Extract the SolidFill character from the graph columns."""
+            # widget tree: Pile -> WidgetPlaceholder(Columns) ->
+            #   Columns(graph_cols) -> AttrMap(SolidFill)
+            pile = widget.original_widget
+            graph_cols = pile.contents[1][0].original_widget.contents[1][0]
+            for item, _options in graph_cols.contents:
+                if isinstance(item, urwid.AttrMap) and isinstance(
+                    item.original_widget, urwid.SolidFill
+                ):
+                    return item.original_widget.fill_char
+            return None
+
+        v.smooth_mode = False
+        v.set_visible_graphs([True, True])
+        assert _get_vline_char(v) == "|"
+
+        v.smooth_mode = True
+        v.set_visible_graphs([True, True])
+        assert _get_vline_char(v) == "│"
+
     def test_set_title(self):
         """set_title changes the title widget text."""
         v = self._make(1)
