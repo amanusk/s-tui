@@ -192,7 +192,7 @@ class TestZenpowerReader:
         """read_power() returns multiple power sensors."""
         mock_glob = mocker.patch("glob.glob")
         call_count = [0]  # Track call index
-        
+
         def glob_side_effect(pattern):
             call_count[0] += 1
             # First call: available() check
@@ -211,9 +211,9 @@ class TestZenpowerReader:
             elif "hwmon0/power*_input" in pattern:
                 return ["/sys/class/hwmon/hwmon0/power1_input", "/sys/class/hwmon/hwmon0/power2_input"]
             return []
-        
+
         mock_glob.side_effect = glob_side_effect
-        
+
         def cat_side_effect(path, fallback="", binary=False):
             path_str = str(path)
             if path_str.endswith("hwmon0/name"):
@@ -229,7 +229,7 @@ class TestZenpowerReader:
             elif path_str.endswith("hwmon0/power2_input"):
                 return "15000000"
             return fallback
-        
+
         mocker.patch("s_tui.sources.rapl_read.cat", side_effect=cat_side_effect)
         reader = ZenpowerReader()
         result = reader.read_power()

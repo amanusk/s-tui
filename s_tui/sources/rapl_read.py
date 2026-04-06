@@ -78,12 +78,12 @@ class RaplReader:
 
 class ZenpowerReader:
     """Reader for ZenPower5 kernel driver (AMD Zen 1-5).
-    
+
     ZenPower5 exposes power sensors via hwmon sysfs interface:
     - power*_input: Power in microwatts (Zen 5 RAPL, or calculated for earlier gens)
     - in*_input: Voltage in microvolts
     - curr*_input: Current in microamps
-    
+
     On Zen 5, RAPL provides direct power readings.
     On earlier generations, power may be calculated from SVI2 voltage/current.
     """
@@ -93,7 +93,7 @@ class ZenpowerReader:
     def __init__(self) -> None:
         self.power_inputs: list[tuple[str, str]] = []
         self.basenames = glob.glob(f"{self.ZENPOWER_HWMON_DIR}hwmon*/")
-        
+
         for path in self.basenames:
             name_file = os.path.join(path, "name")
             name = cat(name_file, fallback="", binary=False)
@@ -102,7 +102,7 @@ class ZenpowerReader:
                 for idx, pf in enumerate(power_files):
                     label_file = pf.replace("_input", "_label")
                     label = cat(label_file, fallback="", binary=False)
-                    
+
                     # Use label from file, or generate fallback
                     if label:
                         # Map zenpower labels to user-friendly names
@@ -124,7 +124,7 @@ class ZenpowerReader:
                             display_label = "SoC"
                         else:
                             display_label = f"power{idx + 1}"
-                    
+
                     self.power_inputs.append((display_label, pf))
 
     def read_power(self) -> list[RaplStats]:
