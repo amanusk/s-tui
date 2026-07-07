@@ -21,34 +21,37 @@
 Provides a zero-external-dependency CPU stress test. Two workload strategies
 are available, selectable at runtime:
 
-1. numpy FP burn — mixed FMA/sqrt/sin on L2-resident arrays for maximum
-   sustained thermal output without triggering AVX-512 frequency penalties.
+1. numpy matmul burn — repeated small dense matrix multiplications via BLAS.
+   Benchmarked on real hardware (AMD Ryzen 4750G) to reach the platform's PPT
+   power ceiling within seconds, beating both the previous sin/sqrt-mix
+   kernel and external `stress -c`.
 2. hashlib SHA-256 — stdlib fallback; tight C-backed loop on 64KB blocks.
 """
 
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import logging
+import os
 from multiprocessing import Event, Process
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Event as EventType
 
-try:
-    import numpy  # noqa: F401  # pyright: ignore[reportMissingImports]
-
-    _HAS_NUMPY = True
-except ImportError:
-    _HAS_NUMPY = False
+# Checked via find_spec rather than an actual import: importing numpy here
+# would initialize OpenBLAS's thread pool in the parent process (inherited
+# by forked workers) before _worker_numpy gets a chance to pin it to one
+# thread per process, causing every worker to oversubscribe the machine.
+_HAS_NUMPY = importlib.util.find_spec("numpy") is not None
 
 STRATEGY_NUMPY = "numpy"
 STRATEGY_HASHLIB = "hashlib"
 STRATEGIES = [STRATEGY_NUMPY, STRATEGY_HASHLIB]
 
 STRATEGY_LABELS = {
-    STRATEGY_NUMPY: "numpy FP burn",
+    STRATEGY_NUMPY: "numpy matmul burn",
     STRATEGY_HASHLIB: "hashlib SHA-256",
 }
 
@@ -66,27 +69,26 @@ def strategy_available(strategy: str) -> bool:
 
 
 def _worker_numpy(stop_event: EventType) -> None:
-    """CPU-intensive worker using mixed numpy FP operations.
+    """CPU-intensive worker using repeated dense matrix multiplication.
 
-    Uses a combination of multiply, sqrt, add, and sin on arrays sized
-    to stay resident in L2 cache.  This mix of instruction types keeps
-    power draw high without fully triggering AVX-512 frequency penalties
-    (which actually *reduce* thermal output).  Benchmarks show this
-    approach matches external ``stress`` in temperature generation.
+    BLAS gemm microkernels keep FMA units busy with little stalling, which
+    draws far more sustained power than a transcendental-heavy elementwise
+    loop (sin/sqrt are latency-bound, not throughput-bound).  Threads are
+    pinned to 1 per process: parallelism already comes from one process per
+    core, so letting BLAS spawn its own thread pool would oversubscribe.
     """
+    os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+    os.environ.setdefault("OMP_NUM_THREADS", "1")
     import numpy as np  # pyright: ignore[reportMissingImports]
 
-    # 100K doubles = 800KB — fits in L2, large enough to minimize
-    # Python loop overhead relative to time spent in numpy C code.
-    size = 100_000
-    a = np.random.random(size) + 1.0
-    b = np.random.random(size) + 1.0
-    out = np.empty(size, dtype=np.float64)
+    # 128x128 float64 = 128KB per matrix -- comfortably cache-resident
+    # across generations/vendors without needing to probe cache sizes.
+    n = 128
+    rng = np.random.default_rng()
+    a = rng.random((n, n))
+    b = rng.random((n, n))
     while not stop_event.is_set():
-        np.multiply(a, b, out=out)
-        np.sqrt(out, out=out)
-        np.add(out, a, out=out)
-        np.sin(out, out=out)
+        a @ b
 
 
 def _worker_hashlib(stop_event: EventType) -> None:

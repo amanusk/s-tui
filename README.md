@@ -207,7 +207,7 @@ or install numpy directly:
 pip install numpy
 ```
 
-When numpy is available, the built-in stresser uses mixed floating-point operations (multiply, sqrt, sin) for maximum thermal output. Without numpy, it falls back to hashlib SHA-256 hashing which still provides good CPU load.
+When numpy is available, the built-in stresser uses repeated dense matrix multiplication (BLAS) for maximum thermal output. Without numpy, it falls back to hashlib SHA-256 hashing which still provides good CPU load.
 
 For additional stress options (memory, I/O, sync workers), you can optionally install the external `stress` or `stress-ng` tool:
 
