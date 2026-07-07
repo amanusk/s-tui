@@ -87,8 +87,9 @@ def _worker_numpy(stop_event: EventType) -> None:
     rng = np.random.default_rng()
     a = rng.random((n, n))
     b = rng.random((n, n))
+    out = np.empty((n, n))
     while not stop_event.is_set():
-        a @ b
+        np.matmul(a, b, out=out)
 
 
 def _worker_hashlib(stop_event: EventType) -> None:
