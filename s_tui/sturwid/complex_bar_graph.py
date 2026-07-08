@@ -30,7 +30,7 @@ class ScalableBarGraph(urwid.BarGraph):
     _size = (0, 0)
 
     def render(self, size, focus=False):
-        canvas = super().render(size, focus)
+        canvas = super().render(size, focus)  # pyright: ignore[reportCallIssue]
         new_size = (int(canvas.rows()), int(canvas.cols()))
         old_size = self._size
         # check if to raise *on_resize* event
