@@ -174,10 +174,7 @@ class PowerProfileMenu:
 
         # Store walker reference for live updates
         self.walker = urwid.SimpleFocusListWalker(self.titles)
-        self.main_window = urwid.LineBox(
-            ViListBox(self.walker),
-            title="Power Profile",
-        )
+        self.main_window = urwid.LineBox(ViListBox(self.walker))
 
     def _build_ui(self) -> None:
         title = urwid.Text(("bold text", "  Power Profile  \n"), "center")
