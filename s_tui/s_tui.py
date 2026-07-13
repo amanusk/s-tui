@@ -455,6 +455,11 @@ class GraphView(urwid.WidgetPlaceholder):
         can_write_governor = os.access(SYSFS_GOVERNOR, os.W_OK)
         can_write_epp = os.access(SYSFS_EPP, os.W_OK)
 
+        def _update_power_profile_menu_size(new_height: int, new_width: int) -> None:
+            if isinstance(self.original_widget, urwid.Overlay):
+                self.original_widget = self.original_widget.bottom_w
+                self._open_menu_overlay(menu)
+
         menu = PowerProfileMenu(
             return_fn=self.on_menu_close,
             powerprofilesctl_exe=self.controller.powerprofilesctl_exe,
@@ -462,6 +467,7 @@ class GraphView(urwid.WidgetPlaceholder):
             can_write_epp=can_write_epp,
             available_governors=available_governors,
             available_epp=available_epp,
+            update_size_fn=_update_power_profile_menu_size,
         )
         if not menu.is_controllable():
             logging.info("Power profile menu: nothing controllable, hiding")

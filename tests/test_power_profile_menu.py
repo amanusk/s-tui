@@ -258,7 +258,8 @@ class TestApplyEpp:
             "/sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference",
             "performance",
         )
-        assert m.return_fn.call_count == 1  # type: ignore[union-attr]
+        assert m.return_fn.call_count == 0  # type: ignore[union-attr]
+        assert m.status_text.text == "Applied successfully."
 
     def test_apply_epp_busy_no_sysfs_shows_short_error(self, menu_epp_only):
         """When powerprofilesctl returns 'busy' and no sysfs, show a short error."""
@@ -277,20 +278,14 @@ class TestApplyEpp:
 
 
 # =====================================================================
-# Cancel
+# Close
 # =====================================================================
 
 
-class TestCancel:
-    def test_cancel_calls_return_fn(self, menu_full):
-        with patch.object(menu_full, "refresh_state"):
-            menu_full.on_cancel(None)
+class TestClose:
+    def test_close_calls_return_fn(self, menu_full):
+        menu_full.on_close(None)
         menu_full.return_fn.assert_called_once()
-
-    def test_cancel_refreshes_state(self, menu_full):
-        with patch.object(menu_full, "refresh_state") as mock_refresh:
-            menu_full.on_cancel(None)
-        mock_refresh.assert_called_once()
 
 
 # =====================================================================

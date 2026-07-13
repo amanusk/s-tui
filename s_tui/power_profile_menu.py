@@ -137,8 +137,10 @@ class PowerProfileMenu:
         can_write_epp: bool,
         available_governors: list[str] | None = None,
         available_epp: list[str] | None = None,
+        update_size_fn: Callable[[int, int], None] | None = None,
     ) -> None:
         self.return_fn = return_fn
+        self.update_size_fn = update_size_fn
         self.powerprofilesctl_exe = powerprofilesctl_exe
         self.can_write_governor = can_write_governor
         self.can_write_epp = can_write_epp
@@ -170,8 +172,10 @@ class PowerProfileMenu:
         self.titles: list[urwid.Widget] = []
         self._build_ui()
 
+        # Store walker reference for live updates
+        self.walker = urwid.SimpleFocusListWalker(self.titles)
         self.main_window = urwid.LineBox(
-            ViListBox(urwid.SimpleFocusListWalker(self.titles)),
+            ViListBox(self.walker),
             title="Power Profile",
         )
 
@@ -230,9 +234,9 @@ class PowerProfileMenu:
 
         apply_button = urwid.Button("Apply", on_press=self.on_apply)
         apply_button._label.align = "center"
-        cancel_button = urwid.Button("Cancel", on_press=self.on_cancel)
-        cancel_button._label.align = "center"
-        self.titles.append(urwid.Columns([apply_button, cancel_button]))
+        close_button = urwid.Button("Close", on_press=self.on_close)
+        close_button._label.align = "center"
+        self.titles.append(urwid.Columns([apply_button, close_button]))
 
     def get_size(self) -> tuple[int, int]:
         return len(self.titles) + 5, self.MAX_TITLE_LEN
@@ -272,7 +276,7 @@ class PowerProfileMenu:
         return None
 
     def on_apply(self, _: object) -> None:
-        """Apply the selected governor and/or EPP."""
+        """Apply the selected governor and/or EPP, then refresh available lists."""
         errors = []
 
         # Apply governor
@@ -297,11 +301,33 @@ class PowerProfileMenu:
                     logging.debug("Failed to set EPP: %s", e)
                     errors.append(str(e))
 
+        # Refresh the UI after gov/epp change
+        self._refresh_ui_lists()
+
         if errors:
             self.status_text.set_text(("high temp txt", "\n".join(errors)))
         else:
-            self.status_text.set_text("")
-            self.return_fn()
+            self.status_text.set_text(("bold text", "Applied successfully."))
+
+    def _refresh_ui_lists(self) -> None:
+        """Re-read available sysfs values and dynamically rebuild the UI."""
+        self.available_governors = read_available(SYSFS_AVAIL_GOVERNORS)
+        self.available_epp = read_available(SYSFS_AVAIL_EPP)
+
+        self.governor_controllable = (
+            self.can_write_governor and len(self.available_governors) > 1
+        )
+        self.epp_controllable = (
+            self.can_write_epp or self.powerprofilesctl_exe is not None
+        ) and len(self.available_epp) > 0
+
+        self.titles.clear()
+        self._build_ui()
+        self.walker[:] = self.titles
+
+        if self.update_size_fn:
+            new_height, new_width = self.get_size()
+            self.update_size_fn(new_height, new_width)
 
     def _apply_epp(self, epp: str) -> None:
         """Apply EPP value using the best available method."""
@@ -324,7 +350,6 @@ class PowerProfileMenu:
             f"and no sysfs write permission"
         )
 
-    def on_cancel(self, _: object) -> None:
-        """Reset radio buttons to current state and close."""
-        self.refresh_state()
+    def on_close(self, _: object) -> None:
+        """Close the window unconditionally."""
         self.return_fn()
