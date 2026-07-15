@@ -115,6 +115,83 @@ class TestConstruction:
         assert m.is_controllable()
 
 
+class TestEppReactiveNarrowing:
+    """Some drivers (e.g. intel_pstate) don't shrink
+    energy_performance_available_preferences to reflect the active governor
+    the way amd-pstate does. Rather than guessing driver-specific rules, a
+    rejected EPP write is treated as the ground truth: narrow the list to
+    the real current EPP value, and trust the advertised list again as soon
+    as a write succeeds."""
+
+    def test_construction_never_restricts_epp_list(self):
+        """No write has been attempted yet, so show whatever sysfs advertises."""
+        with patch(
+            "s_tui.power_profile_menu._read_current", return_value="performance"
+        ):
+            m = PowerProfileMenu(
+                return_fn=MagicMock(),
+                powerprofilesctl_exe=None,
+                can_write_governor=True,
+                can_write_epp=True,
+                available_governors=GOVERNORS,
+                available_epp=EPP_VALUES,
+            )
+        assert m.available_epp == EPP_VALUES
+
+    def test_failed_epp_write_narrows_to_current_value(self):
+        with patch("s_tui.power_profile_menu._read_current", return_value="powersave"):
+            m = PowerProfileMenu(
+                return_fn=MagicMock(),
+                powerprofilesctl_exe=None,
+                can_write_governor=False,
+                can_write_epp=True,
+                available_governors=["powersave"],
+                available_epp=EPP_VALUES,
+            )
+
+        for rb in m.epp_group:
+            rb.set_state(rb.label == "power", do_callback=False)
+
+        with (
+            patch(
+                "s_tui.power_profile_menu._write_all_cores",
+                side_effect=OSError("Device or resource busy"),
+            ),
+            patch("s_tui.power_profile_menu.read_available", return_value=EPP_VALUES),
+            patch("s_tui.power_profile_menu._read_current", return_value="performance"),
+        ):
+            m.on_apply(None)
+
+        assert m.available_epp == ["performance"]
+        assert len(m.epp_buttons) == 1
+        status = m.status_text.get_text()[0]
+        assert "busy" in status.lower()
+
+    def test_successful_epp_write_keeps_full_list(self):
+        with patch("s_tui.power_profile_menu._read_current", return_value="powersave"):
+            m = PowerProfileMenu(
+                return_fn=MagicMock(),
+                powerprofilesctl_exe=None,
+                can_write_governor=False,
+                can_write_epp=True,
+                available_governors=["powersave"],
+                available_epp=EPP_VALUES,
+            )
+
+        for rb in m.epp_group:
+            rb.set_state(rb.label == "power", do_callback=False)
+
+        with (
+            patch("s_tui.power_profile_menu._write_all_cores"),
+            patch("s_tui.power_profile_menu.read_available", return_value=EPP_VALUES),
+            patch("s_tui.power_profile_menu._read_current", return_value="powersave"),
+        ):
+            m.on_apply(None)
+
+        assert m.available_epp == EPP_VALUES
+        assert len(m.epp_buttons) == len(EPP_VALUES)
+
+
 # =====================================================================
 # get_size
 # =====================================================================

@@ -288,6 +288,7 @@ class PowerProfileMenu:
                     errors.append(str(e))
 
         # Apply EPP
+        epp_write_failed = False
         if self.epp_controllable:
             epp = self._get_selected_epp()
             if epp:
@@ -297,19 +298,31 @@ class PowerProfileMenu:
                 except OSError as e:
                     logging.debug("Failed to set EPP: %s", e)
                     errors.append(str(e))
+                    epp_write_failed = True
 
         # Refresh the UI after gov/epp change
-        self._refresh_ui_lists()
+        self._refresh_ui_lists(epp_write_failed)
 
         if errors:
             self.status_text.set_text(("high temp txt", "\n".join(errors)))
         else:
             self.status_text.set_text(("bold text", "Applied successfully."))
 
-    def _refresh_ui_lists(self) -> None:
-        """Re-read available sysfs values and dynamically rebuild the UI."""
+    def _refresh_ui_lists(self, epp_write_failed: bool = False) -> None:
+        """Re-read available sysfs values and dynamically rebuild the UI.
+
+        Some drivers (e.g. intel_pstate) don't shrink
+        energy_performance_available_preferences to reflect the active
+        governor the way amd-pstate does, so a rejected EPP write is the only
+        signal we get. When the just-attempted write failed, trust the
+        kernel's real, current EPP value over the (stale) advertised list.
+        """
         self.available_governors = read_available(SYSFS_AVAIL_GOVERNORS)
         self.available_epp = read_available(SYSFS_AVAIL_EPP)
+        if epp_write_failed:
+            current_epp = _read_current(SYSFS_EPP)
+            if current_epp:
+                self.available_epp = [current_epp]
 
         self.governor_controllable = (
             self.can_write_governor and len(self.available_governors) > 1
