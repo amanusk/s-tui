@@ -30,6 +30,7 @@ import urwid
 from s_tui.builtin_stresser import (
     STRATEGIES,
     STRATEGY_LABELS,
+    STRATEGY_REQUIREMENTS,
     get_default_strategy,
     strategy_available,
 )
@@ -53,14 +54,18 @@ class BuiltinStressMenu:
 
         self.num_workers_ctrl = urwid.Edit("CPU worker count: ", self.num_workers)
 
-        # Strategy radio buttons
+        # Unavailable strategies render as plain text so they can't be selected.
         self._strategy_group: list[urwid.RadioButton] = []
         self._strategy_buttons: dict[str, urwid.RadioButton] = {}
         strategy_widgets: list[urwid.Widget] = []
         for key in STRATEGIES:
             label = STRATEGY_LABELS[key]
             if not strategy_available(key):
-                label += " (requires numpy)"
+                hint = STRATEGY_REQUIREMENTS.get(key, "unavailable")
+                strategy_widgets.append(
+                    urwid.Text([f"  {label} ", ("high temp txt", f"({hint})")])
+                )
+                continue
             rb = urwid.RadioButton(
                 self._strategy_group,
                 label,
@@ -134,7 +139,9 @@ class BuiltinStressMenu:
             self.num_workers = raw
         else:
             self.num_workers = str(psutil.cpu_count() or 1)
-        self.strategy = self._pending_strategy
+        # Only commit a selectable strategy, else the UI desyncs from what runs.
+        if self._pending_strategy in self._strategy_buttons:
+            self.strategy = self._pending_strategy
         self._restore_ui()
         self.return_fn()
 

@@ -51,8 +51,13 @@ STRATEGY_HASHLIB = "hashlib"
 STRATEGIES = [STRATEGY_NUMPY, STRATEGY_HASHLIB]
 
 STRATEGY_LABELS = {
-    STRATEGY_NUMPY: "numpy matmul burn",
+    STRATEGY_NUMPY: "matmul burn",
     STRATEGY_HASHLIB: "hashlib SHA-256",
+}
+
+# Hint shown in the menu when a strategy is unavailable.
+STRATEGY_REQUIREMENTS = {
+    STRATEGY_NUMPY: "requires numpy",
 }
 
 

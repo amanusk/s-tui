@@ -2,8 +2,13 @@
 
 import psutil
 
+import s_tui.builtin_stresser as builtin_stresser
 from s_tui.builtin_stress_menu import BuiltinStressMenu
-from s_tui.builtin_stresser import STRATEGY_HASHLIB, get_default_strategy
+from s_tui.builtin_stresser import (
+    STRATEGY_HASHLIB,
+    STRATEGY_NUMPY,
+    get_default_strategy,
+)
 
 
 class TestBuiltinStressMenu:
@@ -53,4 +58,30 @@ class TestBuiltinStressMenu:
         menu = BuiltinStressMenu(return_fn=lambda: None)
         menu._pending_strategy = STRATEGY_HASHLIB
         menu.on_save(None)
+        assert menu.get_strategy() == STRATEGY_HASHLIB
+
+    def test_numpy_not_selectable_when_unavailable(self, monkeypatch):
+        """When numpy is missing, its strategy has no selectable radio button.
+
+        Guards against the UI showing "numpy" selected while start() silently
+        falls back to hashlib.
+        """
+        monkeypatch.setattr(builtin_stresser, "_HAS_NUMPY", False)
+        menu = BuiltinStressMenu(return_fn=lambda: None)
+
+        # numpy must not be among the selectable radio buttons
+        assert STRATEGY_NUMPY not in menu._strategy_buttons
+        assert STRATEGY_HASHLIB in menu._strategy_buttons
+
+        # Default and committed strategy fall back to an available kernel
+        assert menu.get_strategy() == STRATEGY_HASHLIB
+
+        # Even a forced pending numpy selection (not reachable via the UI) is
+        # ignored on save rather than desyncing the committed strategy
+        menu._pending_strategy = STRATEGY_NUMPY
+        menu.on_save(None)
+        assert menu.get_strategy() == STRATEGY_HASHLIB
+
+        # on_default re-derives an available strategy
+        menu.on_default(None)
         assert menu.get_strategy() == STRATEGY_HASHLIB
