@@ -261,7 +261,11 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # construct the various menus during init phase
         self.stress_menu = StressMenu(self.on_menu_close, self.controller.stress_exe)
-        self.builtin_stress_menu = BuiltinStressMenu(self.on_menu_close)
+        self.builtin_stress_menu = BuiltinStressMenu(
+            self.on_menu_close,
+            self.controller.stress_strategy,
+            self.controller.stress_workers,
+        )
         self.help_menu = HelpMenu(self.on_menu_close)
         self.about_menu = AboutMenu(self.on_menu_close)
         self.graphs_menu = SensorsMenu(
@@ -784,6 +788,28 @@ class GraphController:
                 ):
                     logging.debug("No user config for temp threshold")
 
+            try:
+                self.stress_strategy = self.conf.get("GraphControl", "strategy")
+                logging.debug(
+                    "Built-in stress strategy set to %s", self.stress_strategy
+                )
+            except (
+                ValueError,
+                configparser.NoOptionError,
+                configparser.NoSectionError,
+            ):
+                logging.debug("No user config for stress strategy")
+
+            try:
+                self.stress_workers = self.conf.get("GraphControl", "workers")
+                logging.debug("Built-in stress workers set to %s", self.stress_workers)
+            except (
+                ValueError,
+                configparser.NoOptionError,
+                configparser.NoSectionError,
+            ):
+                logging.debug("No user config for stress workers")
+
         if t_thresh is not None:
             self.temp_thresh = t_thresh
 
@@ -852,6 +878,10 @@ class GraphController:
         self.graphs_default_conf = defaultdict(dict)
 
         self.temp_thresh = None
+
+        # Built-in stresser settings, restored from config if present
+        self.stress_strategy = None
+        self.stress_workers = None
 
         possible_sources = self._load_config(args.t_thresh)
 
@@ -979,6 +1009,17 @@ class GraphController:
             # Save the configured t_thresh
             if self.temp_thresh:
                 conf.set("GraphControl", "TTHRESH", str(self.temp_thresh))
+            # Save the selected built-in stresser strategy and worker count
+            conf.set(
+                "GraphControl",
+                "strategy",
+                self.view.builtin_stress_menu.get_strategy(),
+            )
+            conf.set(
+                "GraphControl",
+                "workers",
+                str(self.view.builtin_stress_menu.get_num_workers()),
+            )
 
             _save_displayed_setting(conf, "Graphs")
             _save_displayed_setting(conf, "Summaries")

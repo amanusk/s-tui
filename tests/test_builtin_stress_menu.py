@@ -44,21 +44,60 @@ class TestBuiltinStressMenu:
         menu = BuiltinStressMenu(return_fn=lambda: None)
         assert menu.get_strategy() == get_default_strategy()
 
-    def test_cancel_restores_strategy(self):
-        """Cancel reverts pending strategy change."""
+    def test_cancel_restores_strategy(self, monkeypatch):
+        """Cancel reverts an unsaved radio selection."""
+        monkeypatch.setattr(builtin_stresser, "_HAS_NUMPY", True)
         menu = BuiltinStressMenu(return_fn=lambda: None)
         original = menu.get_strategy()
-        # Simulate radio button change (would normally be triggered by UI)
-        menu._pending_strategy = STRATEGY_HASHLIB
+        other = STRATEGY_HASHLIB if original != STRATEGY_HASHLIB else STRATEGY_NUMPY
+        # Select the other radio the way a real click does, then cancel.
+        menu._strategy_buttons[other].set_state(True)
         menu.on_cancel(None)
         assert menu.get_strategy() == original
+        assert menu._strategy_buttons[original].state is True
 
-    def test_save_commits_strategy(self):
-        """Save commits the pending strategy change."""
+    def test_save_commits_strategy(self, monkeypatch):
+        """Save persists the strategy selected in the radio group (issue #289)."""
+        monkeypatch.setattr(builtin_stresser, "_HAS_NUMPY", True)
         menu = BuiltinStressMenu(return_fn=lambda: None)
-        menu._pending_strategy = STRATEGY_HASHLIB
+        # Select hashlib via the actual widget state, not an internal shortcut.
+        menu._strategy_buttons[STRATEGY_HASHLIB].set_state(True)
         menu.on_save(None)
         assert menu.get_strategy() == STRATEGY_HASHLIB
+
+    def test_initial_strategy_restored_from_config(self, monkeypatch):
+        """A saved strategy is honoured on construction (issue #289)."""
+        monkeypatch.setattr(builtin_stresser, "_HAS_NUMPY", True)
+        menu = BuiltinStressMenu(
+            return_fn=lambda: None, initial_strategy=STRATEGY_HASHLIB
+        )
+        assert menu.get_strategy() == STRATEGY_HASHLIB
+        assert menu._strategy_buttons[STRATEGY_HASHLIB].state is True
+
+    def test_initial_strategy_falls_back_when_unavailable(self, monkeypatch):
+        """A saved but unrunnable strategy falls back to an available one."""
+        monkeypatch.setattr(builtin_stresser, "_HAS_NUMPY", False)
+        menu = BuiltinStressMenu(
+            return_fn=lambda: None, initial_strategy=STRATEGY_NUMPY
+        )
+        assert menu.get_strategy() == STRATEGY_HASHLIB
+
+    def test_initial_strategy_ignores_garbage(self):
+        """An unknown saved value falls back to the default strategy."""
+        menu = BuiltinStressMenu(return_fn=lambda: None, initial_strategy="bogus")
+        assert menu.get_strategy() == get_default_strategy()
+
+    def test_initial_workers_restored_from_config(self):
+        """A saved worker count is honoured on construction (issue #289)."""
+        menu = BuiltinStressMenu(return_fn=lambda: None, initial_workers="3")
+        assert menu.get_num_workers() == 3
+
+    def test_initial_workers_ignores_invalid(self, monkeypatch):
+        """An invalid saved worker count falls back to the CPU count."""
+        monkeypatch.setattr(psutil, "cpu_count", lambda: 8)
+        for bad in ("0", "-2", "abc", ""):
+            menu = BuiltinStressMenu(return_fn=lambda: None, initial_workers=bad)
+            assert menu.get_num_workers() == 8
 
     def test_numpy_not_selectable_when_unavailable(self, monkeypatch):
         """When numpy is missing, its strategy has no selectable radio button.
@@ -76,9 +115,8 @@ class TestBuiltinStressMenu:
         # Default and committed strategy fall back to an available kernel
         assert menu.get_strategy() == STRATEGY_HASHLIB
 
-        # Even a forced pending numpy selection (not reachable via the UI) is
-        # ignored on save rather than desyncing the committed strategy
-        menu._pending_strategy = STRATEGY_NUMPY
+        # numpy has no radio button, so it cannot be selected or committed;
+        # saving keeps the available kernel rather than desyncing.
         menu.on_save(None)
         assert menu.get_strategy() == STRATEGY_HASHLIB
 

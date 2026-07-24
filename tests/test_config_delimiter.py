@@ -86,6 +86,9 @@ class TestConfigDelimiter:
             mock_view.summary_menu.active_sensors = {
                 "CPU Util": [True, True],
             }
+            mock_view.builtin_stress_menu = MagicMock()
+            mock_view.builtin_stress_menu.get_strategy.return_value = "hashlib"
+            mock_view.builtin_stress_menu.get_num_workers.return_value = 4
             mock_view_class.return_value = mock_view
 
             controller = GraphController(MagicMock())
@@ -120,6 +123,41 @@ class TestConfigDelimiter:
             assert any(
                 "=" in line and ":" not in line.split("=")[0] for line in lines
             ), "Config should use '=' as delimiter, not ':' (PR #254 fix)"
+
+            # Built-in stresser strategy and worker count are persisted (#289)
+            assert "strategy = hashlib" in config_content
+            assert "workers = 4" in config_content
+
+    def test_load_config_reads_stress_settings(self, tmp_path, mocker):
+        """_load_config restores the built-in stresser strategy and workers (#289)."""
+        from collections import defaultdict
+
+        from s_tui.s_tui import GraphController
+
+        cfg = tmp_path / "s-tui.conf"
+        cfg.write_text("[GraphControl]\nstrategy = hashlib\nworkers = 3\n")
+
+        mocker.patch("s_tui.s_tui.user_config_dir_exists", return_value=True)
+        mocker.patch("s_tui.s_tui.get_user_config_dir", return_value=str(tmp_path))
+        mocker.patch("s_tui.s_tui.user_config_file_exists", return_value=True)
+        mocker.patch("s_tui.s_tui.get_user_config_file", return_value=str(cfg))
+
+        # Exercise the real _load_config without running full __init__.
+        ctrl = GraphController.__new__(GraphController)
+        ctrl.script_hooks_enabled = True
+        ctrl.script_loader = None
+        ctrl.refresh_rate = "2.0"
+        ctrl.smooth_graph_mode = False
+        ctrl.temp_thresh = None
+        ctrl.stress_strategy = None
+        ctrl.stress_workers = None
+        ctrl.graphs_default_conf = defaultdict(dict)
+        ctrl.summary_default_conf = defaultdict(dict)
+
+        ctrl._load_config(None)
+
+        assert ctrl.stress_strategy == "hashlib"
+        assert ctrl.stress_workers == "3"
 
     def test_configparser_delimiter_consistency(self):
         """Test that ConfigParser with delimiters="=" preserves colons in values.

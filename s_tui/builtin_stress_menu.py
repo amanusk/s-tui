@@ -39,7 +39,12 @@ from s_tui.builtin_stresser import (
 class BuiltinStressMenu:
     MAX_TITLE_LEN = 50
 
-    def __init__(self, return_fn: Callable[[], None]) -> None:
+    def __init__(
+        self,
+        return_fn: Callable[[], None],
+        initial_strategy: str | None = None,
+        initial_workers: str | None = None,
+    ) -> None:
         self.return_fn = return_fn
 
         self.num_workers = "1"
@@ -49,8 +54,19 @@ class BuiltinStressMenu:
         except OSError as err:
             logging.debug(err)
 
+        # Restore a saved worker count when it is a valid positive integer.
+        if (
+            initial_workers is not None
+            and re.match(r"\A[0-9]+\Z", initial_workers)
+            and int(initial_workers) > 0
+        ):
+            self.num_workers = initial_workers
+
+        # Honour a saved strategy only if it can actually run here, else fall
+        # back so _restore_ui never indexes a missing radio button.
         self.strategy = get_default_strategy()
-        self._pending_strategy = self.strategy
+        if initial_strategy in STRATEGIES and strategy_available(initial_strategy):
+            self.strategy = initial_strategy
 
         self.num_workers_ctrl = urwid.Edit("CPU worker count: ", self.num_workers)
 
@@ -70,8 +86,6 @@ class BuiltinStressMenu:
                 self._strategy_group,
                 label,
                 state=(key == self.strategy),
-                on_state_change=self._on_strategy_change,
-                user_data=key,
             )
             self._strategy_buttons[key] = rb
             strategy_widgets.append(rb)
@@ -79,7 +93,9 @@ class BuiltinStressMenu:
         default_button = urwid.Button("Default", on_press=self.on_default)
         default_button._label.align = "center"
 
-        save_button = urwid.Button("Save", on_press=self.on_save)
+        # "Apply" acts within the session; the main "Save settings" persists
+        # the choice across restarts.
+        save_button = urwid.Button("Apply", on_press=self.on_save)
         save_button._label.align = "center"
 
         cancel_button = urwid.Button("Cancel", on_press=self.on_cancel)
@@ -101,11 +117,12 @@ class BuiltinStressMenu:
 
         self.main_window = urwid.LineBox(urwid.ListBox(self.titles))
 
-    def _on_strategy_change(
-        self, button: urwid.RadioButton, state: bool, key: str
-    ) -> None:
-        if state:
-            self._pending_strategy = key
+    def _selected_strategy(self) -> str:
+        """Return the strategy key of the currently checked radio button."""
+        for key, button in self._strategy_buttons.items():
+            if button.state:
+                return key
+        return self.strategy
 
     def get_size(self) -> tuple[int, int]:
         return len(self.titles) + 5, self.MAX_TITLE_LEN
@@ -125,7 +142,6 @@ class BuiltinStressMenu:
         """Reset UI controls to match committed state."""
         self.num_workers_ctrl.set_edit_text(self.num_workers)
         self._strategy_buttons[self.strategy].set_state(True)
-        self._pending_strategy = self.strategy
 
     def on_default(self, _) -> None:
         self.num_workers = str(psutil.cpu_count() or 1)
@@ -139,9 +155,9 @@ class BuiltinStressMenu:
             self.num_workers = raw
         else:
             self.num_workers = str(psutil.cpu_count() or 1)
-        # Only commit a selectable strategy, else the UI desyncs from what runs.
-        if self._pending_strategy in self._strategy_buttons:
-            self.strategy = self._pending_strategy
+        # Read the checked radio directly; urwid's 'change' callback arg order
+        # varies across builds and can't be relied on (issue #289).
+        self.strategy = self._selected_strategy()
         self._restore_ui()
         self.return_fn()
 
