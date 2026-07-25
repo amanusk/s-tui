@@ -173,7 +173,7 @@ optional arguments:
 
 When CPU throttling is detected, s-tui changes the frequency graph and summary text color and appends a reason label. Labels may be combined with `/` (e.g. `T/W`).
 
-**With root + `msr` module** (detailed per-core reasons via `IA32_THERM_STATUS`):
+**Intel, with root + `msr` module** (detailed per-core reasons via `IA32_THERM_STATUS`):
 
 | Label | Meaning                                               |
 | ----- | ----------------------------------------------------- |
@@ -183,6 +183,22 @@ When CPU throttling is detected, s-tui changes the frequency graph and summary t
 | `W`   | Power limit — PL1/PL2 watt budget exceeded            |
 | `A`   | Current limit — electrical current (amps) limit hit   |
 | `X`   | Cross-domain — throttled by another domain (e.g. GPU) |
+
+**AMD, with root + `msr` module** (per-core P-state cap via `PStateCurLim`):
+
+| Label | Meaning                                                     |
+| ----- | ----------------------------------------------------------- |
+| `Pc`  | P-state cap — the SMU has barred the core from its top P-state |
+
+AMD exposes no equivalent of Intel's reason breakdown through MSRs. The
+thermal/power/current limits themselves (PPT, TDC, EDC, THM, STAPM) live in the
+SMU power-management table, which needs an out-of-tree kernel module to reach,
+so `PStateCurLim` is what remains: it indicates that a cap is in force, not why.
+It behaves as a severity threshold rather than a reason code — the same chip
+pinned at the same temperature was observed showing `Pc` under a load heavy
+enough to drive it below its rated base clock, and nothing under a lighter one.
+Expect it to stay clear on a well-cooled part that is boost-limited but never
+forced that far down.
 
 **Without root** (sysfs fallback, thermal only):
 

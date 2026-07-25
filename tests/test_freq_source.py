@@ -2,6 +2,7 @@
 
 import pytest
 
+from s_tui.sources import amd_pstate_limit, intel_therm
 from s_tui.sources.freq_source import FreqSource, _read_throttle_count
 
 
@@ -100,7 +101,7 @@ class TestFreqSourceThrottle:
             "s_tui.sources.freq_source.intel_therm.available", return_value=False
         )
         mocker.patch(
-            "s_tui.sources.freq_source.amd_therm.available", return_value=False
+            "s_tui.sources.freq_source.amd_pstate_limit.available", return_value=False
         )
         src = FreqSource()
         src.update()
@@ -116,7 +117,7 @@ class TestFreqSourceThrottle:
             "s_tui.sources.freq_source.intel_therm.available", return_value=False
         )
         mocker.patch(
-            "s_tui.sources.freq_source.amd_therm.available", return_value=False
+            "s_tui.sources.freq_source.amd_pstate_limit.available", return_value=False
         )
         src = FreqSource()
         src.update()
@@ -209,7 +210,7 @@ class TestFreqSourceThrottle:
             "s_tui.sources.freq_source.intel_therm.available", return_value=False
         )
         mocker.patch(
-            "s_tui.sources.freq_source.amd_therm.available", return_value=False
+            "s_tui.sources.freq_source.amd_pstate_limit.available", return_value=False
         )
         src = FreqSource()
         assert src._throttle_available is False
@@ -258,7 +259,7 @@ class TestFreqSourceMsrThrottle:
             "s_tui.sources.freq_source._read_throttle_count", return_value=None
         )
         src = FreqSource()
-        assert src._msr_backend == "intel_msr"
+        assert src._msr_therm is intel_therm
 
         # Simulate MSR reporting thermal + power limit on core 0
         status_tw = ThrottleStatus(True, False, False, True, False, False)
@@ -321,14 +322,14 @@ class TestFreqSourceMsrThrottle:
             "s_tui.sources.freq_source.intel_therm.available", return_value=False
         )
         mocker.patch(
-            "s_tui.sources.freq_source.amd_therm.available", return_value=False
+            "s_tui.sources.freq_source.amd_pstate_limit.available", return_value=False
         )
         mocker.patch(
             "s_tui.sources.freq_source._read_throttle_count",
             side_effect=_make_fake_throttle_reader(),
         )
         src = FreqSource()
-        assert src._msr_backend is None
+        assert src._msr_therm is None
         src.update()
         suffixes = src.get_sensor_suffixes()
         assert "Tc" in suffixes[1]
@@ -338,72 +339,78 @@ class TestFreqSourceAmdMsrThrottle:
     """Tests for AMD MSR-based throttle detection in FreqSource."""
 
     def test_amd_msr_label_shown_when_available(self, mock_cpu_freq, mocker):
-        """When AMD MSR is available, per-core labels come from PSTATE_CUR_LIMIT."""
-        from s_tui.sources.amd_therm import AmdThrottleStatus
+        """When AMD MSR is available, per-core labels come from PStateCurLim."""
+        from s_tui.sources.amd_pstate_limit import ThrottleStatus as AmdStatus
 
         mocker.patch(
             "s_tui.sources.freq_source.intel_therm.available", return_value=False
         )
-        mocker.patch("s_tui.sources.freq_source.amd_therm.available", return_value=True)
+        mocker.patch(
+            "s_tui.sources.freq_source.amd_pstate_limit.available", return_value=True
+        )
         mocker.patch(
             "s_tui.sources.freq_source._read_throttle_count", return_value=None
         )
         src = FreqSource()
-        assert src._msr_backend == "amd_msr"
+        assert src._msr_therm is amd_pstate_limit
 
-        status_w = AmdThrottleStatus(smu_limited=True, below_base=False)
-        status_none = AmdThrottleStatus(smu_limited=False, below_base=False)
+        status_capped = AmdStatus(pstate_capped=True)
+        status_none = AmdStatus(pstate_capped=False)
 
         def fake_read(cpu):
-            return status_w if cpu == 0 else status_none
+            return status_capped if cpu == 0 else status_none
 
         mocker.patch(
-            "s_tui.sources.freq_source.amd_therm.read_throttle_status",
+            "s_tui.sources.freq_source.amd_pstate_limit.read_therm_status",
             side_effect=fake_read,
         )
         src.update()
         suffixes = src.get_sensor_suffixes()
-        assert suffixes[0] == "W"  # Avg gets first non-empty
-        assert suffixes[1] == "W"  # Core 0
+        assert suffixes[0] == "Pc"  # Avg gets first non-empty
+        assert suffixes[1] == "Pc"  # Core 0
         assert suffixes[2] == ""  # Core 1
 
     def test_amd_msr_sets_alerts(self, mock_cpu_freq, mocker):
         """AMD throttle labels trigger alert coloring."""
-        from s_tui.sources.amd_therm import AmdThrottleStatus
+        from s_tui.sources.amd_pstate_limit import ThrottleStatus as AmdStatus
 
         mocker.patch(
             "s_tui.sources.freq_source.intel_therm.available", return_value=False
         )
-        mocker.patch("s_tui.sources.freq_source.amd_therm.available", return_value=True)
+        mocker.patch(
+            "s_tui.sources.freq_source.amd_pstate_limit.available", return_value=True
+        )
         mocker.patch(
             "s_tui.sources.freq_source._read_throttle_count", return_value=None
         )
         src = FreqSource()
 
-        status_wf = AmdThrottleStatus(smu_limited=True, below_base=True)
+        status_capped = AmdStatus(pstate_capped=True)
         mocker.patch(
-            "s_tui.sources.freq_source.amd_therm.read_throttle_status",
-            return_value=status_wf,
+            "s_tui.sources.freq_source.amd_pstate_limit.read_therm_status",
+            return_value=status_capped,
         )
         src.update()
         alerts = src.get_sensor_alerts()
         assert alerts[0] == "throttle txt"
         assert alerts[1] == "throttle txt"
         suffixes = src.get_sensor_suffixes()
-        assert suffixes[1] == "W/F"
+        assert suffixes[1] == "Pc"
 
     def test_amd_msr_oserror_clears_label(self, mock_cpu_freq, mocker):
         """If AMD MSR read fails for a core, its label is cleared."""
         mocker.patch(
             "s_tui.sources.freq_source.intel_therm.available", return_value=False
         )
-        mocker.patch("s_tui.sources.freq_source.amd_therm.available", return_value=True)
+        mocker.patch(
+            "s_tui.sources.freq_source.amd_pstate_limit.available", return_value=True
+        )
         mocker.patch(
             "s_tui.sources.freq_source._read_throttle_count", return_value=None
         )
         src = FreqSource()
         mocker.patch(
-            "s_tui.sources.freq_source.amd_therm.read_throttle_status",
+            "s_tui.sources.freq_source.amd_pstate_limit.read_therm_status",
             side_effect=OSError("permission denied"),
         )
         src.update()
@@ -414,9 +421,11 @@ class TestFreqSourceAmdMsrThrottle:
         mocker.patch(
             "s_tui.sources.freq_source.intel_therm.available", return_value=True
         )
-        mocker.patch("s_tui.sources.freq_source.amd_therm.available", return_value=True)
+        mocker.patch(
+            "s_tui.sources.freq_source.amd_pstate_limit.available", return_value=True
+        )
         mocker.patch(
             "s_tui.sources.freq_source._read_throttle_count", return_value=None
         )
         src = FreqSource()
-        assert src._msr_backend == "intel_msr"
+        assert src._msr_therm is intel_therm

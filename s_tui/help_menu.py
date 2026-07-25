@@ -45,10 +45,12 @@ graph\n\
 * Run `s-tui --help` to get this message and additional cli options\n\
 \n\
 Throttle indicators (shown on frequency labels):\n\
-  With root + msr module:\n\
+  Intel, with root + msr module:\n\
     T = Thermal    H = PROCHOT (external)\n\
     C = Critical   W = Power limit (watts)\n\
     A = Current limit (amps)  X = Cross-domain\n\
+  AMD, with root + msr module:\n\
+    Pc = P-state cap (SMU barred the top P-state)\n\
   Without root (sysfs fallback):\n\
     Tc = Core thermal   Tp = Package thermal\n\
   Labels combine with / (e.g. T/W = thermal + power limit)\n\
