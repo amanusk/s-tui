@@ -152,6 +152,27 @@ class TestGetProcessorName:
         result = get_processor_name()
         assert result is not None
 
+    def test_falls_back_to_device_tree_model(self, monkeypatch):
+        """On boards without 'model name' in /proc/cpuinfo, use the device tree."""
+        import builtins
+        import io
+        import platform
+
+        real_open = builtins.open
+
+        def fake_open(file, *args, **kwargs):
+            if file == "/proc/cpuinfo":
+                return io.StringIO("processor\t: 0\nFeatures\t: fp asimd\n")
+            if file == "/proc/device-tree/model":
+                return io.StringIO("Libre Computer AML-S905X-CC\x00")
+            return real_open(file, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "open", fake_open)
+        monkeypatch.setattr(platform, "system", lambda: "Linux")
+        monkeypatch.setattr(platform, "processor", lambda: "")
+
+        assert get_processor_name() == "Libre Computer AML-S905X-CC"
+
 
 # ---------------------------------------------------------------------------
 # Config directory helpers
