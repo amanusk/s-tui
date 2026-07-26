@@ -352,6 +352,10 @@ class GraphView(urwid.WidgetPlaceholder):
                 graph.update()
             except IndexError:
                 logging.debug("Graph update failed")
+            except Exception:
+                logging.exception("Graph update failed with unexpected error")
+                if debug_mode:
+                    raise
 
         # update graph summery
         for summary in self.visible_summaries.values():
@@ -359,6 +363,10 @@ class GraphView(urwid.WidgetPlaceholder):
                 summary.update()
             except IndexError:
                 logging.debug("Summary update failed")
+            except Exception:
+                logging.exception("Summary update failed with unexpected error")
+                if debug_mode:
+                    raise
 
         self._update_cpu_policy()
 
