@@ -7,7 +7,7 @@ from sys import byteorder
 
 def read_msr(cpu: int, register: int) -> int:
     """Read a 64-bit MSR value from /dev/cpu/{cpu}/msr."""
-    with open(f"/dev/cpu/{cpu}/msr", "rb") as f:
+    with open(f"/dev/cpu/{cpu}/msr", "rb", buffering=0) as f:
         f.seek(register)
         data = f.read(8)
         if len(data) != 8:

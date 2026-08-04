@@ -13,7 +13,7 @@ class TestReadMsr:
         mock_open = mocker.mock_open(read_data=data)
         mocker.patch("builtins.open", mock_open)
         result = read_msr(3, 0x19C)
-        mock_open.assert_called_once_with("/dev/cpu/3/msr", "rb")
+        mock_open.assert_called_once_with("/dev/cpu/3/msr", "rb", buffering=0)
         mock_open().seek.assert_called_once_with(0x19C)
         assert result == value
 
