@@ -164,7 +164,8 @@ class TestGetProcessorName:
             if file == "/proc/cpuinfo":
                 return io.StringIO("processor\t: 0\nFeatures\t: fp asimd\n")
             if file == "/proc/device-tree/model":
-                return io.StringIO("Libre Computer AML-S905X-CC\x00")
+                # cat() opens this in binary mode
+                return io.BytesIO(b"Libre Computer AML-S905X-CC\x00")
             return real_open(file, *args, **kwargs)
 
         monkeypatch.setattr(builtins, "open", fake_open)
