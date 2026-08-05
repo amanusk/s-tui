@@ -39,6 +39,25 @@ class TestUtilSourceFailures:
 
 
 class TestFreqSourceFailures:
+    def test_cpu_freq_typeerror_on_init(self, mocker):
+        """A psutil TypeError during startup should mark frequency unavailable."""
+        mocker.patch("psutil.cpu_freq", side_effect=TypeError("missing value"))
+        src = FreqSource()
+        assert isinstance(src, FreqSource)
+
+    def test_cpu_freq_typeerror_on_update(self, mocker):
+        """A psutil TypeError during update should not crash the source."""
+        per_cpu = [type("Freq", (), {"current": 2400.0, "min": 800.0, "max": 3600.0})()]
+        overall = per_cpu[0]
+
+        def cpu_freq(percpu=False):
+            return per_cpu if percpu else overall
+
+        mocker.patch("psutil.cpu_freq", side_effect=cpu_freq)
+        src = FreqSource()
+        mocker.patch("psutil.cpu_freq", side_effect=TypeError("missing value"))
+        src.update()
+
     def test_cpu_freq_returns_none(self, mocker):
         """If cpu_freq returns None (no frequency info), handle gracefully."""
         import contextlib
@@ -69,6 +88,42 @@ class TestFreqSourceFailures:
 
 
 class TestTempSourceFailures:
+    def test_sensors_temperatures_typeerror_on_init(self, mocker):
+        """A psutil TypeError during startup should mark temperature unavailable."""
+        mocker.patch(
+            "psutil.sensors_temperatures", side_effect=TypeError("missing value")
+        )
+        src = TempSource()
+        assert src.get_is_available() is False
+
+    def test_sensors_temperatures_typeerror_on_update(self, mocker):
+        """A psutil TypeError during update should preserve stale temperature data."""
+        temps = OrderedDict(
+            [("coretemp", [SensorTemperature("Core 0", 55.0, 80.0, 100.0)])]
+        )
+        mocker.patch("psutil.sensors_temperatures", return_value=temps)
+        src = TempSource()
+        src.update()
+        old_measurement = list(src.last_measurement)
+
+        mocker.patch(
+            "psutil.sensors_temperatures", side_effect=TypeError("missing value")
+        )
+        src.update()
+        assert src.last_measurement == old_measurement
+
+    def test_sensors_temperatures_typeerror_on_get_top(self, mocker):
+        """A psutil TypeError in the top-temperature path should return its fallback."""
+        temps = OrderedDict(
+            [("coretemp", [SensorTemperature("Core 0", 55.0, 80.0, 100.0)])]
+        )
+        mocker.patch("psutil.sensors_temperatures", return_value=temps)
+        src = TempSource()
+        mocker.patch(
+            "psutil.sensors_temperatures", side_effect=TypeError("missing value")
+        )
+        assert src.get_top() == 10
+
     def test_sensors_temperatures_returns_none(self, mocker):
         """sensors_temperatures() returning None should mark unavailable."""
         mocker.patch("psutil.sensors_temperatures", return_value=None)
@@ -129,6 +184,12 @@ class TestTempSourceFailures:
 
 
 class TestFanSourceFailures:
+    def test_sensors_fans_oserror_on_init(self, mocker):
+        """An OSError during the initial availability probe should not crash."""
+        mocker.patch("psutil.sensors_fans", side_effect=OSError("file disappeared"))
+        src = FanSource()
+        assert src.get_is_available() is False
+
     def test_sensors_fans_returns_none(self, mocker):
         """sensors_fans() returning None should mark unavailable."""
         mocker.patch("psutil.sensors_fans", return_value=None)

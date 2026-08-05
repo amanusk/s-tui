@@ -37,12 +37,12 @@ class FanSource(Source):
             self.is_available = False
             logging.debug("Fans sensors is not available from psutil")
             return
-        except TypeError:
+        except (OSError, TypeError):
             # psutil bug: sensors_fans() raises TypeError on some hardware
             # when sysfs fan sensor files contain None (e.g. Intel xe GPU fans)
             # See: https://github.com/amanusk/s-tui/issues/255
             self.is_available = False
-            logging.debug("Fans sensors raised TypeError (psutil bug)")
+            logging.debug("Fans sensors failed (psutil error)")
             return
 
         Source.__init__(self)

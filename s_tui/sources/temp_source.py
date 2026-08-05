@@ -45,7 +45,7 @@ class TempSource(Source):
                 logging.debug("sensors_temperatures() returned empty/None")
                 return
             self.is_available = True
-        except (AttributeError, OSError):
+        except (AttributeError, OSError, TypeError):
             self.is_available = False
             logging.debug("cpu temperature is not available from psutil")
             return
@@ -73,7 +73,7 @@ class TempSource(Source):
         sensors_dict = None
         try:
             sensors_dict = OrderedDict(sorted(psutil.sensors_temperatures().items()))
-        except OSError:
+        except (OSError, TypeError):
             logging.debug("Unable to create sensors dict")
             self.is_available = False
             return
@@ -116,7 +116,7 @@ class TempSource(Source):
     def update(self) -> None:
         try:
             sensors_data = psutil.sensors_temperatures()
-        except OSError as e:
+        except (OSError, TypeError) as e:
             logging.debug("sensors_temperatures() raised %s, keeping stale data", e)
             return
 
@@ -198,7 +198,10 @@ class TempSource(Source):
             return self._cached_top_temp
 
         top_temp = 10
-        available_temps = psutil.sensors_temperatures().values()
+        try:
+            available_temps = psutil.sensors_temperatures().values()
+        except (OSError, TypeError):
+            return 10
         for temp in available_temps:
             for temp_minor in temp:
                 if (

@@ -71,12 +71,12 @@ class FreqSource(Source):
         # cpu_freq can raise NotImplementedError if cores are offline at startup
         try:
             per_cpu_freq = psutil.cpu_freq(True)
-        except (OSError, NotImplementedError):
+        except (OSError, NotImplementedError, TypeError):
             per_cpu_freq = None
 
         try:
             overall_freq = psutil.cpu_freq(False)
-        except (OSError, NotImplementedError):
+        except (OSError, NotImplementedError, TypeError):
             overall_freq = None
 
         total_cores = self._get_total_core_count()
@@ -203,7 +203,7 @@ class FreqSource(Source):
     def update(self) -> None:
         try:
             per_cpu_freq = psutil.cpu_freq(True)
-        except (OSError, AttributeError, NotImplementedError) as e:
+        except (OSError, AttributeError, NotImplementedError, TypeError) as e:
             logging.debug("cpu_freq() raised %s: %s", type(e).__name__, e)
             for i in range(1, len(self.sensor_available)):
                 self.sensor_available[i] = False
