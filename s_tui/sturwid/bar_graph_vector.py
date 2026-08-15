@@ -56,8 +56,12 @@ class BarGraphVector(LabeledBarGraphVector):
         for _ in range(graph_count):
             self.graph_data.append([0] * self.num_samples)
 
-        # Set max to 1 as default
-        self.graph_max = 1
+        # Init from get_top(); never use `== 1` as an uninitialized sentinel
+        # since Fan/Rapl legitimately return 1.
+        self.graph_max = max(self.source.get_top(), 1)
+        # Force one rebuild after init/reset so the first update()'s fresh
+        # y_label reaches the screen (the init render used a placeholder).
+        self._needs_rebuild = True
 
         self.color_a = regular_colors[0]
         self.color_b = regular_colors[1]
@@ -203,10 +207,6 @@ class BarGraphVector(LabeledBarGraphVector):
                 graph_display_data.append(None)
 
         update_max = False
-        if self.graph_max == 1:
-            self.graph_max = self.source.get_top()
-            update_max = True
-
         local_max = math.ceil(max(local_top_value))
         if local_max > self.graph_max:
             update_max = True
@@ -238,7 +238,7 @@ class BarGraphVector(LabeledBarGraphVector):
         )
 
         # Sync sensor availability from source and rebuild graphs if changed
-        need_rebuild = update_max
+        need_rebuild = update_max or self._needs_rebuild
         source_available = self.source.sensor_available
         if source_available:
             new_available = source_available[: len(self.sensor_available)]
@@ -248,10 +248,13 @@ class BarGraphVector(LabeledBarGraphVector):
 
         if need_rebuild:
             self.set_visible_graphs()
+            self._needs_rebuild = False
 
     def reset(self):
         self.graph_data = []
         # Like in init, we create new instances for each list
         for _ in range(self.graph_count):
             self.graph_data.append([0] * self.num_samples)
-        self.graph_max = 1
+        self.graph_max = max(self.source.get_top(), 1)
+        # Let the next update() repaint with a fresh y_label.
+        self._needs_rebuild = True
