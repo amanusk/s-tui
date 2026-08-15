@@ -1,6 +1,15 @@
 {
     "include": ["s_tui"],
     "exclude": ["build", "dist", "**/__pycache__"],
-    // urwid 4.0.8 MRO change makes SimpleFocusListWalker look abstract (urwid#1203)
-    "reportAbstractUsage": "none"
+    // "basic" catches real type bugs (attribute errors, wrong arg counts,
+    // None deref) without the urwid-protocol noise that "standard" gets
+    // from urwid's imperfect Widget stubs.
+    "typeCheckingMode": "basic",
+    // Both rules below fire only from urwid's own stubs and each release
+    // brings new false positives, not real bugs:
+    //   reportAbstractUsage: SimpleFocusListWalker looks abstract (urwid#1203).
+    //   reportArgumentType:  Button (Flow widget) fails Columns/Pile widget-list
+    //                        protocol narrowing.
+    "reportAbstractUsage": "none",
+    "reportArgumentType": "none"
 }

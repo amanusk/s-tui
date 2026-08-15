@@ -97,18 +97,18 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         self.bar_graph_vector = []
         self.set_graph(bar_graph_vector)
 
-        self.y_label_and_graphs = urwid.WidgetPlaceholder(urwid.Columns([]))  # type: ignore[arg-type]
+        self.y_label_and_graphs = urwid.WidgetPlaceholder(urwid.Columns([]))  # pyright: ignore[reportCallIssue]
         self.y_label = []
         self.set_y_label(y_label)
 
         list_w = urwid.ListBox(urwid.SimpleFocusListWalker([]))
-        self.title = urwid.WidgetPlaceholder(list_w)  # type: ignore[arg-type]
+        self.title = urwid.WidgetPlaceholder(list_w)  # pyright: ignore[reportCallIssue]
         self.sub_title_list = sub_title_list
         self.set_title(title)
 
         self.sensor_available = [True] * len(bar_graph_vector)
 
-        super().__init__(urwid.Pile([]))  # type: ignore[arg-type]
+        super().__init__(urwid.Pile([]))  # pyright: ignore[reportCallIssue]
         self.set_visible_graphs(visible_graph_list)
 
     def set_title(self, title):
@@ -121,21 +121,21 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
     def set_y_label(self, y_label):
         if not y_label:
             text = urwid.Text("1")
-            pile = urwid.Pile([urwid.ListBox([text])])  # pyright: ignore[reportArgumentType]
-            self.y_label = ("fixed", 1, pile)  # type: ignore[assignment]
+            pile = urwid.Pile([urwid.ListBox([text])])
+            self.y_label = ("fixed", 1, pile)
             return
 
         str_y_label = [str(i) for i in y_label]
         y_label_nums = str_y_label[1:]
-        y_list_walker = [(1, urwid.ListBox([urwid.Text(str_y_label[0])]))]  # pyright: ignore[reportArgumentType]
+        y_list_walker = [(1, urwid.ListBox([urwid.Text(str_y_label[0])]))]
 
         for num in y_label_nums:
-            y_list_walker = [urwid.ListBox([urwid.Text(num)]), *y_list_walker]  # pyright: ignore[reportArgumentType]
+            y_list_walker = [urwid.ListBox([urwid.Text(num)]), *y_list_walker]
 
-        y_list_walker = urwid.Pile(y_list_walker, focus_item=0)  # pyright: ignore[reportArgumentType]
+        y_list_walker = urwid.Pile(y_list_walker, focus_item=0)
         y_scale_len = len(max(str_y_label, key=len))
 
-        self.y_label = ("fixed", y_scale_len, y_list_walker)  # type: ignore[assignment]
+        self.y_label = ("fixed", y_scale_len, y_list_walker)
 
     def set_visible_graphs(self, visible_graph_list=None):
         """Show a column of the graph selected for display"""
@@ -151,7 +151,7 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
         ):
             if state:
                 text_w = urwid.Text(sub_title, align="center")
-                sub_title_widget = urwid.ListBox([text_w])  # pyright: ignore[reportArgumentType]
+                sub_title_widget = urwid.ListBox([text_w])
 
                 # Use placeholder if sensor is unavailable
                 if idx < len(self.sensor_available) and not self.sensor_available[idx]:
@@ -160,29 +160,29 @@ class LabeledBarGraphVector(urwid.WidgetPlaceholder):
                     display_widget = graph
 
                 graph_a = [
-                    ("fixed", 1, sub_title_widget),  # type: ignore[list-item]
-                    ("weight", 1, display_widget),  # type: ignore[list-item]
+                    ("fixed", 1, sub_title_widget),
+                    ("weight", 1, display_widget),
                 ]
                 graph_and_title = urwid.Pile(graph_a)
-                graph_vector_column_list.append(("weight", 1, graph_and_title))  # type: ignore[arg-type]
-                graph_vector_column_list.append(("fixed", 1, vline))  # type: ignore[arg-type]
+                graph_vector_column_list.append(("weight", 1, graph_and_title))
+                graph_vector_column_list.append(("fixed", 1, vline))
 
         # if all sub graph are disabled
         if not graph_vector_column_list:
             self.visible_graph_list = visible_graph_list
-            self.original_widget = urwid.Pile([])  # type: ignore[arg-type]
+            self.original_widget = urwid.Pile([])
             return
 
         # remove the last vertical line separator
         graph_vector_column_list.pop()
 
-        y_label_a = ("weight", 1, urwid.Columns(graph_vector_column_list))  # type: ignore[var-type]
+        y_label_a = ("weight", 1, urwid.Columns(graph_vector_column_list))
         y_label_and_graphs = [self.y_label, y_label_a]
-        column_w = urwid.Columns(y_label_and_graphs, dividechars=1)  # type: ignore[arg-type]
-        y_label_and_graphs_widget = urwid.WidgetPlaceholder(column_w)  # type: ignore[arg-type]
+        column_w = urwid.Columns(y_label_and_graphs, dividechars=1)
+        y_label_and_graphs_widget = urwid.WidgetPlaceholder(column_w)  # pyright: ignore[reportCallIssue]
 
         init_widget = urwid.Pile(
-            [("fixed", 1, self.title), ("weight", 1, y_label_and_graphs_widget)]  # type: ignore[list-item]
+            [("fixed", 1, self.title), ("weight", 1, y_label_and_graphs_widget)]
         )
 
         self.visible_graph_list = visible_graph_list

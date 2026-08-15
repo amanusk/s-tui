@@ -58,7 +58,7 @@ class SummaryTextList:
             value_w = urwid.Text(display_val, align="right")
             # This can be accessed by the update method
             self.summary_text_items[key] = value_w
-            col_w = urwid.Columns([("weight", 1.5, label_w), value_w])  # pyright: ignore[reportArgumentType]
+            col_w = urwid.Columns([("weight", 1.5, label_w), value_w])
             # Use setdefault for atomic check-and-set (faster than try/except)
             is_visible = self.visible_summaries.setdefault(key, True)
             if is_visible:

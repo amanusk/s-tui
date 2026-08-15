@@ -110,7 +110,7 @@ graph_controller = None
 class MainLoop(urwid.MainLoop):
     """Inherit urwid Mainloop to catch special character inputs"""
 
-    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
@@ -121,7 +121,7 @@ class MainLoop(urwid.MainLoop):
             graph_controller.stress_controller.kill_stress_process()
         raise urwid.ExitMainLoop()
 
-    def unhandled_input(self, data):  # type: ignore[override]
+    def unhandled_input(self, data):
         logging.debug("Caught %s", data)
         if graph_controller is None:
             return
@@ -248,7 +248,7 @@ class GraphView(urwid.WidgetPlaceholder):
         )
         self.hline = urwid.AttrMap(urwid.SolidFill(" "), "line")
         self.vline = urwid.WidgetPlaceholder(
-            urwid.AttrMap(urwid.SolidFill("|"), "line")  # type: ignore[arg-type]
+            urwid.AttrMap(urwid.SolidFill("|"), "line")  # pyright: ignore[reportCallIssue]
         )
 
         self.mode_buttons = []
@@ -257,7 +257,7 @@ class GraphView(urwid.WidgetPlaceholder):
 
         # Visible graphs are the graphs currently displayed, this is a
         # subset of the available graphs for display
-        self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))  # type: ignore[arg-type]
+        self.graph_place_holder = urwid.WidgetPlaceholder(urwid.Pile([]))  # pyright: ignore[reportCallIssue]
 
         # construct the various menus during init phase
         self.stress_menu = StressMenu(self.on_menu_close, self.controller.stress_exe)
@@ -283,7 +283,7 @@ class GraphView(urwid.WidgetPlaceholder):
         self.power_profile_menu = self._create_power_profile_menu()
 
         # call super
-        urwid.WidgetPlaceholder.__init__(self, self.main_window())  # type: ignore[arg-type]
+        urwid.WidgetPlaceholder.__init__(self, self.main_window())  # pyright: ignore[reportCallIssue]
         urwid.connect_signal(self.refresh_rate_ctrl, "change", self.update_refresh_rate)
 
     def update_refresh_rate(self, _, new_refresh_rate):
@@ -418,7 +418,7 @@ class GraphView(urwid.WidgetPlaceholder):
             for sensor, visible_sensors in self.summary_menu.active_sensors.items():
                 self.visible_summaries[sensor].update_visibility(visible_sensors)
 
-        self.main_window_w.base_widget[0].body[  # type: ignore[index]
+        self.main_window_w.base_widget[0].body[  # pyright: ignore[reportIndexIssue, reportAttributeAccessIssue]
             self.summary_widget_index
         ] = self._generate_summaries()
 
@@ -695,9 +695,9 @@ class GraphView(urwid.WidgetPlaceholder):
         self.vline.original_widget = urwid.AttrMap(urwid.SolidFill(vline_char), "line")
         widget = urwid.Columns(
             [
-                ("fixed", 20, text_col),  # type: ignore[list-item]
-                ("fixed", 1, self.vline),  # type: ignore[list-item]
-                ("weight", 2, self.graph_place_holder),  # type: ignore[list-item]
+                ("fixed", 20, text_col),
+                ("fixed", 1, self.vline),
+                ("weight", 2, self.graph_place_holder),
             ],
             dividechars=0,
             focus_column=0,
@@ -706,7 +706,7 @@ class GraphView(urwid.WidgetPlaceholder):
         widget = urwid.Padding(widget, ("fixed left", 1), ("fixed right", 1))
         self.main_window_w = widget
 
-        base = self.main_window_w.base_widget[0].body  # type: ignore[index]
+        base = self.main_window_w.base_widget[0].body  # pyright: ignore[reportIndexIssue]
         self.summary_widget_index = len(base) - 1
         logging.debug("Pile index: %s", self.summary_widget_index)
 
