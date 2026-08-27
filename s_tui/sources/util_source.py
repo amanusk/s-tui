@@ -52,11 +52,11 @@ class UtilSource(Source):
         self.last_measurement = [0.0] * len(self.available_sensors)
         self.sensor_available = [True] * len(self.available_sensors)
 
-        # Affinity cache — refreshed in update() when online core count changes
-        self._cached_online_ids = self._get_online_cpu_ids()
+        # Affinity cache — refreshed in update() when online core count changes.
+        # Only consulted when psutil returns fewer per-cpu entries than total_cores
+        # (real offline cores), so process affinity from taskset doesn't hide cores.
+        self._cached_online_ids: list[int] | None = None
         self._cached_online_len = -1  # force refresh on first update()
-
-        self._mark_offline_cores(total_cores, self._cached_online_ids)
 
     def update(self) -> None:
         try:
@@ -67,7 +67,20 @@ class UtilSource(Source):
         if not per_cpu:
             return
 
-        # Only re-query affinity when the online core count changes
+        num_cores = len(self.available_sensors) - 1  # index 0 is "Avg"
+
+        # Fast path: psutil returned one entry per known core → direct mapping.
+        # Covers the taskset case, where cpu_affinity() would misleadingly report
+        # only the process's affinity mask despite all CPUs being online.
+        if len(per_cpu) >= num_cores:
+            for core_id in range(num_cores):
+                self.last_measurement[core_id + 1] = float(per_cpu[core_id])
+                self.sensor_available[core_id + 1] = True
+            self.last_measurement[0] = sum(per_cpu[:num_cores]) / num_cores
+            return
+
+        # Fewer entries than cores → some cores are truly offline (chcpu -d).
+        # Re-query affinity only when the online count changes.
         if len(per_cpu) != self._cached_online_len:
             self._cached_online_ids = self._get_online_cpu_ids()
             self._cached_online_len = len(per_cpu)
@@ -75,7 +88,6 @@ class UtilSource(Source):
         online_ids = self._cached_online_ids
 
         if online_ids is None:
-            # No cpu_affinity (e.g. macOS) — direct index mapping
             avg = sum(per_cpu) / len(per_cpu)
             self.last_measurement = [avg] + [float(v) for v in per_cpu]
             return
@@ -83,7 +95,6 @@ class UtilSource(Source):
         # cpu_percent(percpu=True) drops offline cores and shifts indices,
         # so per_cpu[i] belongs to online_ids[i], not to core i.
         value_by_core = dict(zip(online_ids, per_cpu))
-        num_cores = len(self.available_sensors) - 1  # index 0 is "Avg"
         online_values = []
 
         for core_id in range(num_cores):
