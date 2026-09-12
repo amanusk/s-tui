@@ -878,7 +878,7 @@ class GraphController:
         self.script_hooks_enabled = True
         self.script_loader = None
 
-        self.refresh_rate = args.refresh_rate
+        self.refresh_rate = "2.0"
 
         self.smooth_graph_mode = False
 
@@ -892,6 +892,8 @@ class GraphController:
         self.stress_workers = None
 
         possible_sources = self._load_config(args.t_thresh)
+        if args.refresh_rate is not None:
+            self.refresh_rate = args.refresh_rate
 
         # Needed for use in view
         self.args = args
@@ -1176,8 +1178,8 @@ def get_args():
         "-r",
         "--refresh-rate",
         dest="refresh_rate",
-        default="2.0",
-        help="Refresh rate in seconds. Default: 2.0",
+        default=None,
+        help="Refresh rate in seconds. Overrides saved settings. Default: 2.0",
     )
     args = parser.parse_args()
     return args
