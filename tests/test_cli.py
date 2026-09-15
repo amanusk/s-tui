@@ -3,7 +3,9 @@
 import sys
 from unittest.mock import patch
 
-from s_tui.s_tui import get_args
+import pytest
+
+from s_tui.s_tui import GraphController, get_args
 
 
 class TestGetArgs:
@@ -23,7 +25,7 @@ class TestGetArgs:
         assert args.no_mouse is False
         assert args.debug_run is False
         assert args.t_thresh is None
-        assert args.refresh_rate == "2.0"
+        assert args.refresh_rate is None
 
     def test_debug_flag(self):
         args = self._parse(["-d"])
@@ -80,3 +82,56 @@ class TestGetArgs:
         assert args.no_mouse is True
         assert args.t_thresh == "75"
         assert args.refresh_rate == "0.5"
+
+
+class TestRefreshRatePrecedence:
+    @pytest.mark.parametrize(
+        "saved_rate, argv, expected",
+        [
+            (None, [], "2.0"),
+            ("5", [], "5.0"),
+            ("5", ["--refresh-rate", "1"], "1"),
+            ("5", ["-r", "2.0"], "2.0"),
+            (None, ["-r", "0.5"], "0.5"),
+            ("invalid", [], "2.0"),
+            ("invalid", ["-r", "1"], "1"),
+        ],
+    )
+    def test_refresh_rate_precedence(
+        self, tmp_path, mocker, saved_rate, argv, expected
+    ):
+        """Explicit CLI rates override saved settings, which override the default."""
+        config_file = tmp_path / "s-tui.conf"
+        if saved_rate is not None:
+            config_file.write_text(f"[GraphControl]\nrefresh = {saved_rate}\n")
+
+        mocker.patch("s_tui.s_tui.user_config_dir_exists", return_value=True)
+        mocker.patch("s_tui.s_tui.get_user_config_dir", return_value=str(tmp_path))
+        mocker.patch(
+            "s_tui.s_tui.user_config_file_exists", return_value=config_file.exists()
+        )
+        mocker.patch("s_tui.s_tui.get_user_config_file", return_value=str(config_file))
+        mocker.patch("s_tui.s_tui.ScriptHookLoader")
+        mocker.patch("s_tui.s_tui.GraphView")
+        mocker.patch("s_tui.s_tui.GraphController._config_stress")
+        mocker.patch("s_tui.s_tui.which", return_value=None)
+        for source_name in (
+            "TempSource",
+            "FreqSource",
+            "UtilSource",
+            "RaplPowerSource",
+            "FanSource",
+        ):
+            source = mocker.patch(f"s_tui.s_tui.{source_name}")
+            source.return_value.get_is_available.return_value = False
+
+        mocker.patch.object(sys, "argv", ["s-tui", *argv])
+        controller = GraphController(get_args())
+
+        assert controller.refresh_rate == expected
+        if saved_rate is not None:
+            assert (
+                config_file.read_text() == f"[GraphControl]\nrefresh = {saved_rate}\n"
+            )
+        else:
+            assert not config_file.exists()
