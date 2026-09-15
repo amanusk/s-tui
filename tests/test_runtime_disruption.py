@@ -59,6 +59,32 @@ class TestUtilCoreCountChanges:
         summary = src.get_sensors_summary()
         assert summary is not None
 
+    def test_taskset_affinity_does_not_mark_cores_offline(self, mocker):
+        """Regression for issue #303.
+
+        Running under `taskset -c ...` restricts the process's cpu_affinity()
+        to a subset, but psutil.cpu_percent(percpu=True) still returns every
+        online CPU. All cores must remain available.
+        """
+        mocker.patch("psutil.cpu_count", return_value=8)
+        mocker.patch(
+            "psutil.cpu_percent",
+            return_value=[10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0],
+        )
+        mocker.patch(
+            "s_tui.sources.source.Source._get_total_core_count", return_value=8
+        )
+        mocker.patch(
+            "s_tui.sources.source.Source._get_online_cpu_ids",
+            return_value=[3, 4, 5, 6],
+        )
+        src = UtilSource()
+        src.update()
+
+        readings = src.get_reading_list()
+        assert readings[1:] == [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0]
+        assert src.sensor_available[1:] == [True] * 8
+
     def test_core_count_shrinks(self, mocker):
         """Simulate a core going offline mid-run.
 

@@ -19,7 +19,8 @@ jobs:
         run: pip install ruff==0.15.4 pyright==1.1.408
 
       - name: Install project dependencies (for pyright)
-        run: pip install -e ".[test]"
+        # urwid>=4.0.11 tightened widget-protocol stubs; unpin once upstream settles.
+        run: pip install -e ".[test]" "urwid==4.0.10"
 
       - name: Ruff lint
         run: ruff check .
