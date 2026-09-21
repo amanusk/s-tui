@@ -76,6 +76,78 @@ class RaplReader:
         return os.path.exists("/sys/class/powercap/intel-rapl")
 
 
+class ZenpowerReader:
+    """Reader for ZenPower5 kernel driver (AMD Zen 1-5).
+
+    ZenPower5 exposes power sensors via hwmon sysfs interface:
+    - power*_input: Power in microwatts (Zen 5 RAPL, or calculated for earlier gens)
+    - in*_input: Voltage in microvolts
+    - curr*_input: Current in microamps
+
+    On Zen 5, RAPL provides direct power readings.
+    On earlier generations, power may be calculated from SVI2 voltage/current.
+    """
+
+    ZENPOWER_HWMON_DIR = "/sys/class/hwmon/"
+
+    def __init__(self) -> None:
+        self.power_inputs: list[tuple[str, str]] = []
+        self.basenames = glob.glob(f"{self.ZENPOWER_HWMON_DIR}hwmon*/")
+
+        for path in self.basenames:
+            name_file = os.path.join(path, "name")
+            name = cat(name_file, fallback="", binary=False)
+            if name and "zenpower" in name.lower():
+                power_files = sorted(glob.glob(os.path.join(path, "power*_input")))
+                for idx, pf in enumerate(power_files):
+                    label_file = pf.replace("_input", "_label")
+                    label = cat(label_file, fallback="", binary=False)
+
+                    # Use label from file, or generate fallback
+                    if label:
+                        # Map zenpower labels to user-friendly names
+                        if "SVI2_P_Core" in label:
+                            display_label = "Core"
+                        elif "SVI2_P_SoC" in label:
+                            display_label = "SoC"
+                        elif "RAPL_P_Package" in label:
+                            display_label = "Package"
+                        elif "RAPL_P_Core" in label:
+                            display_label = "Core"
+                        else:
+                            display_label = label.strip()
+                    else:
+                        # No label file - map by position (power1=Core, power2=SoC for zenpower)
+                        if idx == 0:
+                            display_label = "Core"
+                        elif idx == 1:
+                            display_label = "SoC"
+                        else:
+                            display_label = f"power{idx + 1}"
+
+                    self.power_inputs.append((display_label, pf))
+
+    def read_power(self) -> list[RaplStats]:
+        ret = []
+        for label, power_file in self.power_inputs:
+            try:
+                value = cat(power_file)
+                value_float = float(value)
+                ret.append(RaplStats(label, value_float, 0.0))
+            except (OSError, ValueError) as err:
+                logging.warning("ignoring %r for file %r", (err, power_file), RuntimeWarning)
+        return ret
+
+    @staticmethod
+    def available() -> bool:
+        basenames = glob.glob(f"{ZenpowerReader.ZENPOWER_HWMON_DIR}hwmon*/name")
+        for path in basenames:
+            name = cat(path, fallback="", binary=False)
+            if name and "zenpower" in name.lower():
+                return True
+        return False
+
+
 class AMDEnergyReader:
     def __init__(self) -> None:
         self.inputs = list(
@@ -210,8 +282,8 @@ class AMDRaplMsrReader:
         return msr_available()
 
 
-def get_power_reader() -> RaplReader | AMDEnergyReader | AMDRaplMsrReader | None:
-    for ReaderType in (RaplReader, AMDEnergyReader, AMDRaplMsrReader):
+def get_power_reader() -> RaplReader | ZenpowerReader | AMDEnergyReader | AMDRaplMsrReader | None:
+    for ReaderType in (ZenpowerReader, RaplReader, AMDEnergyReader, AMDRaplMsrReader):
         if ReaderType.available():
             return ReaderType()
     return None
