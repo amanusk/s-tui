@@ -85,6 +85,43 @@ class TestUtilCoreCountChanges:
         assert readings[1:] == [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0]
         assert src.sensor_available[1:] == [True] * 8
 
+    def test_taskset_with_offline_cpu_uses_system_online_ids(
+        self, mocker, tmp_path
+    ):
+        """Only the actually offline core is unavailable under taskset."""
+        mocker.patch("psutil.cpu_count", return_value=8)
+        mocker.patch(
+            "psutil.cpu_percent",
+            return_value=[10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0],
+        )
+        mocker.patch(
+            "s_tui.sources.source.Source._get_total_core_count", return_value=8
+        )
+        online_cpu_file = tmp_path / "online"
+        online_cpu_file.write_text("0-3,5-7\n")
+        mocker.patch(
+            "s_tui.sources.source.ONLINE_CPU_LIST_PATH", online_cpu_file
+        )
+        affinity = mocker.patch("psutil.Process").return_value.cpu_affinity
+        affinity.return_value = [3, 5, 6]
+
+        src = UtilSource()
+        src.update()
+
+        summary = src.get_sensors_summary()
+        assert summary == {
+            "Avg": "40.0",
+            "Core 0": "10.0",
+            "Core 1": "20.0",
+            "Core 2": "30.0",
+            "Core 3": "40.0",
+            "Core 4": "N/A",
+            "Core 5": "50.0",
+            "Core 6": "60.0",
+            "Core 7": "70.0",
+        }
+        affinity.assert_not_called()
+
     def test_core_count_shrinks(self, mocker):
         """Simulate a core going offline mid-run.
 

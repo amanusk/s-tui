@@ -23,6 +23,7 @@ import contextlib
 import logging
 import os
 from collections import OrderedDict
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -32,6 +33,9 @@ try:
     import psutil
 except ImportError:
     psutil = None
+
+
+ONLINE_CPU_LIST_PATH = Path("/sys/devices/system/cpu/online")
 
 
 class Source:
@@ -171,12 +175,26 @@ class Source:
 
     @staticmethod
     def _get_online_cpu_ids() -> list[int] | None:
-        """Get sorted list of online CPU core IDs using psutil.
+        """Get sorted list of online CPU core IDs.
 
-        Uses Process.cpu_affinity() which reflects which CPUs are online.
-        Available on Linux, Windows, and FreeBSD.
-        Returns a sorted list of online core IDs, or None if unavailable.
+        On Linux, read the system-wide online CPU list so process affinity
+        restrictions do not hide otherwise online cores. Fall back to psutil
+        on other platforms or when the sysfs file is unavailable.
         """
+        try:
+            cpu_ids = set()
+            for item in ONLINE_CPU_LIST_PATH.read_text().strip().split(","):
+                start, separator, end = item.partition("-")
+                first = int(start)
+                last = int(end) if separator else first
+                if last < first:
+                    raise ValueError("invalid CPU range")
+                cpu_ids.update(range(first, last + 1))
+            if cpu_ids:
+                return sorted(cpu_ids)
+        except (OSError, ValueError):
+            pass
+
         if psutil is None:
             return None
         try:
